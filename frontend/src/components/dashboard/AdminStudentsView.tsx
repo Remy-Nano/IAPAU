@@ -9,13 +9,7 @@ type Student = {
   examiner: string;
 };
 
-interface AdminStudentsViewProps {
-  onNavigateToExaminers: () => void;
-}
-
-export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({
-  onNavigateToExaminers,
-}) => {
+export const AdminStudentsView: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([
     {
       id: "1",
@@ -84,14 +78,7 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({
         <div className="mt-8 space-y-2">
           <h2 className="px-3 text-lg font-medium">Administration</h2>
 
-          <div
-            className="p-3 rounded-lg hover:bg-gray-800 cursor-pointer"
-            onClick={onNavigateToExaminers}
-          >
-            <span className="font-medium">Examinateurs</span>
-          </div>
-
-          <div className="p-3 rounded-lg bg-gray-800 cursor-pointer">
+          <div className="p-3 rounded-lg hover:bg-gray-800 cursor-pointer">
             <span className="font-medium">Étudiants</span>
           </div>
         </div>
@@ -112,69 +99,87 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({
 
         {/* Content Area */}
         <div className="flex-1 p-8">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">Liste des étudiants</h2>
-              <button
-                onClick={handleAddStudent}
-                className="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700 flex items-center"
-              >
-                <span className="mr-1">+</span> Nouvel étudiant
-              </button>
-            </div>
+          <div className="p-4 md:p-8 h-full overflow-auto">
+            <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <h2 className="text-xl font-bold">Liste des étudiants</h2>
+                <button
+                  onClick={handleAddStudent}
+                  className="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700 flex items-center self-stretch md:self-auto"
+                >
+                  <span className="mr-1">+</span> Nouvel étudiant
+                </button>
+              </div>
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="py-3 px-6 text-left text-gray-500 font-medium">
-                      Nom
-                    </th>
-                    <th className="py-3 px-6 text-left text-gray-500 font-medium">
-                      Mail
-                    </th>
-                    <th className="py-3 px-6 text-left text-gray-500 font-medium">
-                      Examinateur
-                    </th>
-                    <th className="py-3 px-6 text-right">...</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {students.map((student) => (
-                    <tr key={student.id} className="border-b border-gray-200">
-                      <td className="py-4 px-6">{student.name}</td>
-                      <td className="py-4 px-6">{student.email}</td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center">
-                          <span>{student.examiner}</span>
-                          <ChevronDown className="h-4 w-4 ml-1" />
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-right flex items-center justify-end">
-                        <button
-                          onClick={() => handleSendMagicLink(student.id)}
-                          className="text-green-500 hover:text-green-700 mr-2"
-                          title="Envoyer un lien magique"
-                        >
-                          <Mail className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => handleEditStudent(student.id)}
-                          className="bg-indigo-100 text-indigo-600 rounded-lg px-4 py-2 mr-2"
-                        >
-                          Modifier
-                        </button>
-                        <button
-                          onClick={() => handleDeleteStudent(student.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      </td>
+              <div className="overflow-x-auto -mx-4 md:mx-0">
+                <table className="min-w-full">
+                  <thead className="hidden md:table-header-group">
+                    <tr className="border-b border-gray-200">
+                      <th className="py-3 px-2 md:px-6 text-left text-gray-500 font-medium">
+                        Nom
+                      </th>
+                      <th className="py-3 px-2 md:px-6 text-left text-gray-500 font-medium">
+                        Mail
+                      </th>
+                      <th className="py-3 px-2 md:px-6 text-left text-gray-500 font-medium">
+                        Examinateur
+                      </th>
+                      <th className="py-3 px-2 md:px-6 text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {students.map((student) => (
+                      <tr
+                        key={student.id}
+                        className="border-b border-gray-200 flex flex-col md:table-row"
+                      >
+                        <td className="py-2 md:py-4 px-2 md:px-6 flex flex-col md:block">
+                          <span className="font-medium text-gray-500 md:hidden">
+                            Nom:
+                          </span>
+                          <span>{student.name}</span>
+                        </td>
+                        <td className="py-2 md:py-4 px-2 md:px-6 flex flex-col md:block">
+                          <span className="font-medium text-gray-500 md:hidden">
+                            Mail:
+                          </span>
+                          <span>{student.email}</span>
+                        </td>
+                        <td className="py-2 md:py-4 px-2 md:px-6 flex flex-col md:block">
+                          <span className="font-medium text-gray-500 md:hidden">
+                            Examinateur:
+                          </span>
+                          <div className="flex items-center">
+                            <span>{student.examiner}</span>
+                            <ChevronDown className="h-4 w-4 ml-1" />
+                          </div>
+                        </td>
+                        <td className="py-2 md:py-4 px-2 md:px-6 flex justify-start md:justify-end items-center gap-2">
+                          <button
+                            onClick={() => handleSendMagicLink(student.id)}
+                            className="text-green-500 hover:text-green-700"
+                            title="Envoyer un lien magique"
+                          >
+                            <Mail className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={() => handleEditStudent(student.id)}
+                            className="bg-indigo-100 text-indigo-600 rounded-lg px-3 py-1 md:px-4 md:py-2 text-sm md:text-base"
+                          >
+                            Modifier
+                          </button>
+                          <button
+                            onClick={() => handleDeleteStudent(student.id)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>

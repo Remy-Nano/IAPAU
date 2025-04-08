@@ -66,9 +66,9 @@ export const AuthManager: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-6 px-4 sm:py-12 sm:px-6 lg:px-8">
       {error && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <div className="fixed top-4 left-0 right-0 mx-auto max-w-xs sm:max-w-sm md:max-w-md transform bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg z-50">
           {error}
           <button className="ml-2 font-bold" onClick={() => setError("")}>
             ×
@@ -76,19 +76,21 @@ export const AuthManager: React.FC = () => {
         </div>
       )}
 
-      {currentStep === "initial" && (
-        <InitialAuth onSubmit={handleInitialSubmit} />
-      )}
+      <div className="w-full max-w-md space-y-8 bg-white p-6 sm:p-8 rounded-lg shadow-md">
+        {currentStep === "initial" && (
+          <InitialAuth onSubmit={handleInitialSubmit} />
+        )}
 
-      {currentStep === "student" && <StudentAuth email={email} />}
+        {currentStep === "student" && <StudentAuth email={email} />}
 
-      {currentStep === "examiner" && (
-        <ExaminerAuth onSubmit={handleExaminerLogin} />
-      )}
+        {currentStep === "examiner" && (
+          <ExaminerAuth onSubmit={handleExaminerLogin} />
+        )}
 
-      {currentStep === "admin" && <AdminAuth onSubmit={handleAdminLogin} />}
+        {currentStep === "admin" && <AdminAuth onSubmit={handleAdminLogin} />}
 
-      <CredentialsInfo />
+        <CredentialsInfo />
+      </div>
     </div>
   );
 };

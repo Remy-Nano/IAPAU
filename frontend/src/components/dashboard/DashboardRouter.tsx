@@ -8,12 +8,12 @@ import { StudentDashboard } from "./StudentDashboard";
 export const DashboardRouter: React.FC = () => {
   const { userRole } = useAuth();
 
-  // Rediriger vers la page d'authentification si l'utilisateur n'est pas connecté
+  // Rediriger vers la page d'authentification si le rôle n'est pas défini
   if (!userRole) {
     return <Navigate to="/auth" replace />;
   }
 
-  // Afficher la vue appropriée en fonction du rôle de l'utilisateur
+  // Rediriger vers le dashboard approprié en fonction du rôle
   switch (userRole) {
     case "student":
       return <StudentDashboard />;

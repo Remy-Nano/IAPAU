@@ -35,15 +35,17 @@ export const InitialAuth: React.FC<InitialAuthProps> = ({ onSubmit }) => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-8 rounded-lg border border-gray-200 shadow-md">
-      <h2 className="text-3xl font-bold text-center mb-8">Authentification</h2>
+    <div>
+      <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6">
+        Authentification
+      </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         <div>
           <input
             type="email"
             id="email"
-            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full p-2 sm:p-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
             placeholder="Adresse email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -51,37 +53,39 @@ export const InitialAuth: React.FC<InitialAuthProps> = ({ onSubmit }) => {
           />
         </div>
 
-        <div className="flex flex-wrap gap-2 justify-center text-sm">
+        <div className="flex flex-wrap gap-2 justify-center text-xs sm:text-sm">
           <button
             type="button"
             onClick={() => fillEmail("student")}
-            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
+            className="px-2 sm:px-3 py-1 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
           >
             Étudiant
           </button>
           <button
             type="button"
             onClick={() => fillEmail("examiner")}
-            className="px-3 py-1 bg-green-100 text-green-700 rounded-full hover:bg-green-200"
+            className="px-2 sm:px-3 py-1 bg-green-100 text-green-700 rounded-full hover:bg-green-200"
           >
             Examinateur
           </button>
           <button
             type="button"
             onClick={() => fillEmail("admin")}
-            className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
+            className="px-2 sm:px-3 py-1 bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
           >
             Admin
           </button>
         </div>
 
         {error && (
-          <div className="text-red-500 text-sm text-center">{error}</div>
+          <div className="text-red-500 text-xs sm:text-sm text-center">
+            {error}
+          </div>
         )}
 
         <button
           type="submit"
-          className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+          className="w-full py-2 sm:py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white text-sm sm:text-base font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
         >
           Se connecter
         </button>

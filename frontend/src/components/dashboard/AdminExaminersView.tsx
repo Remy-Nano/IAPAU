@@ -8,13 +8,7 @@ type Examiner = {
   email: string;
 };
 
-interface AdminExaminersViewProps {
-  onNavigateToStudents: () => void;
-}
-
-export const AdminExaminersView: React.FC<AdminExaminersViewProps> = ({
-  onNavigateToStudents,
-}) => {
+export const AdminExaminersView: React.FC = () => {
   const [examiners, setExaminers] = useState<Examiner[]>([
     { id: "1", name: "...............", email: "..............." },
     { id: "2", name: "...............", email: "..............." },
@@ -56,10 +50,7 @@ export const AdminExaminersView: React.FC<AdminExaminersViewProps> = ({
             <span className="font-medium">Examinateurs</span>
           </div>
 
-          <div
-            className="p-3 rounded-lg hover:bg-gray-800 cursor-pointer"
-            onClick={onNavigateToStudents}
-          >
+          <div className="p-3 rounded-lg hover:bg-gray-800 cursor-pointer">
             <span className="font-medium">Étudiants</span>
           </div>
         </div>
@@ -80,53 +71,68 @@ export const AdminExaminersView: React.FC<AdminExaminersViewProps> = ({
 
         {/* Content Area */}
         <div className="flex-1 p-8">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">Liste des examinateurs</h2>
-              <button
-                onClick={handleAddExaminer}
-                className="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700 flex items-center"
-              >
-                <span className="mr-1">+</span> Nouvel examinateur
-              </button>
-            </div>
+          <div className="p-4 md:p-8 h-full overflow-auto">
+            <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <h2 className="text-xl font-bold">Liste des examinateurs</h2>
+                <button
+                  onClick={handleAddExaminer}
+                  className="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700 flex items-center self-stretch md:self-auto"
+                >
+                  <span className="mr-1">+</span> Nouvel examinateur
+                </button>
+              </div>
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="py-3 px-6 text-left text-gray-500 font-medium">
-                      Nom
-                    </th>
-                    <th className="py-3 px-6 text-left text-gray-500 font-medium">
-                      Mail
-                    </th>
-                    <th className="py-3 px-6 text-right"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {examiners.map((examiner) => (
-                    <tr key={examiner.id} className="border-b border-gray-200">
-                      <td className="py-4 px-6">{examiner.name}</td>
-                      <td className="py-4 px-6">{examiner.email}</td>
-                      <td className="py-4 px-6 text-right">
-                        <button
-                          onClick={() => handleEditExaminer(examiner.id)}
-                          className="bg-indigo-100 text-indigo-600 rounded-lg px-4 py-2 mr-2"
-                        >
-                          Modifier
-                        </button>
-                        <button
-                          onClick={() => handleDeleteExaminer(examiner.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      </td>
+              <div className="overflow-x-auto -mx-4 md:mx-0">
+                <table className="min-w-full">
+                  <thead className="hidden md:table-header-group">
+                    <tr className="border-b border-gray-200">
+                      <th className="py-3 px-2 md:px-6 text-left text-gray-500 font-medium">
+                        Nom
+                      </th>
+                      <th className="py-3 px-2 md:px-6 text-left text-gray-500 font-medium">
+                        Mail
+                      </th>
+                      <th className="py-3 px-2 md:px-6 text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {examiners.map((examiner) => (
+                      <tr
+                        key={examiner.id}
+                        className="border-b border-gray-200 flex flex-col md:table-row"
+                      >
+                        <td className="py-2 md:py-4 px-2 md:px-6 flex flex-col md:block">
+                          <span className="font-medium text-gray-500 md:hidden">
+                            Nom:
+                          </span>
+                          <span>{examiner.name}</span>
+                        </td>
+                        <td className="py-2 md:py-4 px-2 md:px-6 flex flex-col md:block">
+                          <span className="font-medium text-gray-500 md:hidden">
+                            Mail:
+                          </span>
+                          <span>{examiner.email}</span>
+                        </td>
+                        <td className="py-2 md:py-4 px-2 md:px-6 flex justify-start md:justify-end items-center gap-2">
+                          <button
+                            onClick={() => handleEditExaminer(examiner.id)}
+                            className="bg-indigo-100 text-indigo-600 rounded-lg px-3 py-1 md:px-4 md:py-2 text-sm md:text-base"
+                          >
+                            Modifier
+                          </button>
+                          <button
+                            onClick={() => handleDeleteExaminer(examiner.id)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
