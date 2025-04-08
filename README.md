@@ -24,27 +24,28 @@ Une application web permettant aux étudiants d'interagir avec des modèles d'IA
    cd Hackathon
    ```
 
-2. Installer les dépendances
+2. Installer les dépendances du frontend et du backend
 
    ```bash
+   # Installation des dépendances frontend
+   cd frontend
    npm install
-   # ou
-   yarn install
+
+   # Installation des dépendances backend
+   cd ../backend
+   npm install
    ```
 
-3. Lancer l'application en mode développement
+3. Lancer l'application en mode développement (dans deux terminaux séparés)
 
    ```bash
+   # Terminal 1 - Lancer le frontend
+   cd frontend
    npm run dev
-   # ou
-   yarn dev
-   ```
 
-4. (Optionnel) Lancer le serveur backend pour les métriques
-   ```bash
+   # Terminal 2 - Lancer le backend
+   cd backend
    npm run server
-   # ou
-   yarn server
    ```
 
 ## 🔐 Comptes de test
@@ -98,25 +99,42 @@ Pour faciliter les tests, des URLs de connexion rapide sont disponibles :
 ## 🛠️ Structure du projet
 
 ```
-src/
-├── components/           # Composants React
-│   ├── auth/             # Composants d'authentification
-│   └── dashboard/        # Tableaux de bord par rôle
-├── context/              # Contextes React (AuthContext)
-├── types.ts              # Types TypeScript
-├── App.tsx               # Composant principal avec routage
-└── main.tsx              # Point d'entrée de l'application
+.
+├── frontend/                # Application React (Frontend)
+│   ├── public/              # Fichiers statiques
+│   ├── src/                 # Code source frontend
+│   │   ├── components/      # Composants React
+│   │   │   ├── auth/        # Composants d'authentification
+│   │   │   └── dashboard/   # Tableaux de bord par rôle
+│   │   ├── context/         # Contextes React (AuthContext)
+│   │   ├── App.tsx          # Composant principal avec routage
+│   │   ├── main.tsx         # Point d'entrée de l'application
+│   │   └── types.ts         # Types TypeScript
+│   └── ...                  # Fichiers de configuration
+│
+└── backend/                 # Serveur Express (Backend)
+    ├── config/              # Configuration du serveur
+    ├── controllers/         # Contrôleurs API
+    ├── middleware/          # Middlewares Express
+    ├── models/              # Modèles de données
+    ├── routes/              # Routes API
+    └── server.js            # Point d'entrée du serveur
 ```
 
 ## 🔧 Technologies utilisées
 
-- **React** - Bibliothèque UI
-- **TypeScript** - Typage statique
-- **React Router** - Routage
-- **Tailwind CSS** - Styling
-- **Vite** - Build tool
-- **Lucide React** - Icônes
-- **Express** - Serveur backend léger (métriques)
+- **Frontend**
+
+  - React
+  - TypeScript
+  - React Router
+  - Tailwind CSS
+  - Vite (build tool)
+  - Lucide React (icônes)
+
+- **Backend**
+  - Express
+  - Cors
 
 ## 🔮 Perspectives d'amélioration
 
