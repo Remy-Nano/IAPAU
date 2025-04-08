@@ -86,7 +86,6 @@ Une application web permettant aux étudiants d'interagir avec des modèles d'IA
 1. Se connecter avec email et mot de passe
 2. Gérer les comptes des examinateurs (ajouter, modifier, supprimer)
 3. Gérer les comptes des étudiants (ajouter, modifier, supprimer)
-4. Envoyer des liens magiques aux étudiants
 
 ## 🧪 Routes de test rapide
 
