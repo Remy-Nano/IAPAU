@@ -1,10 +1,16 @@
-<<<<<<< HEAD
 export type UserRole = "student" | "examiner" | "admin";
 
 export type User = {
-  id: string;
+  _id: string;
+  nom: string;
+  prenom: string;
   email: string;
-  role: UserRole;
+  dateNaissance: Date;
+  formation: string;
+  role: "student" | "admin" | "teacher";
+  groupes: string[];
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type Student = User & {
@@ -22,48 +28,69 @@ export type Admin = User & {
   firstName: string;
   lastName: string;
 };
-=======
-export type Student = {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  studentId: string;
-}
->>>>>>> 32df47abaeac27ff8b21431d4e544eebc011a238
 
 export type AIModel = {
   id: string;
   name: string;
   description: string;
   provider: string;
-<<<<<<< HEAD
 };
 
 export type Message = {
-  role: "user" | "assistant";
+  _id?: string;
+  role: "user" | "ai";
   content: string;
-  timestamp: Date;
-  model: string;
+  timestamp?: Date;
+  tokenCount?: number;
 };
 
 export type ChatHistory = {
   [modelId: string]: Message[];
 };
-=======
-}
 
-export type Message = {
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  model: string;
-}
+export type Group = {
+  _id: string;
+  nom: string;
+  description: string;
+  membres: string[];
+  createdAt: Date;
+  updatedAt: Date;
+};
 
-export type ChatHistory = {
-  [modelId: string]: Message[];
-}
->>>>>>> 32df47abaeac27ff8b21431d4e544eebc011a238
+export type Tache = {
+  _id: string;
+  titre: string;
+  description: string;
+  deadline: Date;
+  groupId: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type StatistiquesIA = {
+  modelUtilise: string;
+  tokensTotal: number;
+  coutEstime?: number;
+};
+
+export type Conversation = {
+  _id: string;
+  studentId: string;
+  groupId: string;
+  tacheId: string;
+  modelName: string;
+  titreConversation: string;
+  promptType: "one shot" | "contextuel";
+  messages: Message[];
+  statistiquesIA?: StatistiquesIA;
+  versionFinale?: {
+    promptFinal: string;
+    reponseIAFinale: string;
+    soumisLe: Date;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 // export type Metric = {
 //   modelId: string;
@@ -75,8 +102,4 @@ export type ChatHistory = {
 //   messageCount: number;
 //   promptDuration: number;
 //   responseDuration: number;
-<<<<<<< HEAD
 // }
-=======
-// }
->>>>>>> 32df47abaeac27ff8b21431d4e544eebc011a238

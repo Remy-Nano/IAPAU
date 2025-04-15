@@ -1,144 +1,103 @@
-# Hackathon - Plateforme d'Évaluation par IA
+# Application de Comparaison de Modèles d'IA pour Hackathon
 
-Une application web permettant aux étudiants d'interagir avec des modèles d'IA, tandis que les examinateurs peuvent évaluer leurs prompts et réponses. Le système comprend également une interface d'administration pour gérer les utilisateurs.
+Cette application MERN en TypeScript permet aux étudiants d'interagir avec différents modèles d'IA (OpenAI et Mistral), de comparer leurs réponses, et de sélectionner manuellement la meilleure réponse comme version finale.
 
-## 🚀 Fonctionnalités
+## Technologies
 
-- **Authentification multi-rôles** (étudiant, examinateur, administrateur)
-- **Interface étudiant** avec chat IA et système de tokens
-- **Interface examinateur** pour évaluer les interactions des étudiants
-- **Interface administrateur** pour gérer les utilisateurs
-- **Design responsive** avec Tailwind CSS
+- **Frontend**: React, TypeScript, TailwindCSS, ShadCN/UI, React Hook Form, React Router
+- **Backend**: Node.js, Express, TypeScript, MongoDB, Mongoose
+- **Modèles d'IA**: OpenAI (GPT-3.5 Turbo) et Mistral (mistral-small)
+- **Base de données**: MongoDB Atlas
 
-## 📋 Prérequis
+## Fonctionnalités
 
-- Node.js (v14+)
-- npm ou yarn
+- Interface de chat pour interagir avec les modèles d'IA
+- Sélection du modèle d'IA (OpenAI ou Mistral)
+- Sélection du type de prompt (one shot ou contextuel)
+- Stockage des conversations dans MongoDB
+- Sélection manuelle de la meilleure réponse comme version finale
+- Système d'authentification avec différents rôles (étudiant, examinateur, administrateur)
+- Tableau de bord spécifique pour chaque rôle utilisateur
+- Statistiques sur l'utilisation des tokens et estimation des coûts
 
-## ⚙️ Installation
+## Rôles Utilisateurs
+
+- **Étudiant**: Peut créer des conversations, interagir avec les modèles d'IA et soumettre des versions finales
+- **Examinateur**: Peut consulter et analyser les conversations des étudiants
+- **Administrateur**: Peut gérer les utilisateurs (étudiants et examinateurs)
+
+## Architecture
+
+- **Frontend**: Application React avec routage et gestion de l'état via contextes
+- **Backend**: API RESTful Express avec contrôleurs pour les conversations et l'IA
+- **Modèles de données**: Schémas Mongoose pour les utilisateurs et les conversations
+
+## Installation
+
+### Prérequis
+
+- Node.js et npm
+- MongoDB Atlas (ou MongoDB local)
+- Clés API pour OpenAI et Mistral
+
+### Étapes d'installation
 
 1. Cloner le dépôt
 
-   ```bash
-   git clone <url-du-repo>
-   cd Hackathon
-   ```
-
-2. Installer les dépendances du frontend et du backend
-
-   ```bash
-   # Installation des dépendances frontend
-   cd frontend
-   npm install
-
-   # Installation des dépendances backend
-   cd ../backend
-   npm install
-   ```
-
-3. Lancer l'application en mode développement (dans deux terminaux séparés)
-
-   ```bash
-   # Terminal 1 - Lancer le frontend
-   cd frontend
-   npm run dev
-
-   # Terminal 2 - Lancer le backend
-   cd backend
-   npm run server
-   ```
-
-## 🔐 Comptes de test
-
-### Administrateur
-
-- **Email**: `admin@example.com`
-- **Mot de passe**: `admin123`
-
-### Examinateur
-
-- **Email**: `examiner@example.com`
-- **Mot de passe**: `examiner123`
-
-### Étudiant
-
-- **Email**: `student@example.com`
-- **Méthode**: Lien magique (connexion automatique en mode démonstration)
-
-## 🔄 Flux d'utilisation
-
-### Étudiants
-
-1. Se connecter avec email (un lien magique est envoyé)
-2. Accéder au dashboard étudiant
-3. Sélectionner un modèle d'IA
-4. Échanger avec l'IA (chaque échange consomme des tokens)
-
-### Examinateurs
-
-1. Se connecter avec email et mot de passe
-2. Consulter les échanges des étudiants
-3. Attribuer des notes et commenter les échanges
-4. Soumettre l'évaluation
-
-### Administrateurs
-
-1. Se connecter avec email et mot de passe
-2. Gérer les comptes des examinateurs (ajouter, modifier, supprimer)
-3. Gérer les comptes des étudiants (ajouter, modifier, supprimer)
-
-## 🧪 Routes de test rapide
-
-Pour faciliter les tests, des URLs de connexion rapide sont disponibles :
-
-- `/test-login/student` - Connexion automatique en tant qu'étudiant
-- `/test-login/examiner` - Connexion automatique en tant qu'examinateur
-- `/test-login/admin` - Connexion automatique en tant qu'administrateur
-
-## 🛠️ Structure du projet
-
 ```
-.
-├── frontend/                # Application React (Frontend)
-│   ├── public/              # Fichiers statiques
-│   ├── src/                 # Code source frontend
-│   │   ├── components/      # Composants React
-│   │   │   ├── auth/        # Composants d'authentification
-│   │   │   └── dashboard/   # Tableaux de bord par rôle
-│   │   ├── context/         # Contextes React (AuthContext)
-│   │   ├── App.tsx          # Composant principal avec routage
-│   │   ├── main.tsx         # Point d'entrée de l'application
-│   │   └── types.ts         # Types TypeScript
-│   └── ...                  # Fichiers de configuration
-│
-└── backend/                 # Serveur Express (Backend)
-    ├── config/              # Configuration du serveur
-    ├── controllers/         # Contrôleurs API
-    ├── middleware/          # Middlewares Express
-    ├── models/              # Modèles de données
-    ├── routes/              # Routes API
-    └── server.js            # Point d'entrée du serveur
+git clone <url-du-depot>
+cd <nom-du-dossier>
 ```
 
-## 🔧 Technologies utilisées
+2. Installer les dépendances du backend
 
-- **Frontend**
+```
+cd backend
+npm install
+```
 
-  - React
-  - TypeScript
-  - React Router
-  - Tailwind CSS
-  - Vite (build tool)
-  - Lucide React (icônes)
+3. Installer les dépendances du frontend
 
-- **Backend**
-  - Express
-  - Cors
+```
+cd ../frontend
+npm install
+```
 
-## 🔮 Perspectives d'amélioration
+4. Configurer les variables d'environnement
+   Créer un fichier `.env` dans le dossier `backend` avec les informations suivantes:
 
-- Intégration d'une vraie API d'IA (OpenAI, etc.)
-- Système d'authentification complet avec JWT
-- Base de données Mongo pour stocker les utilisateurs et interactions
-- Système de reporting et d'analytics
-- Tests unitaires et d'intégration
+```
+MONGODB_URI=<votre-uri-mongodb>
+OPENAI_API_KEY=<votre-cle-api-openai>
+MISTRAL_API_KEY=<votre-cle-api-mistral>
+```
+
+## Démarrage
+
+1. Démarrer le backend
+
+```
+cd backend
+npm run dev
+```
+
+2. Démarrer le frontend (dans un autre terminal)
+
+```
+cd frontend
+npm run dev
+```
+
+3. Accéder à l'application
+   Ouvrir http://localhost:5173 dans votre navigateur
+
+## Utilisation
+
+1. Connectez-vous à l'application (ou utilisez une route de test : `/test-login/student`, `/test-login/examiner`, ou `/test-login/admin`)
+2. Dans l'interface de chat (pour les étudiants):
+   - Sélectionnez un modèle d'IA (OpenAI ou Mistral)
+   - Sélectionnez un type de prompt (one shot ou contextuel)
+   - Écrivez votre prompt et envoyez-le
+   - Comparez les réponses des différents modèles
+   - Sélectionnez la meilleure réponse en cochant la case "Version finale"
+   - Cliquez sur "Soumettre la version finale" pour enregistrer votre choix
