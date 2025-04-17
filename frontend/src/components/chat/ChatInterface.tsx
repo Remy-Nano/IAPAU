@@ -16,12 +16,14 @@ import {
 } from "../ui/alert-dialog";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Separator } from "../ui/separator";
 import { ConversationStats } from "./ConversationStats";
 import { ModelSelect } from "./ModelSelect";
 import { PromptInput } from "./PromptInput";
 import { PromptTypeSelect } from "./PromptTypeSelect";
 import { ResponseList } from "./ResponseList";
 import { SubmitFinalButton } from "./SubmitFinalButton";
+import { TokenCounter } from "./TokenCounter";
 
 interface ChatData {
   titreConversation: string;
@@ -101,12 +103,21 @@ export function ChatInterface({
     messageModels,
   });
 
+  // État pour les tokens de l'utilisateur
+  const [tokensUsed, setTokensUsed] = useState<number>(0);
+  const [tokensAuthorized, setTokensAuthorized] = useState<number>(1000);
+
   // Initialiser le composant avec la conversation existante si elle est fournie
   useEffect(() => {
     if (existingConversation) {
       setConversationId(existingConversation._id);
       setMessages(existingConversation.messages);
       setConversationData(existingConversation);
+
+      // Mettre à jour les tokens utilisés si disponibles dans les statistiques
+      if (existingConversation.statistiquesIA?.tokensTotal) {
+        setTokensUsed(existingConversation.statistiquesIA.tokensTotal);
+      }
 
       // Initialiser les modèles de messages
       const newMessageModels: Record<number, string> = {};
@@ -141,7 +152,40 @@ export function ChatInterface({
         selectedPair: null,
       });
     }
-  }, [existingConversation, methods]);
+
+    // Récupérer les informations de l'utilisateur, y compris les tokens
+    const fetchUserTokens = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:3000/api/users/${studentId}`
+        );
+        if (response.data.user) {
+          // Si l'API renvoie des informations sur les tokens de l'utilisateur
+          if (response.data.user.tokensUsed !== undefined) {
+            setTokensUsed(response.data.user.tokensUsed);
+          }
+          if (response.data.user.tokensAuthorized !== undefined) {
+            setTokensAuthorized(response.data.user.tokensAuthorized);
+          }
+        }
+      } catch (error) {
+        console.error(
+          "Erreur lors de la récupération des informations de l'utilisateur:",
+          error
+        );
+        // On garde les valeurs par défaut
+      }
+    };
+
+    fetchUserTokens();
+  }, [existingConversation, methods, studentId]);
+
+  // Mettre à jour les tokens utilisés lorsque la conversation change
+  useEffect(() => {
+    if (conversationData?.statistiquesIA?.tokensTotal) {
+      setTokensUsed(conversationData.statistiquesIA.tokensTotal);
+    }
+  }, [conversationData]);
 
   /**
    * Gère l'envoi d'un nouveau prompt à l'IA
@@ -457,90 +501,115 @@ export function ChatInterface({
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ModelSelect />
-              <PromptTypeSelect />
-            </div>
+            {/* Section compteur de tokens et options */}
+            <div className="space-y-6">
+              {/* Compteur de tokens et configuration */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Compteur de tokens */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow-sm md:col-span-1">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    Crédits de tokens
+                  </h3>
+                  <TokenCounter
+                    tokensUsed={tokensUsed}
+                    tokensAuthorized={tokensAuthorized}
+                  />
+                </div>
 
-            {/* Formulaire pour envoyer un prompt */}
-            <form
-              ref={promptFormRef}
-              onSubmit={(e) => {
-                e.preventDefault();
-                methods.handleSubmit(handleSendPrompt)(e);
-              }}
-            >
-              <PromptInput
-                isLoading={isLoading}
-                isDisabled={hasVersionFinale}
-              />
-            </form>
+                {/* Options de modèle et type de prompt */}
+                <div className="md:col-span-2 flex flex-col space-y-4">
+                  <div className="w-full">
+                    <ModelSelect />
+                  </div>
+                  <div className="w-full">
+                    <PromptTypeSelect />
+                  </div>
+                </div>
+              </div>
 
-            <ResponseList
-              messages={messages}
-              isLoading={isLoading}
-              modelName={currentModelName}
-              messageModels={messageModels}
-              isDisabled={hasVersionFinale}
-              versionFinale={conversationData?.versionFinale}
-            />
+              {/* Séparateur */}
+              <Separator className="my-2" />
 
-            {/* Formulaire pour soumettre la version finale */}
-            {!hasVersionFinale && (
+              {/* Formulaire pour envoyer un prompt */}
               <form
-                ref={finalFormRef}
-                id="final-form"
+                ref={promptFormRef}
                 onSubmit={(e) => {
-                  // Intercepter et analyser l'événement de soumission
-                  console.log("ÉVÉNEMENT DE SOUMISSION CAPTURÉ!", {
-                    timeStamp: e.timeStamp,
-                    type: e.type,
-                    target: e.target,
-                    currentTarget: e.currentTarget,
-                    defaultPrevented: e.defaultPrevented,
-                  });
-
-                  // Bloquer l'action par défaut
                   e.preventDefault();
-                  e.stopPropagation();
-
-                  // Log des données actuelles
-                  console.log("Formulaire final soumis manuellement");
-                  console.log(
-                    "Données actuelles du formulaire:",
-                    methods.getValues()
-                  );
-
-                  // Vérifier qu'on a une paire sélectionnée
-                  const pairValue = methods.getValues().selectedPair;
-                  if (pairValue === null || pairValue === undefined) {
-                    console.error(
-                      "ERREUR: Aucune paire sélectionnée lors de la soumission"
-                    );
-                    toast.error(
-                      "Veuillez sélectionner une réponse avant de soumettre"
-                    );
-                    return false;
-                  }
-
-                  // Appeler directement handleSubmitFinal
-                  console.log("Appel direct de handleSubmitFinal");
-                  try {
-                    handleSubmitFinal(methods.getValues());
-                  } catch (err) {
-                    console.error("Erreur lors de l'appel manuel:", err);
-                  }
-
-                  console.log("Fin du handler de soumission");
-                  return false;
+                  methods.handleSubmit(handleSendPrompt)(e);
                 }}
               >
-                <SubmitFinalButton
-                  isSubmitting={isSubmitting}
-                  disabled={messages.length === 0}
+                <PromptInput
+                  isLoading={isLoading}
+                  isDisabled={hasVersionFinale}
                 />
               </form>
-            )}
+
+              <ResponseList
+                messages={messages}
+                isLoading={isLoading}
+                modelName={currentModelName}
+                messageModels={messageModels}
+                isDisabled={hasVersionFinale}
+                versionFinale={conversationData?.versionFinale}
+              />
+
+              {/* Formulaire pour soumettre la version finale */}
+              {!hasVersionFinale && (
+                <form
+                  ref={finalFormRef}
+                  id="final-form"
+                  onSubmit={(e) => {
+                    // Intercepter et analyser l'événement de soumission
+                    console.log("ÉVÉNEMENT DE SOUMISSION CAPTURÉ!", {
+                      timeStamp: e.timeStamp,
+                      type: e.type,
+                      target: e.target,
+                      currentTarget: e.currentTarget,
+                      defaultPrevented: e.defaultPrevented,
+                    });
+
+                    // Bloquer l'action par défaut
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Log des données actuelles
+                    console.log("Formulaire final soumis manuellement");
+                    console.log(
+                      "Données actuelles du formulaire:",
+                      methods.getValues()
+                    );
+
+                    // Vérifier qu'on a une paire sélectionnée
+                    const pairValue = methods.getValues().selectedPair;
+                    if (pairValue === null || pairValue === undefined) {
+                      console.error(
+                        "ERREUR: Aucune paire sélectionnée lors de la soumission"
+                      );
+                      toast.error(
+                        "Veuillez sélectionner une réponse avant de soumettre"
+                      );
+                      return false;
+                    }
+
+                    // Appeler directement handleSubmitFinal
+                    console.log("Appel direct de handleSubmitFinal");
+                    try {
+                      handleSubmitFinal(methods.getValues());
+                    } catch (err) {
+                      console.error("Erreur lors de l'appel manuel:", err);
+                    }
+
+                    console.log("Fin du handler de soumission");
+                    return false;
+                  }}
+                >
+                  <SubmitFinalButton
+                    isSubmitting={isSubmitting}
+                    disabled={messages.length === 0}
+                  />
+                </form>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
