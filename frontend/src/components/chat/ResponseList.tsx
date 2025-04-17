@@ -20,8 +20,7 @@ import {
 interface ResponseListProps {
   messages: Message[];
   isLoading?: boolean;
-  modelName?: string;
-  messageModels?: Record<number, string>;
+  modelName?: string; // Modèle par défaut (si modelUsed n'est pas disponible)
   isDisabled?: boolean;
   versionFinale?: {
     promptFinal: string;
@@ -30,6 +29,20 @@ interface ResponseListProps {
   } | null;
 }
 
+// Fonction pour obtenir la couleur du badge selon le modèle
+const getModelBadgeStyles = (modelName: string = ""): string => {
+  const modelLower = modelName.toLowerCase();
+
+  if (modelLower.includes("openai") || modelLower === "openai") {
+    return "bg-green-50 text-green-700 border-green-200";
+  } else if (modelLower.includes("mistral") || modelLower === "mistral") {
+    return "bg-blue-50 text-blue-700 border-blue-200";
+  }
+
+  // Style par défaut
+  return "bg-indigo-50 text-indigo-700 border-indigo-200";
+};
+
 /**
  * Composant d'affichage des messages et sélection de la version finale
  */
@@ -37,7 +50,6 @@ export function ResponseList({
   messages,
   isLoading = false,
   modelName = "IA",
-  messageModels = {},
   isDisabled = false,
   versionFinale = null,
 }: ResponseListProps) {
@@ -48,6 +60,15 @@ export function ResponseList({
   useEffect(() => {
     if (messages.length === 0) {
       setValue("selectedPair", null);
+    }
+
+    // Log pour vérifier les modèles des messages
+    const aiMessages = messages.filter((m) => m.role === "ai");
+    if (aiMessages.length > 0) {
+      console.log(
+        "Modèles dans les messages IA:",
+        aiMessages.map((m, i) => `Message ${i}: ${m.modelUsed || "non défini"}`)
+      );
     }
   }, [messages, setValue]);
 
@@ -72,8 +93,15 @@ export function ResponseList({
       const response = messages[i + 1];
 
       if (prompt.role === "user" && response.role === "ai") {
-        // Utiliser le modèle spécifique stocké pour cette réponse, sinon utiliser le modèle global
-        const responseModel = messageModels[i + 1] || modelName;
+        // Utiliser le modèle stocké dans le message AI, sinon utiliser le modèle global
+        const responseModel = response.modelUsed || modelName;
+
+        // Log de débogage pour voir le modèle utilisé
+        console.log(
+          `Message AI ${i + 1} - Modèle: ${responseModel} (modelUsed: ${
+            response.modelUsed || "non défini"
+          })`
+        );
 
         // Vérifier si cette paire correspond à la version finale
         const isVersionFinale = Boolean(
@@ -218,7 +246,7 @@ export function ResponseList({
                           {pair.model && (
                             <Badge
                               variant="outline"
-                              className="bg-indigo-50 text-indigo-700 border-indigo-200"
+                              className={getModelBadgeStyles(pair.model)}
                             >
                               <Bot className="h-3 w-3 mr-1" />
                               {pair.model}

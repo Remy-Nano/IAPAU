@@ -5,6 +5,7 @@ import {
   deleteConversation,
   getConversationById,
   getConversationsByStudent,
+  getFinalVersion,
   updateFinalVersion,
 } from "../controllers/conversation.controller";
 
@@ -20,6 +21,9 @@ router.post("/", createConversation);
 /**
  * @route GET /api/conversations/student/:studentId
  * @desc Récupérer toutes les conversations d'un étudiant
+ * @param {string} studentId - ID de l'étudiant
+ * @param {boolean} [includeMessages] - Si true, inclut tous les messages de chaque conversation
+ * @param {boolean} [includeStats] - Si true, inclut les statistiques d'IA de chaque conversation
  * @access Private
  */
 router.get("/student/:studentId", getConversationsByStudent);
@@ -44,6 +48,13 @@ router.post("/:id/ai-response", addAiResponse);
  * @access Private
  */
 router.patch("/:id/final", updateFinalVersion);
+
+/**
+ * @route GET /api/conversations/:id/version-finale
+ * @desc Récupérer la version finale d'une conversation
+ * @access Private
+ */
+router.get("/:id/version-finale", getFinalVersion);
 
 /**
  * @route DELETE /api/conversations/:id

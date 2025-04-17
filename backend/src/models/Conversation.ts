@@ -6,6 +6,7 @@ interface IMessage {
   content: string;
   timestamp?: Date;
   tokenCount?: number;
+  modelUsed?: string;
 }
 
 // Interface pour la version finale
@@ -54,6 +55,9 @@ const MessageSchema = new Schema<IMessage>({
   },
   tokenCount: {
     type: Number,
+  },
+  modelUsed: {
+    type: String,
   },
 });
 

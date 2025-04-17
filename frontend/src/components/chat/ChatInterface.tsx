@@ -3,7 +3,7 @@ import { Check, MessageSquare } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Conversation, Message } from "../../types";
 import {
   AlertDialog,
@@ -67,16 +67,6 @@ export function ChatInterface({
   const [selectedFinalPrompt, setSelectedFinalPrompt] = useState<string>("");
   const [selectedFinalResponse, setSelectedFinalResponse] =
     useState<string>("");
-  // Stocker les modèles utilisés pour chaque message
-  const [messageModels, setMessageModels] = useState<Record<number, string>>(
-    {}
-  );
-  // État pour vérifier si la conversation a une version finale
-  const hasVersionFinale = Boolean(
-    conversationData?.versionFinale &&
-      conversationData.versionFinale.promptFinal &&
-      conversationData.versionFinale.reponseIAFinale
-  );
 
   // Références pour les formulaires
   const promptFormRef = useRef<HTMLFormElement>(null);
@@ -100,33 +90,60 @@ export function ChatInterface({
     selectedPair,
     conversationId,
     messagesCount: messages.length,
-    messageModels,
   });
 
   // État pour les tokens de l'utilisateur
   const [tokensUsed, setTokensUsed] = useState<number>(0);
-  const [tokensAuthorized, setTokensAuthorized] = useState<number>(1000);
+  // Définir une valeur par défaut beaucoup plus élevée pour les tokens autorisés
+  const tokensAuthorized = 1000000;
+
+  // État pour vérifier si la conversation a une version finale
+  const hasVersionFinale = Boolean(
+    conversationData?.versionFinale &&
+      conversationData.versionFinale.promptFinal &&
+      conversationData.versionFinale.reponseIAFinale
+  );
 
   // Initialiser le composant avec la conversation existante si elle est fournie
   useEffect(() => {
     if (existingConversation) {
       setConversationId(existingConversation._id);
-      setMessages(existingConversation.messages);
-      setConversationData(existingConversation);
+
+      // Mise à jour des messages pour s'assurer que le modèle est correctement défini
+      const updatedMessages = existingConversation.messages.map(
+        (message: Message) => {
+          if (message.role === "ai" && !message.modelUsed) {
+            // N'ajouter le modelName que si modelUsed n'existe pas déjà
+            return {
+              ...message,
+              modelUsed: existingConversation.modelName,
+            };
+          }
+          return message;
+        }
+      );
+
+      console.log(
+        "Modèle utilisé dans la conversation chargée:",
+        existingConversation.modelName
+      );
+      console.log(
+        "Messages IA mis à jour avec le modèle:",
+        updatedMessages
+          .filter((m: Message) => m.role === "ai")
+          .map((m: Message) => m.modelUsed)
+      );
+
+      setMessages(updatedMessages);
+      setConversationData({
+        ...existingConversation,
+        messages: updatedMessages,
+      });
 
       // Mettre à jour les tokens utilisés si disponibles dans les statistiques
       if (existingConversation.statistiquesIA?.tokensTotal) {
         setTokensUsed(existingConversation.statistiquesIA.tokensTotal);
       }
-
-      // Initialiser les modèles de messages
-      const newMessageModels: Record<number, string> = {};
-      existingConversation.messages.forEach((message, index) => {
-        if (message.role === "ai") {
-          newMessageModels[index] = existingConversation.modelName;
-        }
-      });
-      setMessageModels(newMessageModels);
 
       // Réinitialiser le formulaire avec les valeurs de la conversation
       methods.reset({
@@ -141,7 +158,6 @@ export function ChatInterface({
       setConversationId(null);
       setMessages([]);
       setConversationData(null);
-      setMessageModels({});
 
       // Réinitialiser le formulaire pour une nouvelle conversation
       methods.reset({
@@ -154,11 +170,25 @@ export function ChatInterface({
     }
 
     // Récupérer les informations de l'utilisateur, y compris les tokens
+    // Cette fonctionnalité semble ne pas être disponible sur le serveur,
+    // donc nous allons utiliser les statistiques de la conversation actuelle
+    // au lieu de faire une requête qui échoue
+    const updateTokensFromConversation = () => {
+      if (existingConversation?.statistiquesIA?.tokensTotal) {
+        setTokensUsed(existingConversation.statistiquesIA.tokensTotal);
+      } else if (conversationData?.statistiquesIA?.tokensTotal) {
+        setTokensUsed(conversationData.statistiquesIA.tokensTotal);
+      }
+      // Par défaut, on garde la valeur initiale de tokensAuthorized (1000000)
+    };
+
+    updateTokensFromConversation();
+
+    // Commentons la fonction qui génère des erreurs
+    /*
     const fetchUserTokens = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:3000/api/users/${studentId}`
-        );
+        const response = await axios.get(`http://localhost:3000/api/users/${studentId}`);
         if (response.data.user) {
           // Si l'API renvoie des informations sur les tokens de l'utilisateur
           if (response.data.user.tokensUsed !== undefined) {
@@ -169,16 +199,14 @@ export function ChatInterface({
           }
         }
       } catch (error) {
-        console.error(
-          "Erreur lors de la récupération des informations de l'utilisateur:",
-          error
-        );
+        console.error("Erreur lors de la récupération des informations de l'utilisateur:", error);
         // On garde les valeurs par défaut
       }
     };
-
+    
     fetchUserTokens();
-  }, [existingConversation, methods, studentId]);
+    */
+  }, [existingConversation, methods]);
 
   // Mettre à jour les tokens utilisés lorsque la conversation change
   useEffect(() => {
@@ -191,6 +219,9 @@ export function ChatInterface({
    * Gère l'envoi d'un nouveau prompt à l'IA
    */
   const handleSendPrompt = async (data: ChatData) => {
+    // Log du modèle demandé
+    console.log("Modèle demandé:", data.modelName);
+
     // Empêcher l'envoi si un prompt vide
     if (!data.prompt || data.prompt.trim() === "") {
       toast.error("Veuillez entrer un prompt avant d'envoyer");
@@ -240,14 +271,36 @@ export function ChatInterface({
         console.log("Nouvelle conversation créée:", response.data);
         const newConversationId = response.data.conversation._id;
         setConversationId(newConversationId);
-        setMessages(response.data.conversation.messages);
-        setConversationData(response.data.conversation);
 
-        // Mémoriser le modèle pour le premier message IA
-        const newMessageModels: Record<number, string> = {};
-        // L'indice 1 correspond à la réponse IA (indice impair)
-        newMessageModels[1] = data.modelName;
-        setMessageModels(newMessageModels);
+        // Assurons-nous que les messages contiennent bien modelUsed
+        const conversationMessages = response.data.conversation.messages;
+
+        // Ajout explicite du modèle utilisé uniquement pour les nouveaux messages IA sans modelUsed
+        const messagesWithModel = conversationMessages.map(
+          (message: Message) => {
+            if (message.role === "ai" && !message.modelUsed) {
+              // Ne modifier que les messages qui n'ont pas déjà un modelUsed
+              return {
+                ...message,
+                modelUsed: data.modelName,
+              };
+            }
+            return message;
+          }
+        );
+
+        console.log(
+          "Messages avec modèle mis à jour:",
+          messagesWithModel
+            .filter((m: Message) => m.role === "ai")
+            .map((m: Message) => m.modelUsed)
+        );
+
+        setMessages(messagesWithModel);
+        setConversationData({
+          ...response.data.conversation,
+          messages: messagesWithModel,
+        });
 
         // Notifier le parent de la création de la nouvelle conversation
         if (onConversationCreated) {
@@ -272,16 +325,36 @@ export function ChatInterface({
         );
 
         console.log("Réponse d'ajout de message:", response.data);
-        setMessages(response.data.conversation.messages);
-        setConversationData(response.data.conversation);
 
-        // Mémoriser le modèle pour les nouveaux messages
-        const newMessageModels = { ...messageModels };
-        // Les 2 nouveaux messages sont aux indices messages.length-2 et messages.length-1
-        // On associe seulement la réponse IA au modèle actuel (indice impair)
-        const responseIndex = response.data.conversation.messages.length - 1;
-        newMessageModels[responseIndex] = data.modelName;
-        setMessageModels(newMessageModels);
+        // Assurons-nous que les messages contiennent bien modelUsed
+        const conversationMessages = response.data.conversation.messages;
+
+        // Ajout explicite du modèle utilisé uniquement pour les nouveaux messages IA sans modelUsed
+        const messagesWithModel = conversationMessages.map(
+          (message: Message) => {
+            if (message.role === "ai" && !message.modelUsed) {
+              // Ne modifier que les messages qui n'ont pas déjà un modelUsed
+              return {
+                ...message,
+                modelUsed: data.modelName,
+              };
+            }
+            return message;
+          }
+        );
+
+        console.log(
+          "Messages avec modèle mis à jour:",
+          messagesWithModel
+            .filter((m: Message) => m.role === "ai")
+            .map((m: Message) => m.modelUsed)
+        );
+
+        setMessages(messagesWithModel);
+        setConversationData({
+          ...response.data.conversation,
+          messages: messagesWithModel,
+        });
 
         toast.success("Réponse reçue avec succès");
       }
@@ -445,6 +518,8 @@ export function ChatInterface({
     }
   };
 
+  const navigate = useNavigate();
+
   return (
     <FormProvider {...methods}>
       {/* Message d'accueil lorsqu'aucune conversation n'est sélectionnée et qu'on affiche l'interface depuis la sidebar */}
@@ -487,17 +562,26 @@ export function ChatInterface({
 
             {/* Indicateur de version finale */}
             {hasVersionFinale && (
-              <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-md flex items-center gap-3">
-                <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
-                <div>
-                  <p className="text-green-800 font-medium">
-                    Version finale soumise
-                  </p>
-                  <p className="text-green-600 text-sm">
-                    Cette conversation a été finalisée et ne peut plus être
-                    modifiée.
-                  </p>
+              <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-md flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
+                  <div>
+                    <p className="text-green-800 font-medium">
+                      Version finale soumise
+                    </p>
+                    <p className="text-green-600 text-sm">
+                      Cette conversation a été finalisée et ne peut plus être
+                      modifiée.
+                    </p>
+                  </div>
                 </div>
+                <Button
+                  variant="outline"
+                  className="border-green-500 text-green-700 hover:bg-green-50"
+                  onClick={() => navigate(`/version-finale/${conversationId}`)}
+                >
+                  Voir la version finale
+                </Button>
               </div>
             )}
 
@@ -514,6 +598,9 @@ export function ChatInterface({
                     tokensUsed={tokensUsed}
                     tokensAuthorized={tokensAuthorized}
                   />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Tokens utilisés dans cette conversation
+                  </p>
                 </div>
 
                 {/* Options de modèle et type de prompt */}
@@ -548,7 +635,6 @@ export function ChatInterface({
                 messages={messages}
                 isLoading={isLoading}
                 modelName={currentModelName}
-                messageModels={messageModels}
                 isDisabled={hasVersionFinale}
                 versionFinale={conversationData?.versionFinale}
               />

@@ -104,7 +104,11 @@ export const createConversation = async (
         content: aiResponse.content,
         timestamp: new Date(),
         tokenCount: aiResponse.tokenCount,
+        modelUsed: aiResponse.modelUsed,
       });
+
+      // Log pour debugging
+      console.log(`Message AI créé avec le modèle: ${aiResponse.modelUsed}`);
 
       // Mise à jour des statistiques
       if (conversation.statistiquesIA) {
@@ -212,7 +216,11 @@ export const addAiResponse = async (
         content: aiResponse.content,
         timestamp: new Date(),
         tokenCount: aiResponse.tokenCount,
+        modelUsed: aiResponse.modelUsed,
       });
+
+      // Log pour debugging
+      console.log(`Message AI créé avec le modèle: ${aiResponse.modelUsed}`);
 
       // Mise à jour des statistiques
       if (conversation.statistiquesIA) {
@@ -325,6 +333,7 @@ export const getConversationsByStudent = async (
 ): Promise<void> => {
   try {
     const { studentId } = req.params;
+    const { includeMessages, includeStats } = req.query;
 
     // Validation de l'ID
     if (!mongoose.Types.ObjectId.isValid(studentId)) {
@@ -335,17 +344,31 @@ export const getConversationsByStudent = async (
       return;
     }
 
+    // Définir les champs à projeter en fonction des paramètres
+    const projection: any = {
+      _id: 1,
+      modelName: 1,
+      titreConversation: 1,
+      createdAt: 1,
+      versionFinale: 1, // Inclure la version finale pour identifier les conversations soumises
+    };
+
+    // Ajouter les messages complets si demandé, sinon juste le premier pour l'aperçu
+    if (includeMessages === "true") {
+      projection.messages = 1; // Tous les messages
+    } else {
+      projection.messages = { $slice: 1 }; // Seulement le premier message
+    }
+
+    // Ajouter les statistiques IA si demandées
+    if (includeStats === "true") {
+      projection.statistiquesIA = 1;
+    }
+
     // Recherche des conversations de l'étudiant avec tri par date de création décroissante
     const conversations = await Conversation.find(
       { studentId: new mongoose.Types.ObjectId(studentId) },
-      {
-        _id: 1,
-        modelName: 1,
-        titreConversation: 1,
-        createdAt: 1,
-        messages: { $slice: 1 }, // Récupère seulement le premier message pour l'aperçu
-        versionFinale: 1, // Inclure la version finale pour identifier les conversations soumises
-      }
+      projection
     ).sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -440,6 +463,71 @@ export const deleteConversation = async (
     });
   } catch (error) {
     console.error("Erreur lors de la suppression de la conversation:", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur interne du serveur",
+    });
+  }
+};
+
+/**
+ * Récupère la version finale d'une conversation
+ */
+export const getFinalVersion = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    // Validation de l'ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({
+        success: false,
+        message: "ID de conversation invalide",
+      });
+      return;
+    }
+
+    // Recherche de la conversation
+    const conversation = await Conversation.findById(id);
+
+    if (!conversation) {
+      res.status(404).json({
+        success: false,
+        message: "Conversation non trouvée",
+      });
+      return;
+    }
+
+    // Vérifier si la conversation a une version finale
+    if (!conversation.versionFinale) {
+      res.status(404).json({
+        success: false,
+        message: "Cette conversation n'a pas de version finale",
+      });
+      return;
+    }
+
+    // Déterminer le modèle utilisé (depuis statistiquesIA ou modelName)
+    const modelUsed =
+      conversation.statistiquesIA?.modelUtilise || conversation.modelName;
+
+    // Retourner les données de la version finale
+    res.status(200).json({
+      success: true,
+      finalVersion: {
+        prompt: conversation.versionFinale.promptFinal,
+        response: conversation.versionFinale.reponseIAFinale,
+        model: modelUsed,
+        submittedAt: conversation.versionFinale.soumisLe,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Erreur lors de la récupération de la version finale:",
+      error
+    );
     res.status(500).json({
       success: false,
       message: "Erreur interne du serveur",

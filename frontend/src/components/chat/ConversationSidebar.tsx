@@ -24,11 +24,18 @@ interface ConversationItem {
   modelName: string;
   titreConversation: string;
   createdAt: string;
-  messages?: { content: string; role: string }[];
+  messages?: {
+    content: string;
+    role: string;
+    modelUsed?: string;
+  }[];
   versionFinale?: {
     promptFinal: string;
     reponseIAFinale: string;
     soumisLe: string;
+  };
+  statistiquesIA?: {
+    modelUtilise: string;
   };
 }
 
@@ -96,6 +103,41 @@ export function ConversationSidebar({
     );
   };
 
+  // Ajouter une fonction pour déterminer le modèle réellement utilisé
+  const getActualModel = (conversation: ConversationItem): string => {
+    // Si la conversation a des statistiques IA, utiliser le modèle réellement utilisé
+    if (conversation.statistiquesIA?.modelUtilise) {
+      return conversation.statistiquesIA.modelUtilise;
+    }
+
+    // Si la conversation a une version finale, vérifier si le message de réponse contient l'information du modèle
+    if (conversation.messages && conversation.messages.length > 0) {
+      // Chercher le dernier message AI qui pourrait avoir un attribut modelUsed
+      for (let i = conversation.messages.length - 1; i >= 0; i--) {
+        const message = conversation.messages[i];
+        if (message.role === "ai" && message.modelUsed) {
+          return message.modelUsed;
+        }
+      }
+    }
+
+    // Par défaut, utiliser le modelName de la conversation
+    return conversation.modelName;
+  };
+
+  // Fonction pour obtenir les styles CSS du badge du modèle
+  const getModelBadgeStyle = (modelName: string): string => {
+    const model = modelName.toLowerCase();
+
+    if (model.includes("openai") || model === "openai") {
+      return "bg-green-700 text-white";
+    } else if (model.includes("mistral") || model === "mistral") {
+      return "bg-blue-700 text-white";
+    }
+
+    return "bg-gray-700 text-gray-300";
+  };
+
   // Récupérer les conversations de l'étudiant
   useEffect(() => {
     const fetchConversations = async () => {
@@ -106,7 +148,7 @@ export function ConversationSidebar({
 
       try {
         const response = await axios.get(
-          `http://localhost:3000/api/conversations/student/${studentId}`
+          `http://localhost:3000/api/conversations/student/${studentId}?includeMessages=true&includeStats=true`
         );
 
         if (response.data.success) {
@@ -132,6 +174,26 @@ export function ConversationSidebar({
 
     fetchConversations();
   }, [studentId]);
+
+  // Mettre à jour l'affichage du modèle dans les conversations
+  useEffect(() => {
+    if (conversations.length > 0) {
+      console.log("Modèles détectés dans les conversations:");
+      conversations.forEach((conversation) => {
+        const actualModel = getActualModel(conversation);
+        console.log(
+          `Conversation ${conversation._id} - Modèle affiché: ${actualModel} (original: ${conversation.modelName})`
+        );
+
+        // Log des statistiques IA si disponibles
+        if (conversation.statistiquesIA?.modelUtilise) {
+          console.log(
+            `  - statistiquesIA.modelUtilise: ${conversation.statistiquesIA.modelUtilise}`
+          );
+        }
+      });
+    }
+  }, [conversations]);
 
   // Déterminer la classe CSS pour afficher/masquer la sidebar sur mobile
   const mobileClass = isMobileOpen ? "translate-x-0" : "-translate-x-full";
@@ -298,8 +360,12 @@ export function ConversationSidebar({
                     </div>
                   </div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs bg-gray-700 px-2 py-0.5 rounded text-gray-300 shrink-0">
-                      {conversation.modelName}
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded shrink-0 ${getModelBadgeStyle(
+                        getActualModel(conversation)
+                      )}`}
+                    >
+                      {getActualModel(conversation)}
                     </span>
                     {hasValidVersionFinale(conversation) && (
                       <span className="text-xs bg-green-600 px-2 py-0.5 rounded text-white font-medium shrink-0">

@@ -8,6 +8,7 @@ import {
 import { AuthPage } from "./components/auth/AuthPage";
 import { MagicLinkPage } from "./components/auth/MagicLinkPage";
 import { TestLogin } from "./components/auth/TestLogin";
+import { StudentFinalView } from "./components/chat/StudentFinalView";
 import { DashboardRouter } from "./components/dashboard/DashboardRouter";
 import { useAuth } from "./context/AuthContext";
 
@@ -48,6 +49,14 @@ function App() {
           element={
             <ProtectedRoute>
               <DashboardRouter />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/version-finale/:conversationId"
+          element={
+            <ProtectedRoute>
+              <StudentFinalView />
             </ProtectedRoute>
           }
         />

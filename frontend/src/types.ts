@@ -42,6 +42,7 @@ export type Message = {
   content: string;
   timestamp?: Date;
   tokenCount?: number;
+  modelUsed?: string;
 };
 
 export type ChatHistory = {
