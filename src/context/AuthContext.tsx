@@ -1,5 +1,7 @@
+"use client";
+
+import { Admin, Examiner, Student, UserRole } from "@/types";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { Admin, Examiner, Student, UserRole } from "../types";
 
 type AuthContextType = {
   user: (Student | Examiner | Admin) | null;
@@ -112,6 +114,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           role: "examiner",
           firstName: "Examinateur",
           lastName: "Test",
+          nom: "Test",
+          prenom: "Examinateur",
+          _id: "1",
+          groupes: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
         };
       } else {
         userData = {
@@ -120,6 +128,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           role: "admin",
           firstName: "Admin",
           lastName: "Système",
+          nom: "Système",
+          prenom: "Admin",
+          _id: "2",
+          groupes: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
         };
       }
 
@@ -147,6 +161,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         firstName: "Étudiant",
         lastName: "Test",
         studentId: "STU123",
+        nom: "Test",
+        prenom: "Étudiant",
+        _id: "3",
+        groupes: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       setUser(mockStudent);

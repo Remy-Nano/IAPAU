@@ -1,18 +1,20 @@
-// Rôles utilisateur
 export type UserRole = "student" | "examiner" | "admin";
 
-// Utilisateur de base
+// Type de base pour toutes les catégories d'utilisateurs
 export type User = {
+  id?: string;
   _id: string;
+  nom?: string;
+  prenom?: string;
   email: string;
-  nom: string;
-  prenom: string;
-  dateNaissance: Date;
-  formation: string;
+  dateNaissance?: Date;
+  formation?: string;
   role: UserRole;
-  groupes: string[];
-  createdAt: Date;
-  updatedAt: Date;
+  groupes?: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
+  firstName?: string;
+  lastName?: string;
 };
 
 // Spécialisations selon les rôles

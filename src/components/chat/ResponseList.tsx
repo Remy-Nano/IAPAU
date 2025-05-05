@@ -1,9 +1,9 @@
+import { formatRelativeTime } from "@/lib/date-utils";
+import { Message } from "@/types";
 import { BarChart2, Bot, Check, Clock } from "lucide-react";
 import { useEffect } from "react";
 import { Controller, useFormContext } from "react-hook-form";
-import { formatRelativeTime } from "../../lib/date-utils";
 import { cn } from "../../lib/utils";
-import { Message } from "../../types";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Badge } from "../ui/badge";
 import { Card, CardContent } from "../ui/card";

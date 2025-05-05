@@ -1,6 +1,8 @@
+"use client";
+
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation"; // ✅ Next.js router
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { AdminAuth } from "./AdminAuth";
 import { CredentialsInfo } from "./CredentialsInfo";
 import { ExaminerAuth } from "./ExaminerAuth";
@@ -9,7 +11,7 @@ import { StudentAuth } from "./StudentAuth";
 
 export const AuthManager: React.FC = () => {
   const { loginWithEmail, loginWithCredentials } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter(); // ✅ remplacement de useNavigate
   const [currentStep, setCurrentStep] = useState<
     "initial" | "student" | "examiner" | "admin"
   >("initial");
@@ -28,7 +30,6 @@ export const AuthManager: React.FC = () => {
 
       switch (userType) {
         case "student":
-          // Simuler l'envoi d'un email avec un lien magique
           console.log(`Envoi d'un lien magique à ${email}`);
           setCurrentStep("student");
           break;
@@ -48,7 +49,7 @@ export const AuthManager: React.FC = () => {
   const handleExaminerLogin = async (email: string, password: string) => {
     try {
       await loginWithCredentials(email, password, "examiner");
-      navigate("/");
+      router.push("/dashboard/examiner"); // ✅ route correcte
     } catch (err) {
       setError("Email ou mot de passe incorrect");
       console.error(err);
@@ -58,7 +59,7 @@ export const AuthManager: React.FC = () => {
   const handleAdminLogin = async (email: string, password: string) => {
     try {
       await loginWithCredentials(email, password, "admin");
-      navigate("/");
+      router.push("/dashboard/admin"); // ✅ route correcte
     } catch (err) {
       setError("Email ou mot de passe incorrect");
       console.error(err);
