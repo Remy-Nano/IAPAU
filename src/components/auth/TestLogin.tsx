@@ -1,6 +1,6 @@
+import { useAuth } from "@/context/AuthContext";
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 
 interface TestLoginProps {
   role: "student" | "examiner" | "admin";
