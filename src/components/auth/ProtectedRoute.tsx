@@ -17,11 +17,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-    } else if (!allowedRoles.includes(userRole ?? "")) {
-      router.push("/unauthorized");
-    }
+    // Ajouter un délai pour éviter les problèmes de flashs
+    const timeoutId = setTimeout(() => {
+      if (!isAuthenticated) {
+        router.push("/login");
+      } else if (!allowedRoles.includes(userRole ?? "")) {
+        router.push("/unauthorized");
+      }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [isAuthenticated, userRole, router, allowedRoles]);
 
   if (!isAuthenticated || !allowedRoles.includes(userRole ?? "")) {

@@ -1,6 +1,5 @@
 // src/app/layout.tsx
-import { AuthProvider } from "@/context/AuthContext";
-import { Toaster } from "react-hot-toast";
+import ClientProviders from "@/components/ClientProviders";
 import "./globals.css";
 
 export const metadata = {
@@ -16,10 +15,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body>
-        <AuthProvider>
-          {children}
-          <Toaster position="top-right" />
-        </AuthProvider>
+        <ClientProviders>{children}</ClientProviders>
       </body>
     </html>
   );

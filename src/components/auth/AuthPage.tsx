@@ -1,18 +1,20 @@
+"use client";
+
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { AuthManager } from "./AuthManager";
 
 export const AuthPage: React.FC = () => {
   const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   // Rediriger vers la page d'accueil si l'utilisateur est déjà connecté
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/");
+      router.push("/");
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, router]);
 
   return (
     <div className="min-h-screen bg-gray-50">

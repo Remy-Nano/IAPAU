@@ -1,9 +1,11 @@
+"use client";
+
 import axios from "axios";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ArrowLeft, Clock } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -19,8 +21,9 @@ interface FinalVersion {
 }
 
 export function StudentFinalView() {
-  const { conversationId } = useParams<{ conversationId: string }>();
-  const navigate = useNavigate();
+  const params = useParams();
+  const conversationId = params.conversationId as string;
+  const router = useRouter();
   const [finalVersion, setFinalVersion] = useState<FinalVersion | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -99,7 +102,7 @@ export function StudentFinalView() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate(-1)}
+          onClick={() => router.back()}
           className="flex items-center gap-1"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -122,7 +125,7 @@ export function StudentFinalView() {
           </p>
           <Button
             className="mt-4"
-            onClick={() => navigate(`/conversations/${conversationId}`)}
+            onClick={() => router.push(`/conversations/${conversationId}`)}
           >
             Retourner à la conversation
           </Button>
@@ -177,7 +180,7 @@ export function StudentFinalView() {
           </p>
           <Button
             className="mt-4"
-            onClick={() => navigate(`/conversations/${conversationId}`)}
+            onClick={() => router.push(`/conversations/${conversationId}`)}
           >
             Retourner à la conversation
           </Button>

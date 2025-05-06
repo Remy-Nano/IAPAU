@@ -1,9 +1,11 @@
+"use client";
+
 import axios from "axios";
 import { Check, MessageSquare } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
-import { useNavigate, useParams } from "react-router-dom";
 import { Conversation, Message } from "../../types";
 import {
   AlertDialog,
@@ -46,15 +48,10 @@ export function ChatInterface({
   onConversationCreated,
 }: ChatInterfaceProps) {
   // Récupération des paramètres d'URL avec des valeurs par défaut
-  const {
-    studentId = "6553f1ed4c3ef31ea8c03bc1",
-    groupId = "6553f1ed4c3ef31ea8c03bc2",
-    tacheId = "6553f1ed4c3ef31ea8c03bc3",
-  } = useParams<{
-    studentId?: string;
-    groupId?: string;
-    tacheId?: string;
-  }>();
+  const params = useParams();
+  const studentId = (params.studentId as string) || "6553f1ed4c3ef31ea8c03bc1";
+  const groupId = (params.groupId as string) || "6553f1ed4c3ef31ea8c03bc2";
+  const tacheId = (params.tacheId as string) || "6553f1ed4c3ef31ea8c03bc3";
 
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -183,37 +180,11 @@ export function ChatInterface({
     };
 
     updateTokensFromConversation();
-
-    // Commentons la fonction qui génère des erreurs
-    /*
-    const fetchUserTokens = async () => {
-      try {
-        const response = await axios.get(`http://localhost:3000/api/users/${studentId}`);
-        if (response.data.user) {
-          // Si l'API renvoie des informations sur les tokens de l'utilisateur
-          if (response.data.user.tokensUsed !== undefined) {
-            setTokensUsed(response.data.user.tokensUsed);
-          }
-          if (response.data.user.tokensAuthorized !== undefined) {
-            setTokensAuthorized(response.data.user.tokensAuthorized);
-          }
-        }
-      } catch (error) {
-        console.error("Erreur lors de la récupération des informations de l'utilisateur:", error);
-        // On garde les valeurs par défaut
-      }
-    };
-    
-    fetchUserTokens();
-    */
-  }, [existingConversation, methods]);
-
-  // Mettre à jour les tokens utilisés lorsque la conversation change
-  useEffect(() => {
-    if (conversationData?.statistiquesIA?.tokensTotal) {
-      setTokensUsed(conversationData.statistiquesIA.tokensTotal);
-    }
-  }, [conversationData]);
+  }, [
+    existingConversation,
+    methods,
+    conversationData?.statistiquesIA?.tokensTotal,
+  ]);
 
   /**
    * Gère l'envoi d'un nouveau prompt à l'IA
@@ -518,7 +489,7 @@ export function ChatInterface({
     }
   };
 
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <FormProvider {...methods}>
@@ -527,7 +498,7 @@ export function ChatInterface({
         <div className="flex flex-col items-center justify-center h-full text-center p-6 text-gray-600">
           <MessageSquare className="h-16 w-16 mb-4 text-indigo-300 opacity-50" />
           <h2 className="text-xl font-semibold mb-2">
-            Bienvenue dans l'interface de chat
+            Bienvenue dans le chat IA{" "}
           </h2>
           <p className="mb-6 max-w-md">
             Sélectionnez une conversation existante dans la barre latérale ou
@@ -578,7 +549,9 @@ export function ChatInterface({
                 <Button
                   variant="outline"
                   className="border-green-500 text-green-700 hover:bg-green-50"
-                  onClick={() => navigate(`/version-finale/${conversationId}`)}
+                  onClick={() =>
+                    router.push(`/version-finale/${conversationId}`)
+                  }
                 >
                   Voir la version finale
                 </Button>

@@ -7,12 +7,16 @@ import { useAuth } from "@/context/AuthContext";
 import { Conversation } from "@/types";
 import axios from "axios";
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 export default function StudentDashboard() {
+  const router = useRouter();
   const { user } = useAuth(); // récupération de l'utilisateur connecté
-  const studentId = user?._id;
+
+  // Utiliser user._id, user.id, ou une valeur par défaut
+  const studentId = user?._id || user?.id || "6553f1ed4c3ef31ea8c03bc1";
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedConversationId, setSelectedConversationId] = useState<
@@ -21,6 +25,12 @@ export default function StudentDashboard() {
   const [currentConversation, setCurrentConversation] =
     useState<Conversation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // Log pour debug
+    console.log("User in StudentDashboard:", user);
+    console.log("Student ID used:", studentId);
+  }, [user, studentId]);
 
   const loadConversation = async (conversationId: string) => {
     if (isLoading || !studentId) return;
@@ -31,7 +41,7 @@ export default function StudentDashboard() {
         `http://localhost:3000/api/conversations/${conversationId}`
       );
 
-      if (response.data.success) {
+      if (response.data.conversation) {
         setCurrentConversation(response.data.conversation);
         setSelectedConversationId(conversationId);
         setSidebarOpen(false);
@@ -69,8 +79,6 @@ export default function StudentDashboard() {
     }
   };
 
-  if (!studentId) return null; // si l'utilisateur n'est pas encore chargé
-
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-100 overflow-hidden">
       <button
@@ -97,7 +105,9 @@ export default function StudentDashboard() {
         <header className="bg-white shadow-sm p-4 pl-14 md:pl-4 flex justify-between items-center">
           <div className="px-4 py-2 bg-gray-200 rounded-lg">Hackathon IA</div>
           <div className="flex items-center space-x-4">
-            <div className="px-4 py-2 bg-gray-200 rounded-lg">Étudiant</div>
+            <div className="px-4 py-2 bg-gray-200 rounded-lg">
+              {user?.prenom ? `${user.prenom} ${user.nom}` : "Étudiant"}
+            </div>
             <LogoutButton />
           </div>
         </header>
