@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
+    "@mistralai/mistralai": "^1.6.0",
     "@radix-ui/react-alert-dialog": "^1.1.11",
     "@radix-ui/react-avatar": "^1.1.7",
     "@radix-ui/react-checkbox": "^1.2.3",
@@ -30,6 +31,7 @@
     "lucide-react": "^0.507.0",
     "mongoose": "^8.14.1",
     "next": "15.3.1",
+    "openai": "^4.97.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.2",

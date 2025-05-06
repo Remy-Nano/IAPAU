@@ -2,18 +2,21 @@ import { getConversationsByStudent } from "@/lib/controllers/conversationControl
 import connectDB from "@/lib/mongoose";
 import { NextResponse } from "next/server";
 
-interface Params {
-  params: { id: string };
+interface Context {
+  params: Promise<{ id: string }> | { id: string };
 }
 
-export async function GET(request: Request, { params }: Params) {
-  const url = new URL(request.url);
-  const includeMessages = url.searchParams.get("includeMessages") === "true";
-  const includeStats = url.searchParams.get("includeStats") === "true";
-
+export async function GET(request: Request, context: Context) {
   try {
+    // Dans Next.js 15, params peut être une promesse
+    const params = await context.params;
+    const id = params.id;
+
+    const url = new URL(request.url);
+    const includeMessages = url.searchParams.get("includeMessages") === "true";
+
     await connectDB();
-    const conversations = await getConversationsByStudent(params.id);
+    const conversations = await getConversationsByStudent(id);
 
     // Si on ne veut pas inclure les messages, on les filtre
     const filteredConversations = conversations.map((convo) => {

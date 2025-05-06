@@ -4,14 +4,16 @@ import connectDB from "@/lib/mongoose";
 import { NextResponse } from "next/server";
 
 interface Params {
-  params: { id: string };
+  params: Promise<{ id: string }> | { id: string };
 }
 
 export async function POST(request: Request, { params }: Params) {
   await connectDB();
   const payload = await request.json();
   try {
-    const updated = await addMessage(params.id, payload);
+    // Attendre les paramètres avant d'y accéder (requis dans Next.js 15)
+    const resolvedParams = await params;
+    const updated = await addMessage(resolvedParams.id, payload);
     if (!updated) {
       return NextResponse.json(
         { error: "Conversation non trouvée" },

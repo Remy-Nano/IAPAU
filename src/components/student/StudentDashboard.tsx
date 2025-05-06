@@ -7,16 +7,14 @@ import { useAuth } from "@/context/AuthContext";
 import { Conversation } from "@/types";
 import axios from "axios";
 import { Menu, X } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 export default function StudentDashboard() {
-  const router = useRouter();
   const { user } = useAuth(); // récupération de l'utilisateur connecté
 
-  // Utiliser user._id, user.id, ou une valeur par défaut
-  const studentId = user?._id || user?.id || "6553f1ed4c3ef31ea8c03bc1";
+  // Utiliser l'ID de l'utilisateur connecté s'il est disponible, sinon utiliser l'ID connu
+  const studentId = user?._id || "6553f1ed4c3ef31ea8c03bc1";
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedConversationId, setSelectedConversationId] = useState<
@@ -37,9 +35,7 @@ export default function StudentDashboard() {
     setIsLoading(true);
 
     try {
-      const response = await axios.get(
-        `http://localhost:3000/api/conversations/${conversationId}`
-      );
+      const response = await axios.get(`/api/conversations/${conversationId}`);
 
       if (response.data.conversation) {
         setCurrentConversation(response.data.conversation);
@@ -70,6 +66,10 @@ export default function StudentDashboard() {
 
   const handleConversationCreated = (newConversationId: string) => {
     setSelectedConversationId(newConversationId);
+    // Charger automatiquement la nouvelle conversation
+    loadConversation(newConversationId);
+    // Ajouter un feedback visuel
+    toast.success("Nouvelle conversation créée");
   };
 
   const handleConversationDeleted = (deletedConversationId: string) => {

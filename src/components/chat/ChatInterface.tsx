@@ -101,24 +101,39 @@ export function ChatInterface({
       conversationData.versionFinale.reponseIAFinale
   );
 
+  // Mettre à jour les messages pour s'assurer que le modèle est correctement défini
+  // et adapter les rôles au format attendu par l'interface
+  const adaptMessagesRoles = (messages: Message[]) => {
+    return messages.map((message: Message) => {
+      let role = message.role;
+
+      // Convertir les rôles backend en rôles frontend
+      if (message.role === "student") role = "user";
+      if (message.role === "assistant") role = "ai";
+
+      // Ajouter modelUsed si c'est un message IA sans modelUsed
+      if (
+        (message.role === "assistant" || message.role === "ai") &&
+        !message.modelUsed
+      ) {
+        return {
+          ...message,
+          role,
+          modelUsed: conversationData?.modelName || currentModelName,
+        };
+      }
+
+      return { ...message, role };
+    });
+  };
+
   // Initialiser le composant avec la conversation existante si elle est fournie
   useEffect(() => {
     if (existingConversation) {
       setConversationId(existingConversation._id);
 
-      // Mise à jour des messages pour s'assurer que le modèle est correctement défini
-      const updatedMessages = existingConversation.messages.map(
-        (message: Message) => {
-          if (message.role === "ai" && !message.modelUsed) {
-            // N'ajouter le modelName que si modelUsed n'existe pas déjà
-            return {
-              ...message,
-              modelUsed: existingConversation.modelName,
-            };
-          }
-          return message;
-        }
-      );
+      // Adaptation des rôles et ajout du modelUsed si nécessaire
+      const updatedMessages = adaptMessagesRoles(existingConversation.messages);
 
       console.log(
         "Modèle utilisé dans la conversation chargée:",
@@ -246,19 +261,8 @@ export function ChatInterface({
         // Assurons-nous que les messages contiennent bien modelUsed
         const conversationMessages = response.data.conversation.messages;
 
-        // Ajout explicite du modèle utilisé uniquement pour les nouveaux messages IA sans modelUsed
-        const messagesWithModel = conversationMessages.map(
-          (message: Message) => {
-            if (message.role === "ai" && !message.modelUsed) {
-              // Ne modifier que les messages qui n'ont pas déjà un modelUsed
-              return {
-                ...message,
-                modelUsed: data.modelName,
-              };
-            }
-            return message;
-          }
-        );
+        // Adaptation des rôles et ajout du modelUsed si nécessaire
+        const messagesWithModel = adaptMessagesRoles(conversationMessages);
 
         console.log(
           "Messages avec modèle mis à jour:",
@@ -288,7 +292,7 @@ export function ChatInterface({
         });
 
         const response = await axios.post(
-          `http://localhost:3000/api/conversations/${conversationId}/ai-response`,
+          `/api/conversations/${conversationId}/ai-response`,
           {
             prompt: data.prompt,
             modelName: data.modelName,
@@ -300,19 +304,8 @@ export function ChatInterface({
         // Assurons-nous que les messages contiennent bien modelUsed
         const conversationMessages = response.data.conversation.messages;
 
-        // Ajout explicite du modèle utilisé uniquement pour les nouveaux messages IA sans modelUsed
-        const messagesWithModel = conversationMessages.map(
-          (message: Message) => {
-            if (message.role === "ai" && !message.modelUsed) {
-              // Ne modifier que les messages qui n'ont pas déjà un modelUsed
-              return {
-                ...message,
-                modelUsed: data.modelName,
-              };
-            }
-            return message;
-          }
-        );
+        // Adaptation des rôles et ajout du modelUsed si nécessaire
+        const messagesWithModel = adaptMessagesRoles(conversationMessages);
 
         console.log(
           "Messages avec modèle mis à jour:",
@@ -432,7 +425,7 @@ export function ChatInterface({
       setSelectedFinalResponse(selectedPromptResponse.response);
 
       // Construction de l'URL et des données pour l'API
-      const apiUrl = `http://localhost:3000/api/conversations/${conversationId}/final`;
+      const apiUrl = `/api/conversations/${conversationId}/final`;
       const apiData = {
         promptFinal: selectedPromptResponse.prompt,
         reponseIAFinale: selectedPromptResponse.response,

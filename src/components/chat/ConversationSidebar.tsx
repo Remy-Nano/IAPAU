@@ -1,6 +1,6 @@
 import axios from "axios";
-import { formatDistanceToNow } from "date-fns";
-import { fr } from "date-fns/locale";
+// Importations simples pour gérer les dates
+import { format } from "date-fns";
 import { Brain, Check, MessageSquare, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
@@ -70,10 +70,29 @@ export function ConversationSidebar({
   // Fonction pour formater la date en format relatif (ex: "il y a 2 heures")
   const formatDate = (dateString: string) => {
     try {
-      return formatDistanceToNow(new Date(dateString), {
-        addSuffix: true,
-        locale: fr,
-      });
+      const date = new Date(dateString);
+      const now = new Date();
+
+      // Calcul de la différence en millisecondes
+      const diffMs = now.getTime() - date.getTime();
+
+      // Conversion en jours/heures/minutes
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+      // Format relatif simple
+      if (diffDays > 30) {
+        return format(date, "dd/MM/yyyy");
+      } else if (diffDays > 0) {
+        return diffDays === 1 ? "hier" : `il y a ${diffDays} jours`;
+      } else if (diffHours > 0) {
+        return `il y a ${diffHours} heure${diffHours > 1 ? "s" : ""}`;
+      } else if (diffMinutes > 0) {
+        return `il y a ${diffMinutes} minute${diffMinutes > 1 ? "s" : ""}`;
+      } else {
+        return "à l'instant";
+      }
     } catch {
       return "Date inconnue";
     }
@@ -122,7 +141,7 @@ export function ConversationSidebar({
     }
 
     // Par défaut, utiliser le modelName de la conversation
-    return conversation.modelName;
+    return conversation.modelName || "IA";
   };
 
   // Fonction pour obtenir les styles CSS du badge du modèle
@@ -147,26 +166,58 @@ export function ConversationSidebar({
       setError(null);
 
       try {
+        // Utiliser un chemin d'URL relatif
         const response = await axios.get(
-          `http://localhost:3000/api/conversations/student/${studentId}?includeMessages=true&includeStats=true`
+          `/api/conversations/student/${studentId}?includeMessages=true&includeStats=true`
         );
 
         if (response.data.success) {
           console.log("Conversations chargées:", response.data.conversations);
-          // Vérifier lesquelles ont versionFinale
-          response.data.conversations.forEach((conv: ConversationItem) => {
-            console.log(
-              `Conversation ${conv._id} - versionFinale:`,
-              conv.versionFinale
-            );
-          });
-          setConversations(response.data.conversations);
+
+          // Si des conversations sont disponibles, les définir
+          if (
+            response.data.conversations &&
+            response.data.conversations.length > 0
+          ) {
+            setConversations(response.data.conversations);
+          } else {
+            // Essayer de récupérer toutes les conversations si aucune n'est trouvée pour l'ID spécifique
+            const allResponse = await axios.get(`/api/conversations`);
+            if (
+              allResponse.data.success &&
+              allResponse.data.conversations?.length > 0
+            ) {
+              console.log(
+                "Utilisation de toutes les conversations disponibles"
+              );
+              setConversations(allResponse.data.conversations);
+            } else {
+              setError("Aucune conversation disponible");
+            }
+          }
         } else {
           setError("Impossible de charger les conversations");
         }
       } catch (err) {
         console.error("Erreur lors du chargement des conversations:", err);
         setError("Erreur de connexion au serveur");
+
+        // En cas d'erreur, essayer de récupérer toutes les conversations
+        try {
+          const fallbackResponse = await axios.get(`/api/conversations`);
+          if (
+            fallbackResponse.data.success &&
+            fallbackResponse.data.conversations?.length > 0
+          ) {
+            console.log(
+              "Fallback: Utilisation de toutes les conversations disponibles"
+            );
+            setConversations(fallbackResponse.data.conversations);
+            setError(null);
+          }
+        } catch (fallbackErr) {
+          console.error("Erreur de fallback:", fallbackErr);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -202,8 +253,9 @@ export function ConversationSidebar({
   const deleteConversation = async (conversationId: string) => {
     setIsDeletingConversation(true);
     try {
+      // Utiliser un chemin d'URL relatif
       const response = await axios.delete(
-        `http://localhost:3000/api/conversations/${conversationId}`
+        `/api/conversations/${conversationId}`
       );
 
       if (response.data.success) {
@@ -307,7 +359,7 @@ export function ConversationSidebar({
               <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>Aucune conversation</p>
               <p className="text-xs mt-1">
-                Cliquez sur "Nouvelle conversation" pour commencer
+                Cliquez sur &quot;Nouvelle conversation&quot; pour commencer
               </p>
             </div>
           ) : (

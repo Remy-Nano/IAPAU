@@ -3,6 +3,25 @@
 import { Admin, Examiner, Student, UserRole } from "@/types";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
+// Fonction utilitaire pour vérifier si on est côté client
+const isClient = typeof window !== "undefined";
+
+// Fonctions utilitaires pour localStorage
+const getFromStorage = (key: string): string | null => {
+  if (!isClient) return null;
+  return localStorage.getItem(key);
+};
+
+const setInStorage = (key: string, value: string): void => {
+  if (!isClient) return;
+  localStorage.setItem(key, value);
+};
+
+const removeFromStorage = (key: string): void => {
+  if (!isClient) return;
+  localStorage.removeItem(key);
+};
+
 type AuthContextType = {
   user: (Student | Examiner | Admin) | null;
   userRole: UserRole | null;
@@ -50,13 +69,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [userRole, setUserRole] = useState<UserRole | null>(null);
 
   useEffect(() => {
-    // Vérifier le localStorage au chargement
-    const storedUser = localStorage.getItem("user");
-    const storedRole = localStorage.getItem("userRole") as UserRole | null;
+    // Vérifier le localStorage au chargement, mais seulement côté client
+    if (isClient) {
+      const storedUser = getFromStorage("user");
+      const storedRole = getFromStorage("userRole") as UserRole | null;
 
-    if (storedUser && storedRole) {
-      setUser(JSON.parse(storedUser));
-      setUserRole(storedRole);
+      if (storedUser && storedRole) {
+        setUser(JSON.parse(storedUser));
+        setUserRole(storedRole);
+      }
     }
   }, []);
 
@@ -139,8 +160,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setUser(userData);
       setUserRole(role);
-      localStorage.setItem("user", JSON.stringify(userData));
-      localStorage.setItem("userRole", role);
+      setInStorage("user", JSON.stringify(userData));
+      setInStorage("userRole", role);
     } catch (error) {
       console.error("Erreur de connexion:", error);
       throw error;
@@ -171,8 +192,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setUser(mockStudent);
       setUserRole("student");
-      localStorage.setItem("user", JSON.stringify(mockStudent));
-      localStorage.setItem("userRole", "student");
+      setInStorage("user", JSON.stringify(mockStudent));
+      setInStorage("userRole", "student");
     } catch (error) {
       console.error("Erreur de connexion avec lien magique:", error);
       throw error;
@@ -182,8 +203,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const logout = () => {
     setUser(null);
     setUserRole(null);
-    localStorage.removeItem("user");
-    localStorage.removeItem("userRole");
+    removeFromStorage("user");
+    removeFromStorage("userRole");
   };
 
   return (

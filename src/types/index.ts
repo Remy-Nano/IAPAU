@@ -41,7 +41,7 @@ export type AIModel = {
 // Message dans une conversation
 export type Message = {
   _id?: string;
-  role: "user" | "ai";
+  role: "user" | "ai" | "student" | "assistant";
   content: string;
   timestamp?: Date;
   tokenCount?: number;

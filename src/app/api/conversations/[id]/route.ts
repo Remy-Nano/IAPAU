@@ -1,15 +1,19 @@
 // src/app/api/conversations/[id]/route.ts
-import { getConversation } from "@/lib/controllers/conversationController";
+import {
+  deleteConversation,
+  getConversation,
+} from "@/lib/controllers/conversationController";
 import connectDB from "@/lib/mongoose";
 import { NextResponse } from "next/server";
 
 interface Params {
-  params: { id: string };
+  params: Promise<{ id: string }> | { id: string };
 }
 
 export async function GET(_: Request, { params }: Params) {
   await connectDB();
-  const convo = await getConversation(params.id);
+  const resolvedParams = await params;
+  const convo = await getConversation(resolvedParams.id);
   if (!convo) {
     return NextResponse.json(
       { error: "Conversation non trouvée" },
@@ -17,4 +21,24 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
   return NextResponse.json({ conversation: convo });
+}
+
+export async function DELETE(_: Request, { params }: Params) {
+  try {
+    await connectDB();
+    const resolvedParams = await params;
+    const success = await deleteConversation(resolvedParams.id);
+
+    if (success) {
+      return NextResponse.json({ success: true }, { status: 200 });
+    } else {
+      return NextResponse.json(
+        { success: false, error: "Conversation non trouvée" },
+        { status: 404 }
+      );
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Erreur inconnue";
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+  }
 }
