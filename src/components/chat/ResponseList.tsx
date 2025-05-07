@@ -1,7 +1,7 @@
 import { formatRelativeTime } from "@/lib/date-utils";
 import { Message } from "@/types";
-import { BarChart2, Bot, Check, Clock } from "lucide-react";
-import { useEffect } from "react";
+import { BarChart2, Check, Clock } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { cn } from "../../lib/utils";
 import { Avatar, AvatarFallback } from "../ui/avatar";
@@ -55,6 +55,8 @@ export function ResponseList({
 }: ResponseListProps) {
   const { control, watch, setValue } = useFormContext();
   const selectedPair = watch("selectedPair");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
 
   // Réinitialiser la sélection si les messages changent
   useEffect(() => {
@@ -69,6 +71,16 @@ export function ResponseList({
         "Modèles dans les messages IA:",
         aiMessages.map((m, i) => `Message ${i}: ${m.modelUsed || "non défini"}`)
       );
+    }
+
+    // Scroll to bottom when new messages come in
+    if (lastMessageRef.current) {
+      lastMessageRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    } else if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, setValue]);
 
@@ -154,11 +166,97 @@ export function ResponseList({
     setValue("selectedPair", index);
   };
 
+  const renderMessage = (message: Message, index: number) => {
+    const isUserMessage = message.role === "user";
+    const isAIMessage = message.role === "ai" || message.role === "assistant";
+    const isTemporaryMessage = message._id?.startsWith("temp-");
+
+    // Déterminer la classe CSS pour le modèle d'IA
+    let modelBadgeClass = "bg-gray-700 text-white";
+
+    // Si c'est un message AI, déterminer la classe CSS en fonction du modèle utilisé
+    if (isAIMessage && message.modelUsed) {
+      const model = message.modelUsed.toLowerCase();
+      if (model.includes("openai") || model === "openai") {
+        modelBadgeClass = "bg-green-700 text-white";
+      } else if (model.includes("mistral") || model === "mistral") {
+        modelBadgeClass = "bg-blue-700 text-white";
+      }
+    }
+
+    // Le contenu du message avec gestion de l'état de chargement
+    const messageContent =
+      isTemporaryMessage && isAIMessage ? (
+        <div className="flex items-center space-x-3">
+          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-700"></div>
+          <p>{message.content}</p>
+        </div>
+      ) : (
+        <p className="whitespace-pre-wrap">{message.content}</p>
+      );
+
+    return (
+      <div className="flex items-start gap-3">
+        <Avatar className="h-8 w-8 mt-1">
+          <AvatarFallback className="bg-blue-100 text-blue-800">
+            🧑‍🎓
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1">
+          <Card
+            className={cn(
+              "bg-blue-50 border-blue-100 shadow-sm p-4 transition-all duration-200",
+              { "ring-2 ring-blue-300": selectedPair === index },
+              { "border-2 border-green-500": message.isVersionFinale }
+            )}
+          >
+            <CardContent className="p-0 space-y-2">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-medium text-blue-800">Étudiant</span>
+                {message.timestamp && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <div className="flex items-center text-xs text-gray-500">
+                          <Clock className="h-3 w-3 mr-1" />
+                          <span>{formatRelativeTime(message.timestamp)}</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {new Date(message.timestamp).toLocaleString("fr-FR")}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mb-1">
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full ${modelBadgeClass}`}
+                >
+                  {isAIMessage && `${message.modelUsed || "IA"}`}
+                  {isUserMessage && "Utilisateur"}
+                </span>
+                {/* Ajouter d'autres badges si nécessaire */}
+              </div>
+              {messageContent}
+              {message.tokenCount && (
+                <div className="flex items-center text-xs text-gray-500 mt-2">
+                  <BarChart2 className="h-3 w-3 mr-1" />
+                  <span>{message.tokenCount} tokens</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <Label className="text-lg font-medium">Réponses disponibles</Label>
 
-      <ScrollArea className="h-[550px] pr-4 overflow-y-auto">
+      <ScrollArea className="h-[550px] pr-4 overflow-y-auto" ref={scrollRef}>
         <div className="space-y-6">
           {promptResponsePairs.map((pair, index) => (
             <div
@@ -167,8 +265,11 @@ export function ResponseList({
                 "animate-in fade-in-50 zoom-in-95":
                   index === promptResponsePairs.length - 1,
               })}
+              ref={
+                index === promptResponsePairs.length - 1 ? lastMessageRef : null
+              }
             >
-              {/* Message de l'utilisateur */}
+              {/* User message */}
               <div className="flex items-start gap-3">
                 <Avatar className="h-8 w-8 mt-1">
                   <AvatarFallback className="bg-blue-100 text-blue-800">
@@ -222,7 +323,7 @@ export function ResponseList({
                 </div>
               </div>
 
-              {/* Réponse de l'IA */}
+              {/* AI Response - Handle temporary responses specially */}
               <div className="flex items-start gap-3 pl-8">
                 <Avatar className="h-8 w-8 mt-1">
                   <AvatarFallback className="bg-indigo-100 text-indigo-800">
@@ -248,7 +349,6 @@ export function ResponseList({
                               variant="outline"
                               className={getModelBadgeStyles(pair.model)}
                             >
-                              <Bot className="h-3 w-3 mr-1" />
                               {pair.model}
                             </Badge>
                           )}
@@ -273,9 +373,23 @@ export function ResponseList({
                           </TooltipProvider>
                         )}
                       </div>
-                      <p className="text-gray-800 whitespace-pre-wrap">
-                        {pair.response}
-                      </p>
+
+                      {/* Génération en cours ou réponse finale */}
+                      {pair.response.includes(
+                        "Génération de la réponse en cours"
+                      ) ? (
+                        <div className="flex items-center space-x-3">
+                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-700"></div>
+                          <p className="text-gray-500">
+                            Génération de la réponse...
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-gray-800 whitespace-pre-wrap">
+                          {pair.response}
+                        </p>
+                      )}
+
                       {pair.responseTokens && (
                         <div className="flex items-center text-xs text-gray-500 mt-2">
                           <BarChart2 className="h-3 w-3 mr-1" />

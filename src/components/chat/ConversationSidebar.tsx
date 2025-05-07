@@ -1,7 +1,15 @@
 import axios from "axios";
 // Importations simples pour gérer les dates
 import { format } from "date-fns";
-import { Brain, Check, MessageSquare, Plus, Trash2 } from "lucide-react";
+import {
+  Brain,
+  Check,
+  Clock,
+  MessageCircle,
+  Plus,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import {
@@ -157,6 +165,31 @@ export function ConversationSidebar({
     return "bg-gray-700 text-gray-300";
   };
 
+  // Fonction pour formater le titre de la conversation
+  const formatConversationTitle = (conversation: ConversationItem): string => {
+    // Si la conversation a déjà un titre personnalisé, l'utiliser
+    if (
+      conversation.titreConversation &&
+      conversation.titreConversation !== "Sans titre"
+    ) {
+      return conversation.titreConversation;
+    }
+
+    // Sinon, créer un titre avec date et heure
+    try {
+      const date = new Date(conversation.createdAt);
+      const formattedDate = date.toLocaleDateString("fr-FR");
+      const formattedTime = date.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+      return `Conversation ${formattedDate} ${formattedTime}`;
+    } catch {
+      return "Nouvelle conversation";
+    }
+  };
+
   // Récupérer les conversations de l'étudiant
   useEffect(() => {
     const fetchConversations = async () => {
@@ -310,44 +343,49 @@ export function ConversationSidebar({
       {/* Overlay semi-transparent pour fermer la sidebar sur mobile */}
       {isMobileOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-black/50 z-30"
+          className="md:hidden fixed inset-0 bg-black/50 z-30 backdrop-blur-sm"
           onClick={() => onNewConversation()} // Utiliser onNewConversation comme handler pour fermer la sidebar
         />
       )}
 
       <aside
-        className={`md:flex flex-col w-full md:w-80 lg:w-96 bg-gray-900 text-white p-4 h-full overflow-hidden ${className} fixed md:relative left-0 top-0 bottom-0 z-40 transition-transform duration-300 ease-in-out ${mobileClass} md:translate-x-0`}
+        className={`md:flex flex-col w-full md:w-80 lg:w-96 bg-gradient-to-b from-gray-900 to-gray-800 text-white p-4 h-full overflow-hidden ${className} fixed md:relative left-0 top-0 bottom-0 z-40 transition-all duration-300 ease-in-out ${mobileClass} md:translate-x-0 border-r border-indigo-500/20`}
         aria-label="Historique des conversations"
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-2">
             <Brain className="h-6 w-6 text-indigo-400" />
-            <h2 className="text-lg font-bold">Conversations</h2>
+            <h2 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+              Conversations
+            </h2>
           </div>
         </div>
 
         <Button
           onClick={onNewConversation}
-          className="mb-5 w-full bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center transition-all"
+          className="mb-5 w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 flex items-center justify-center transition-all shadow-lg shadow-indigo-700/20 hover:shadow-indigo-700/40 transform hover:scale-[1.02] duration-200"
         >
           <Plus className="h-4 w-4 mr-2" />
           Nouvelle conversation
         </Button>
 
         {error && (
-          <div className="bg-red-900/20 border border-red-800 text-red-100 rounded-md p-3 text-sm mb-5">
+          <div className="bg-red-900/20 border border-red-800 text-red-100 rounded-md p-3 text-sm mb-5 backdrop-blur-sm">
             {error}
           </div>
         )}
 
-        <ScrollArea className="flex-1 pr-3 -mr-2 pb-5">
+        <ScrollArea className="flex-1 pr-3 -mr-2 pb-5 conversation-history-scroll">
           {isLoading ? (
             // Affichage d'un skeleton loader pendant le chargement
             <div className="space-y-4">
               {Array(5)
                 .fill(0)
                 .map((_, i) => (
-                  <div key={i} className="p-4 bg-gray-800/40 rounded-lg">
+                  <div
+                    key={i}
+                    className="p-4 bg-gray-800/40 rounded-lg backdrop-blur-sm"
+                  >
                     <Skeleton className="h-5 w-3/4 bg-gray-700 mb-3" />
                     <Skeleton className="h-4 w-full bg-gray-700 mb-2" />
                     <Skeleton className="h-4 w-2/3 bg-gray-700" />
@@ -355,10 +393,10 @@ export function ConversationSidebar({
                 ))}
             </div>
           ) : conversations.length === 0 ? (
-            <div className="text-gray-400 text-center mt-6">
-              <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Aucune conversation</p>
-              <p className="text-xs mt-1">
+            <div className="text-gray-400 text-center mt-6 p-8 rounded-xl bg-gray-800/30 backdrop-blur-sm border border-gray-700/50">
+              <MessageCircle className="h-10 w-10 mx-auto mb-3 opacity-50 text-indigo-400" />
+              <p className="font-medium">Aucune conversation</p>
+              <p className="text-sm mt-2 text-gray-500">
                 Cliquez sur &quot;Nouvelle conversation&quot; pour commencer
               </p>
             </div>
@@ -367,43 +405,54 @@ export function ConversationSidebar({
               {conversations.map((conversation) => (
                 <div
                   key={conversation._id}
-                  className={`p-4 rounded-lg cursor-pointer transition-all shadow-sm hover:shadow-md group ${
+                  className={`p-4 rounded-xl cursor-pointer transition-all shadow-sm hover:shadow-md group relative overflow-hidden ${
                     selectedConversationId === conversation._id
-                      ? "bg-indigo-600"
+                      ? "bg-gradient-to-r from-indigo-600 to-indigo-500 shadow-lg shadow-indigo-700/20"
                       : hasValidVersionFinale(conversation)
-                      ? "bg-green-50 border-l-4 border-green-500 dark:bg-green-900/20"
-                      : "bg-gray-800 hover:bg-gray-700"
+                      ? "bg-gradient-to-r from-green-600/20 to-green-500/10 border-l-4 border-green-500/70 dark:bg-green-900/20"
+                      : "bg-gray-800/80 hover:bg-gray-700/80 backdrop-blur-sm border border-gray-700/50 hover:border-indigo-500/30"
+                  } transform transition-transform duration-200 ${
+                    selectedConversationId === conversation._id
+                      ? "scale-[1.02]"
+                      : "hover:scale-[1.02]"
                   }`}
                   onClick={() => onSelectConversation(conversation._id)}
                   role="button"
                   tabIndex={0}
                   aria-selected={selectedConversationId === conversation._id}
                 >
-                  <div className="flex justify-between items-start mb-2">
+                  {/* Effet brillant sur hover */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/0 via-indigo-600/5 to-indigo-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 blur-md" />
+
+                  <div className="flex justify-between items-start mb-2 relative">
                     <div className="flex items-center max-w-[80%]">
-                      {hasValidVersionFinale(conversation) && (
+                      {hasValidVersionFinale(conversation) ? (
                         <span
                           title="Version finale soumise"
                           className="flex-shrink-0 mr-1.5 bg-green-500/20 p-1 rounded-full"
                         >
-                          <Check className="h-3.5 w-3.5 text-green-500" />
+                          <Check className="h-3.5 w-3.5 text-green-300" />
+                        </span>
+                      ) : (
+                        <span className="flex-shrink-0 mr-1.5 bg-indigo-500/20 p-1 rounded-full">
+                          <MessageCircle className="h-3.5 w-3.5 text-indigo-300" />
                         </span>
                       )}
                       <h3
                         className={`font-medium text-base truncate leading-tight ${
                           hasValidVersionFinale(conversation) &&
                           !(selectedConversationId === conversation._id)
-                            ? "text-green-800 dark:text-green-200"
+                            ? "text-green-200"
                             : ""
                         }`}
                       >
-                        {conversation.titreConversation || "Sans titre"}
+                        {formatConversationTitle(conversation)}
                       </h3>
                     </div>
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 z-10">
                       <button
                         onClick={(e) => handleDeleteClick(conversation._id, e)}
-                        className="text-red-400 transition-colors p-1 rounded-full hover:bg-gray-700/50 hover:text-red-500 flex-shrink-0"
+                        className="text-red-400 transition-colors p-1 rounded-full hover:bg-red-500/20 hover:text-red-300 flex-shrink-0"
                         aria-label="Supprimer cette conversation"
                         title="Supprimer cette conversation"
                       >
@@ -413,14 +462,16 @@ export function ConversationSidebar({
                   </div>
                   <div className="flex items-center gap-2 mb-2">
                     <span
-                      className={`text-xs px-2 py-0.5 rounded shrink-0 ${getModelBadgeStyle(
+                      className={`text-xs px-2 py-0.5 rounded-full shrink-0 flex items-center ${getModelBadgeStyle(
                         getActualModel(conversation)
                       )}`}
                     >
+                      <Sparkles className="h-3 w-3 mr-1 opacity-70" />
                       {getActualModel(conversation)}
                     </span>
                     {hasValidVersionFinale(conversation) && (
-                      <span className="text-xs bg-green-600 px-2 py-0.5 rounded text-white font-medium shrink-0">
+                      <span className="text-xs bg-gradient-to-r from-green-600 to-emerald-600 px-2 py-0.5 rounded-full text-white font-medium shrink-0 flex items-center">
+                        <Check className="h-3 w-3 mr-1" />
                         Version finale
                       </span>
                     )}
@@ -428,7 +479,8 @@ export function ConversationSidebar({
                   <p className="text-sm text-gray-300 line-clamp-2 mb-2 leading-snug">
                     {getPreview(conversation)}
                   </p>
-                  <p className="text-xs text-gray-500 mt-auto">
+                  <p className="text-xs text-gray-400 mt-auto flex items-center">
+                    <Clock className="h-3 w-3 mr-1 opacity-70" />
                     {formatDate(conversation.createdAt)}
                   </p>
                 </div>
@@ -439,7 +491,7 @@ export function ConversationSidebar({
 
         {/* Boîte de dialogue de confirmation de suppression */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent className="bg-gray-800 text-white border-gray-700">
+          <AlertDialogContent className="bg-gray-800 text-white border border-gray-700 rounded-xl backdrop-blur-md">
             <AlertDialogHeader>
               <AlertDialogTitle>Supprimer la conversation</AlertDialogTitle>
               <AlertDialogDescription className="text-gray-400">
@@ -456,7 +508,7 @@ export function ConversationSidebar({
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={confirmDelete}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white"
                 disabled={isDeletingConversation}
               >
                 {isDeletingConversation ? (

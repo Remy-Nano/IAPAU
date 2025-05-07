@@ -225,6 +225,23 @@ export function ChatInterface({
     try {
       setIsLoading(true);
 
+      // Créer un ID unique pour le message utilisateur
+      const userMsgId = `temp-user-${Date.now()}`;
+
+      // Mettre à jour l'état local immédiatement pour afficher le message de l'utilisateur
+      const userMessage: Message = {
+        _id: userMsgId,
+        content: data.prompt,
+        role: "user",
+        timestamp: new Date(),
+      };
+
+      // Ajouter le message utilisateur immédiatement à l'interface
+      setMessages((prev) => [...prev, userMessage]);
+
+      // Créer un ID unique pour le message IA temporaire
+      const tempAiMsgId = `temp-ai-${Date.now()}`;
+
       if (!conversationId) {
         // Création d'une nouvelle conversation
         console.log("Création d'une nouvelle conversation avec:", {
@@ -234,10 +251,23 @@ export function ChatInterface({
           modelName: data.modelName,
           titreConversation:
             data.titreConversation ||
-            `Conversation ${new Date().toLocaleString()}`,
+            `Conversation ${new Date().toLocaleDateString(
+              "fr-FR"
+            )} ${new Date().toLocaleTimeString("fr-FR")}`,
           promptType: data.promptType,
           prompt: data.prompt,
         });
+
+        // Ajouter un message temporaire pour signaler que l'IA est en train de répondre
+        const tempAiMessage: Message = {
+          _id: tempAiMsgId,
+          content: "Génération de la réponse en cours...",
+          role: "ai",
+          timestamp: new Date(),
+          modelUsed: data.modelName,
+        };
+
+        setMessages((prev) => [...prev, tempAiMessage]);
 
         const response = await axios.post(
           "http://localhost:3000/api/conversations",
@@ -248,7 +278,9 @@ export function ChatInterface({
             modelName: data.modelName,
             titreConversation:
               data.titreConversation ||
-              `Conversation ${new Date().toLocaleString()}`,
+              `Conversation ${new Date().toLocaleDateString(
+                "fr-FR"
+              )} ${new Date().toLocaleTimeString("fr-FR")}`,
             promptType: data.promptType,
             prompt: data.prompt,
           }
@@ -271,18 +303,35 @@ export function ChatInterface({
             .map((m: Message) => m.modelUsed)
         );
 
-        setMessages(messagesWithModel);
+        // Remplacer notre message temporaire par le message réel
+        const finalMessages = messagesWithModel.map((msg) => {
+          // Remplacer le message utilisateur temporaire par celui retourné par l'API
+          if (msg.role === "user" && messagesWithModel.indexOf(msg) === 0) {
+            return {
+              ...msg,
+              _id: msg._id || userMsgId, // Conserver l'ID temporaire si l'API n'en a pas fourni
+            };
+          }
+          // Remplacer le message IA temporaire par celui retourné par l'API
+          if (msg.role === "ai" && messagesWithModel.indexOf(msg) === 1) {
+            return {
+              ...msg,
+              _id: msg._id || tempAiMsgId, // Conserver l'ID temporaire si l'API n'en a pas fourni
+            };
+          }
+          return msg;
+        });
+
+        setMessages(finalMessages);
         setConversationData({
           ...response.data.conversation,
-          messages: messagesWithModel,
+          messages: finalMessages,
         });
 
         // Notifier le parent de la création de la nouvelle conversation
         if (onConversationCreated) {
           onConversationCreated(newConversationId);
         }
-
-        toast.success("Nouvelle conversation créée avec succès");
       } else {
         // Ajout d'un message à une conversation existante
         console.log("Ajout d'un message:", {
@@ -290,6 +339,17 @@ export function ChatInterface({
           prompt: data.prompt,
           modelName: data.modelName,
         });
+
+        // Ajouter un message temporaire pour signaler que l'IA est en train de répondre
+        const tempAiMessage: Message = {
+          _id: tempAiMsgId,
+          content: "Génération de la réponse en cours...",
+          role: "ai",
+          timestamp: new Date(),
+          modelUsed: data.modelName,
+        };
+
+        setMessages((prev) => [...prev, tempAiMessage]);
 
         const response = await axios.post(
           `/api/conversations/${conversationId}/ai-response`,
@@ -314,13 +374,39 @@ export function ChatInterface({
             .map((m: Message) => m.modelUsed)
         );
 
-        setMessages(messagesWithModel);
+        // Trouver les messages utilisateur et IA les plus récents de l'API
+        const latestUserMsgIndex = messagesWithModel.findLastIndex(
+          (m) => m.role === "user"
+        );
+        const latestAiMsgIndex = messagesWithModel.findLastIndex(
+          (m) => m.role === "ai"
+        );
+
+        if (latestUserMsgIndex >= 0 && latestAiMsgIndex >= 0) {
+          // Remplacer nos messages temporaires par les messages réels
+          const updatedMessages = [...messages]; // Copier notre liste de messages actuelle
+
+          // Supprimer le message IA temporaire
+          updatedMessages.pop();
+
+          // Ajouter la réponse réelle de l'IA
+          updatedMessages.push({
+            ...messagesWithModel[latestAiMsgIndex],
+            _id: messagesWithModel[latestAiMsgIndex]._id || tempAiMsgId,
+          });
+
+          // Mettre à jour l'état avec les messages mis à jour
+          setMessages(updatedMessages);
+        } else {
+          // Si on ne trouve pas les derniers messages, utiliser tous les messages de l'API
+          setMessages(messagesWithModel);
+        }
+
+        // Mise à jour de la conversation complète
         setConversationData({
           ...response.data.conversation,
           messages: messagesWithModel,
         });
-
-        toast.success("Réponse reçue avec succès");
       }
 
       // Réinitialiser le champ de prompt
@@ -328,6 +414,11 @@ export function ChatInterface({
         ...methods.getValues(),
         prompt: "",
       });
+
+      // Mettre à jour les tokens utilisés depuis la réponse si disponible
+      if (conversationData?.statistiquesIA?.tokensTotal) {
+        setTokensUsed(conversationData.statistiquesIA.tokensTotal);
+      }
     } catch (error: unknown) {
       console.error("Erreur lors de l'envoi du prompt:", error);
       // Affichage plus détaillé de l'erreur
@@ -341,6 +432,11 @@ export function ChatInterface({
       } else {
         toast.error("Erreur lors de l'envoi du prompt");
       }
+
+      // En cas d'erreur, supprimer le message temporaire de l'IA
+      setMessages((prev) =>
+        prev.filter((msg) => !msg._id?.startsWith("temp-"))
+      );
     } finally {
       setIsLoading(false);
     }
