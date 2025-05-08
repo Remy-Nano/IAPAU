@@ -27,6 +27,10 @@ export interface IConversation extends Document {
   studentId?: string;
   groupId?: string;
   modelName?: string;
+  maxTokens?: number;
+  maxTokensUsed?: number;
+  temperature?: number;
+  temperatureUsed?: number;
   messages: IMessage[];
   versionFinale: IVersionFinale;
   statistiquesIA?: IStatistiquesIA;
@@ -74,6 +78,10 @@ const convSchema = new Schema<IConversation>(
     studentId: { type: String, default: null },
     groupId: { type: String, default: null },
     modelName: { type: String, default: null },
+    maxTokens: { type: Number, default: 512 },
+    maxTokensUsed: { type: Number, required: false },
+    temperature: { type: Number, default: 0.7 },
+    temperatureUsed: { type: Number, required: false },
     messages: { type: [MessageSchema], default: [] },
     versionFinale: { type: VersionSchema, default: () => ({}) },
     statistiquesIA: { type: StatistiquesSchema },

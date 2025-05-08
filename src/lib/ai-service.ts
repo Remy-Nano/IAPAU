@@ -19,7 +19,8 @@ const mistral = new Mistral({
 export async function generateAIResponse(
   prompt: string,
   modelName: string,
-  history: { role: string; content: string }[] = []
+  history: { role: string; content: string }[] = [],
+  maxTokens: number = 512
 ): Promise<{ content: string; tokenCount?: number }> {
   try {
     // Générer une réponse avec OpenAI
@@ -37,6 +38,7 @@ export async function generateAIResponse(
         model: config.models.openai.defaultModel,
         messages,
         temperature: 0.7,
+        max_tokens: maxTokens,
       });
 
       return {
@@ -68,6 +70,8 @@ export async function generateAIResponse(
         const response = await mistral.chat.complete({
           model: config.models.mistral.defaultModel,
           messages: formattedMessages as any, // Forcer le type pour contourner les limitations
+          // Passer directement l'objet avec les paramètres à l'API
+          ...{ maxTokens }, // Utiliser la syntaxe d'extension pour ajouter maxTokens
         });
 
         // Vérifier si la réponse est valide

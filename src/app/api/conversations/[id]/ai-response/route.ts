@@ -28,7 +28,11 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     // Récupérer les données du prompt et du modèle
-    const { prompt, modelName = conversation.modelName } = await request.json();
+    const {
+      prompt,
+      modelName = conversation.modelName,
+      maxTokens = 512,
+    } = await request.json();
 
     // Ajouter le message utilisateur à la conversation
     await addMessage(conversationId, {
@@ -46,7 +50,8 @@ export async function POST(request: Request, { params }: Params) {
     const { content: aiResponse, tokenCount } = await generateAIResponse(
       prompt,
       modelName,
-      messageHistory
+      messageHistory,
+      maxTokens
     );
 
     // Ajouter la réponse IA à la conversation avec le comptage de tokens si disponible

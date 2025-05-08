@@ -3,17 +3,51 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Conversation } from "@/types";
 import axios from "axios";
 import { ArrowLeft, Check, Clock, Sparkles, Zap } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+// Ajouter ces interfaces en haut du fichier, sous les imports
+interface FinalVersionResponse {
+  success: boolean;
+  promptFinal: string;
+  finalText: string;
+  finalVersionDate: string;
+  maxTokensUsed: number | null;
+  temperatureUsed: number | null;
+  error?: string;
+  conversation?: {
+    statistiquesIA?: {
+      tokensTotal: number;
+      modelUtilise: string;
+    };
+    modelName?: string;
+    titreConversation?: string;
+  };
+}
+
+interface EnhancedConversation {
+  promptFinal: string;
+  finalText: string;
+  finalVersionDate: string;
+  maxTokensUsed: number | null;
+  temperatureUsed: number | null;
+  statistiquesIA?: {
+    tokensTotal: number;
+    modelUtilise: string;
+  };
+  modelName?: string;
+  titreConversation?: string;
+}
+
 export default function VersionFinalePage() {
   const { id } = useParams();
   const router = useRouter();
-  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [conversation, setConversation] = useState<EnhancedConversation | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,20 +57,32 @@ export default function VersionFinalePage() {
         setLoading(true);
 
         // Utiliser l'API pour récupérer la conversation
-        const response = await axios.get(`/api/conversations/${id}`);
-        const convo = response.data.conversation;
+        const response = await axios.get<FinalVersionResponse>(
+          `/api/conversations/${id}/final`
+        );
+        const {
+          promptFinal,
+          finalText,
+          finalVersionDate,
+          maxTokensUsed,
+          temperatureUsed,
+        } = response.data;
 
-        if (!convo) {
+        if (response.data.error) {
           setError("Conversation non trouvée");
           return;
         }
 
-        if (!convo.versionFinale || !convo.versionFinale.promptFinal) {
-          setError("Cette conversation n'a pas de version finale");
-          return;
-        }
-
-        setConversation(convo);
+        setConversation({
+          promptFinal,
+          finalText,
+          finalVersionDate,
+          maxTokensUsed,
+          temperatureUsed,
+          statistiquesIA: response.data.conversation?.statistiquesIA,
+          modelName: response.data.conversation?.modelName,
+          titreConversation: response.data.conversation?.titreConversation,
+        });
       } catch (err) {
         console.error(
           "Erreur lors de la récupération de la conversation:",
@@ -75,14 +121,20 @@ export default function VersionFinalePage() {
     );
   }
 
-  if (!conversation || !conversation.versionFinale) {
+  if (!conversation) {
     return null;
   }
 
-  const { promptFinal, reponseIAFinale, soumisLe } = conversation.versionFinale;
+  const {
+    promptFinal,
+    finalText,
+    finalVersionDate,
+    maxTokensUsed,
+    temperatureUsed,
+  } = conversation;
 
   // Formatage de la date
-  const dateObj = new Date(soumisLe);
+  const dateObj = new Date(finalVersionDate);
   const options: Intl.DateTimeFormatOptions = {
     day: "2-digit",
     month: "long",
@@ -94,6 +146,7 @@ export default function VersionFinalePage() {
     dateObj
   );
 
+  // Récupérer les données de la conversation, y compris maxTokensUsed
   const tokens = conversation.statistiquesIA?.tokensTotal || 0;
   const modelUtilise =
     conversation.statistiquesIA?.modelUtilise ||
@@ -170,6 +223,34 @@ export default function VersionFinalePage() {
             <p className="font-medium">{tokens}</p>
           </CardContent>
         </Card>
+
+        {maxTokensUsed != null && (
+          <Card className="col-span-1 shadow-md hover:shadow-lg transition-all duration-300 border-0">
+            <CardHeader className="pb-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-lg">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Max tokens
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center">
+              <Zap className="h-4 w-4 mr-2 text-orange-500" />
+              <p className="font-medium">{maxTokensUsed}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {temperatureUsed != null && (
+          <Card className="col-span-1 shadow-md hover:shadow-lg transition-all duration-300 border-0">
+            <CardHeader className="pb-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-lg">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Température utilisée
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center">
+              <Zap className="h-4 w-4 mr-2 text-orange-500" />
+              <p className="font-medium">{temperatureUsed}</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <div className="space-y-8">
@@ -200,7 +281,7 @@ export default function VersionFinalePage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="whitespace-pre-wrap bg-white p-6 rounded text-md overflow-auto border-t border-purple-100 leading-relaxed">
-              {reponseIAFinale}
+              {finalText}
             </div>
           </CardContent>
         </Card>
@@ -216,6 +297,11 @@ export default function VersionFinalePage() {
             Cette version a été sélectionnée et validée par l&apos;étudiant
             comme la réponse finale à sa question.
           </p>
+          {maxTokensUsed != null && (
+            <p className="text-sm text-gray-600 mt-2">
+              <strong>Max tokens utilisé :</strong> {maxTokensUsed}
+            </p>
+          )}
         </div>
       </div>
     </div>

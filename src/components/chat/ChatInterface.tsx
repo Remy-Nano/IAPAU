@@ -13,7 +13,6 @@ import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -22,11 +21,13 @@ import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
 import { ConversationStats } from "./ConversationStats";
+import { MaxTokensSlider } from "./MaxTokensSlider";
 import { ModelSelect } from "./ModelSelect";
 import { PromptInput } from "./PromptInput";
 import { PromptTypeSelect } from "./PromptTypeSelect";
 import { ResponseList } from "./ResponseList";
 import { SubmitFinalButton } from "./SubmitFinalButton";
+import { TemperatureSlider } from "./TemperatureSlider";
 import { TokenCounter } from "./TokenCounter";
 
 interface ChatData {
@@ -35,6 +36,8 @@ interface ChatData {
   modelName: string;
   prompt: string;
   selectedPair: number | null;
+  maxTokens: number;
+  temperature: number;
 }
 
 interface ChatInterfaceProps {
@@ -85,6 +88,8 @@ export function ChatInterface({
       modelName: "openai",
       prompt: "",
       selectedPair: null,
+      maxTokens: 512,
+      temperature: 0.7,
     },
   });
 
@@ -209,6 +214,8 @@ export function ChatInterface({
         modelName: existingConversation.modelName,
         prompt: "",
         selectedPair: null,
+        maxTokens: existingConversation.maxTokens || 512,
+        temperature: existingConversation.temperature || 0.7,
       });
     } else {
       // Réinitialiser l'état pour une nouvelle conversation
@@ -223,6 +230,8 @@ export function ChatInterface({
         modelName: "openai",
         prompt: "",
         selectedPair: null,
+        maxTokens: 512,
+        temperature: 0.7,
       });
     }
   }, [existingConversation, methods]);
@@ -280,6 +289,8 @@ export function ChatInterface({
             )} ${new Date().toLocaleTimeString("fr-FR")}`,
           promptType: data.promptType,
           prompt: data.prompt,
+          maxTokens: data.maxTokens,
+          temperature: data.temperature,
         });
 
         const newConversationId = conversationResponse.data.conversation._id;
@@ -320,6 +331,8 @@ export function ChatInterface({
         await axios.post(`/api/conversations/${conversationId}/ai-response`, {
           prompt: data.prompt,
           modelName: data.modelName,
+          maxTokens: data.maxTokens,
+          temperature: data.temperature,
         });
 
         // Récupérer les messages mis à jour
@@ -454,8 +467,10 @@ export function ChatInterface({
       // Construction de l'URL et des données pour l'API
       const apiUrl = `/api/conversations/${conversationId}/final`;
       const apiData = {
+        finalText: selectedPromptResponse.response,
+        maxTokensUsed: data.maxTokens,
+        temperatureUsed: data.temperature,
         promptFinal: selectedPromptResponse.prompt,
-        reponseIAFinale: selectedPromptResponse.response,
       };
 
       // Envoi de la version finale
@@ -598,12 +613,10 @@ export function ChatInterface({
 
                 {/* Options de modèle et type de prompt */}
                 <div className="md:col-span-2 flex flex-col space-y-4">
-                  <div className="w-full">
-                    <ModelSelect />
-                  </div>
-                  <div className="w-full">
-                    <PromptTypeSelect />
-                  </div>
+                  <ModelSelect />
+                  <MaxTokensSlider />
+                  <TemperatureSlider />
+                  <PromptTypeSelect />
                 </div>
               </div>
 
@@ -703,27 +716,27 @@ export function ChatInterface({
               <Check className="mr-2 h-5 w-5" />
               Version finale soumise avec succès
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-4">
-              <div>
-                La version finale de votre conversation a été enregistrée avec
-                succès.
-              </div>
-
-              <div className="bg-gray-50 p-3 rounded-md">
-                <h4 className="text-sm font-bold mb-1">Prompt sélectionné:</h4>
-                <p className="text-xs text-gray-700 mb-3 whitespace-pre-wrap">
-                  {selectedFinalPrompt}
-                </p>
-
-                <h4 className="text-sm font-bold mb-1">
-                  Réponse IA sélectionnée:
-                </h4>
-                <p className="text-xs text-gray-700 whitespace-pre-wrap">
-                  {selectedFinalResponse}
-                </p>
-              </div>
-            </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-4 text-sm text-gray-500">
+            <p>
+              La version finale de votre conversation a été enregistrée avec
+              succès.
+            </p>
+
+            <div className="bg-gray-50 p-3 rounded-md">
+              <h4 className="text-sm font-bold mb-1">Prompt sélectionné:</h4>
+              <p className="text-xs text-gray-700 mb-3 whitespace-pre-wrap">
+                {selectedFinalPrompt}
+              </p>
+
+              <h4 className="text-sm font-bold mb-1">
+                Réponse IA sélectionnée:
+              </h4>
+              <p className="text-xs text-gray-700 whitespace-pre-wrap">
+                {selectedFinalResponse}
+              </p>
+            </div>
+          </div>
           <AlertDialogFooter>
             <AlertDialogAction className="bg-indigo-600 hover:bg-indigo-700">
               Compris

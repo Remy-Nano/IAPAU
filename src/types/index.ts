@@ -90,6 +90,8 @@ export type Conversation = {
   modelName: string;
   titreConversation: string;
   promptType: "one shot" | "contextuel";
+  maxTokens?: number;
+  temperature?: number;
   messages: Message[];
   statistiquesIA?: StatistiquesIA;
   versionFinale?: {

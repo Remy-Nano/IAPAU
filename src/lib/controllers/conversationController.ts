@@ -11,6 +11,7 @@ export async function createConversation(data: {
   studentId?: string;
   groupId?: string;
   modelName?: string;
+  maxTokens?: number;
 }): Promise<IConversation> {
   return Conversation.create({
     ...data,
