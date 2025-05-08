@@ -10,6 +10,8 @@ Une plateforme moderne de chat avec IA permettant aux étudiants d'interagir ave
 - **Authentification** : Système de connexion sécurisé avec magic link
 - **Interface responsive** : Compatible desktop et mobile
 - **Expérience utilisateur fluide** : Réponses en temps réel sans rechargement de page
+- **Personnalisation avancée** : Contrôle de température et nombre maximum de tokens
+- **Statistiques de conversation** : Analyse des interactions et métriques d'utilisation
 
 ## 🔧 Prérequis
 
@@ -80,11 +82,18 @@ prompt-challenge/
 │   │   ├── unauthorized/      # Page d'accès non autorisé
 │   │   └── version-finale/    # Affichage des versions finales
 │   ├── components/            # Composants React
-│   │   ├── admin/             # Composants pour l'administration
 │   │   ├── auth/              # Composants d'authentification
 │   │   ├── chat/              # Composants de l'interface de chat
-│   │   ├── examiner/          # Composants pour les examinateurs
-│   │   ├── student/           # Composants pour les étudiants
+│   │   │   ├── ChatInterface.tsx        # Interface principale de chat
+│   │   │   ├── ConversationSidebar.tsx  # Barre latérale des conversations
+│   │   │   ├── ResponseList.tsx         # Liste des réponses
+│   │   │   ├── PromptInput.tsx          # Saisie de prompt
+│   │   │   ├── ModelSelect.tsx          # Sélection du modèle d'IA
+│   │   │   ├── TemperatureSlider.tsx    # Contrôle de température
+│   │   │   ├── MaxTokensSlider.tsx      # Limitation de tokens
+│   │   │   ├── TokenCounter.tsx         # Compteur de tokens
+│   │   │   ├── ConversationStats.tsx    # Statistiques de conversation
+│   │   │   └── SubmitFinalButton.tsx    # Soumission version finale
 │   │   └── ui/                # Composants UI réutilisables
 │   ├── context/               # Contextes React (Auth, etc.)
 │   ├── lib/                   # Utilitaires et services
@@ -98,15 +107,36 @@ prompt-challenge/
 └── next.config.ts             # Configuration Next.js
 ```
 
-## 🌈 Évolutions récentes
+## 🌈 État d'avancement du projet
 
-- **Interface Utilisateur Améliorée** : Design moderne avec effets de transition et feedback visuel
-- **Authentification par magic link** : Connexion simplifiée et sécurisée
-- **Titres de conversations automatiques** : Format "Conversation JJ/MM/AAAA HH:MM:SS"
-- **Affichage en temps réel** : Les réponses s'affichent instantanément sans rechargement
-- **Indicateur de chargement** : Animation visuelle durant la génération des réponses
-- **Défilement automatique** : Scroll automatique vers les nouvelles réponses
-- **Thème modernisé** : Dégradés, ombres et effets visuels pour une meilleure expérience
+### Fonctionnalités implémentées
+
+- ✅ **Architecture complète Next.js 15** : Structure App Router moderne avec API routes
+- ✅ **Interface de chat fonctionnelle** : Interactions en temps réel avec les modèles d'IA
+- ✅ **Intégration multi-modèles** : Support OpenAI (v4.97.0) et Mistral AI (v1.6.0)
+- ✅ **Système d'authentification** : Magic link et JWT pour la sécurité
+- ✅ **Gestion des conversations** : Création, lecture, historique et suppression
+- ✅ **Middleware d'authentification** : Protection des routes privées
+- ✅ **Personnalisation des paramètres d'IA** : Contrôle de température et limite de tokens
+- ✅ **Interface utilisateur moderne** : Composants Radix UI et TailwindCSS 4
+- ✅ **Stockage de données MongoDB** : Modèles utilisateurs et conversations
+- ✅ **Soumission de version finale** : Sauvegarde d'une conversation comme version finale
+
+### Fonctionnalités en cours de développement
+
+- 🔄 **Optimisation des performances** : Amélioration du chargement des conversations
+- 🔄 **Exportation de conversations** : Format PDF et partage de liens
+- 🔄 **Interface d'administration** : Tableau de bord pour les administrateurs
+- 🔄 **Analyse des prompts** : Système de suggestion pour améliorer les prompts
+- 🔄 **Mode hors-ligne** : Fonctionnement en cas de perte de connexion
+
+### Améliorations techniques récentes
+
+- **Utilisation de React 19** : Mise à niveau vers la dernière version avec améliorations de performance
+- **TailwindCSS 4** : Mise à jour vers la dernière version du framework CSS
+- **Turbopack** : Activation du bundler pour des performances de développement améliorées
+- **TypeScript stricte** : Types rigoureux pour une meilleure qualité de code
+- **Optimisation MongoDB** : Schémas et indexes optimisés pour les performances
 
 ## 🔄 Utilisation
 
@@ -114,27 +144,39 @@ prompt-challenge/
 2. Accédez au tableau de bord
 3. Créez une nouvelle conversation ou poursuivez une existante
 4. Sélectionnez le modèle d'IA souhaité (OpenAI ou Mistral)
-5. Envoyez votre prompt et recevez une réponse en temps réel
-6. Sélectionnez une version finale pour la soumettre définitivement
+5. Ajustez les paramètres (température, tokens maximum) selon vos besoins
+6. Envoyez votre prompt et recevez une réponse en temps réel
+7. Consultez les statistiques de votre conversation
+8. Sélectionnez une version finale pour la soumettre définitivement
 
 ## 🛠️ Technologies utilisées
 
-- [Next.js 15.3.1](https://nextjs.org/) - Framework React
-- [React 19](https://reactjs.org/) - Bibliothèque UI
-- [MongoDB](https://www.mongodb.com/) - Base de données
+- [Next.js 15.3.1](https://nextjs.org/) - Framework React avec App Router
+- [React 19](https://reactjs.org/) - Bibliothèque UI dernière version
+- [MongoDB](https://www.mongodb.com/) - Base de données NoSQL
 - [Mongoose 8.14.1](https://mongoosejs.com/) - ODM pour MongoDB
-- [Tailwind CSS 4](https://tailwindcss.com/) - Framework CSS
+- [Tailwind CSS 4](https://tailwindcss.com/) - Framework CSS utility-first
 - [OpenAI API 4.97.0](https://openai.com/api/) - API pour GPT
 - [Mistral AI 1.6.0](https://mistral.ai/) - Modèle d'IA alternatif
 - [JWT](https://jwt.io/) - Authentification sécurisée
 - [Radix UI](https://www.radix-ui.com/) - Composants UI accessibles
+- [Turbopack](https://turbo.build/pack) - Bundler nouvelle génération pour Next.js
 
 ## 📝 Notes de développement
 
-- L'application utilise Turbopack pour un développement plus rapide (`npm run dev`)
-- Les réponses de l'IA sont maintenant affichées instantanément sans rechargement
-- Le système d'authentification utilise JWT pour la sécurité
-- Les conversations sont stockées dans MongoDB pour une persistance des données
+- Utilisation de `npm run dev --turbopack` pour un développement rapide
+- Structure modulaire avec composants spécialisés pour le chat
+- Interface réactive avec comptage de tokens en temps réel
+- Système de sliders pour ajuster les paramètres IA facilement
+- Modèles de données MongoDB optimisés pour les requêtes fréquentes
+
+## 🔜 Prochaines étapes
+
+- Implémentation de tests automatisés avec Jest et React Testing Library
+- Intégration de nouveaux modèles d'IA (Claude, Ollama, etc.)
+- Système de suggestions de prompts basé sur l'historique
+- Mode collaboratif pour partager des sessions de chat
+- Amélioration des analytics pour l'utilisateur et l'administrateur
 
 ## 🤝 Contribution
 

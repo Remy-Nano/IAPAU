@@ -14,8 +14,11 @@ import { toast } from "react-hot-toast";
 export default function StudentDashboard() {
   const { user } = useAuth(); // récupération de l'utilisateur connecté
 
-  // Utiliser l'ID de l'utilisateur connecté s'il est disponible
-  const studentId = user?._id;
+  // ID étudiant standard pour l'étudiant test
+  const studentId = user?._id || "6553f1ed4c3ef31ea8c03bc1"; // Rétablir l'ID original de l'étudiant test
+  // IDs par défaut pour tâche et groupe
+  const defaultTacheId = "6553f1ed4c3ef31ea8c03bc3";
+  const defaultGroupId = "6553f1ed4c3ef31ea8c03bc2";
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedConversationId, setSelectedConversationId] = useState<
@@ -24,12 +27,32 @@ export default function StudentDashboard() {
   const [currentConversation, setCurrentConversation] =
     useState<Conversation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  // Ajout d'un état pour forcer le rafraîchissement des conversations
+  const [refreshConversations, setRefreshConversations] = useState(0);
+
+  // Forcer un rafraîchissement des conversations
+  const forceRefreshConversations = () => {
+    console.log("Forçage du rafraîchissement des conversations");
+    setRefreshConversations((prev) => prev + 1);
+  };
 
   useEffect(() => {
     // Log pour debug
     console.log("User in StudentDashboard:", user);
     console.log("Student ID used:", studentId);
+
+    // Forcer le rafraîchissement des conversations au chargement
+    forceRefreshConversations();
   }, [user, studentId]);
+
+  // Rafraîchir les conversations toutes les 30 secondes
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      forceRefreshConversations();
+    }, 30000); // 30 secondes
+
+    return () => clearInterval(refreshInterval);
+  }, []);
 
   const loadConversation = async (conversationId: string) => {
     if (isLoading || !studentId) {
@@ -59,12 +82,32 @@ export default function StudentDashboard() {
     }
   };
 
-  const handleNewConversation = () => {
+  const handleNewConversation = async () => {
     setCurrentConversation(null);
     setSelectedConversationId(null);
     setSidebarOpen(false);
-    // Ajouter un feedback visuel pour une meilleure expérience utilisateur
-    toast.success("Nouvelle conversation démarrée");
+
+    // Créer immédiatement une nouvelle conversation vide
+    try {
+      const conversationResponse = await axios.post("/api/conversations", {
+        studentId,
+        tacheId: defaultTacheId, // Ajouter l'ID de tâche par défaut
+        groupId: defaultGroupId, // Ajouter l'ID de groupe par défaut
+        titreConversation: `Conversation ${new Date().toLocaleDateString(
+          "fr-FR"
+        )} ${new Date().toLocaleTimeString("fr-FR")}`,
+        promptType: "one shot",
+        modelName: "openai",
+      });
+
+      const newConversationId = conversationResponse.data.conversation._id;
+
+      // Utiliser la même fonction que lorsqu'une conversation est créée dans l'interface de chat
+      handleConversationCreated(newConversationId);
+    } catch (error) {
+      console.error("Erreur lors de la création de la conversation:", error);
+      toast.error("Erreur lors de la création de la conversation");
+    }
   };
 
   const handleSelectConversation = (conversationId: string) => {
@@ -77,8 +120,10 @@ export default function StudentDashboard() {
     setSelectedConversationId(newConversationId);
     // Charger automatiquement la nouvelle conversation
     loadConversation(newConversationId);
-    // Ajouter un feedback visuel
-    toast.success("Nouvelle conversation créée");
+    // Forcer le rafraîchissement des conversations dans la sidebar
+    setRefreshConversations((prev) => prev + 1);
+    // Message toast plus clair
+    toast.success("Nouvelle conversation créée avec succès");
   };
 
   const handleConversationDeleted = (deletedConversationId: string) => {
@@ -100,6 +145,31 @@ export default function StudentDashboard() {
         {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
+      {/* Ajout d'un bouton de rafraîchissement */}
+      <button
+        className="hidden md:flex fixed top-4 right-20 z-50 p-2.5 rounded-lg bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors"
+        onClick={forceRefreshConversations}
+        aria-label="Rafraîchir les conversations"
+        title="Rafraîchir les conversations"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M21 2v6h-6"></path>
+          <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+          <path d="M3 22v-6h6"></path>
+          <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
+        </svg>
+      </button>
+
       <ConversationSidebar
         studentId={studentId}
         selectedConversationId={selectedConversationId}
@@ -108,6 +178,7 @@ export default function StudentDashboard() {
         onConversationDeleted={handleConversationDeleted}
         isMobileOpen={sidebarOpen}
         className="shadow-lg"
+        key={`sidebar-${refreshConversations}`} // Forcer le remontage du composant quand refreshConversations change
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">

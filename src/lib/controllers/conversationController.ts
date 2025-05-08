@@ -79,46 +79,124 @@ export async function getConversationsByStudent(
 ): Promise<IConversation[]> {
   console.log("Recherche des conversations pour studentId:", studentId);
 
-  // Pour debugger, cherchons toutes les conversations
-  const allConversations = await Conversation.find().lean<IConversation[]>();
-  console.log(
-    "Toutes les conversations:",
-    JSON.stringify(allConversations, null, 2)
-  );
-
-  // Essayer de trouver des conversations avec le studentId spécifique
-  let conversations = await Conversation.find({ studentId })
-    .sort({ createdAt: -1 })
-    .lean<IConversation[]>();
-
-  // Si aucune conversation n'est trouvée, essayer avec une recherche moins stricte
-  if (!conversations || conversations.length === 0) {
-    // Le studentId pourrait être stocké dans un format différent, essayons de comparer
-    // la chaîne de caractères au lieu de l'objet
-    conversations = allConversations.filter(
-      (conv) => conv.studentId && conv.studentId.toString() === studentId
+  try {
+    // Pour debugger, cherchons toutes les conversations
+    const allConversations = await Conversation.find().lean<IConversation[]>();
+    console.log(
+      "Toutes les conversations disponibles:",
+      allConversations.length,
+      "Premier élément:",
+      allConversations.length > 0 ? allConversations[0]._id : "aucun"
     );
 
-    // Si toujours aucune conversation, retourner les 5 dernières conversations
+    // Essayer plusieurs méthodes de recherche pour être sûr de trouver les conversations
+
+    // 1. Recherche directe (par valeur exacte)
+    let conversations = await Conversation.find({ studentId })
+      .sort({ createdAt: -1 }) // Tri par date décroissante (plus récentes en premier)
+      .lean<IConversation[]>();
+
+    console.log(
+      "Résultat recherche directe par studentId:",
+      conversations.length
+    );
+
+    // 2. Si aucune conversation n'est trouvée, essayer avec une recherche par comparaison de chaînes
     if (!conversations || conversations.length === 0) {
       console.log(
-        "Aucune conversation trouvée, retour des 5 dernières conversations"
+        "Recherche par comparaison de chaînes pour studentId:",
+        studentId
       );
+      // Le studentId pourrait être stocké dans un format différent
       conversations = allConversations
+        .filter((conv) => {
+          if (!conv.studentId) return false;
+
+          // Plusieurs techniques de comparaison pour être sûr
+          const convStudentId = conv.studentId.toString();
+          const targetId = studentId.toString();
+
+          // 1. Comparaison directe des chaînes
+          const exactMatch = convStudentId === targetId;
+
+          // 2. Comparaison sans les parties ObjectId (juste la chaîne hexadécimale)
+          const hexMatch =
+            convStudentId.replace(/ObjectId\(['"](.+)['"]\)/, "$1") ===
+            targetId.replace(/ObjectId\(['"](.+)['"]\)/, "$1");
+
+          // 3. Vérification si l'un contient l'autre
+          const containsMatch =
+            convStudentId.includes(targetId) ||
+            targetId.includes(convStudentId);
+
+          const matches = exactMatch || hexMatch || containsMatch;
+
+          if (matches) {
+            console.log(
+              `Match trouvé: ${convStudentId} ~= ${targetId} (exact: ${exactMatch}, hex: ${hexMatch}, contains: ${containsMatch})`
+            );
+          }
+
+          return matches;
+        })
         .sort(
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
-        .slice(0, 5);
+        );
+
+      console.log(
+        "Résultat recherche par comparaison de chaînes:",
+        conversations.length
+      );
     }
+
+    // 3. Si toujours aucune conversation, essayer avec une recherche par égalité d'ID
+    if (!conversations || conversations.length === 0) {
+      console.log("Recherche par ID sous forme de chaîne:", studentId);
+
+      // Suppression des guillemets et des caractères de formatage ObjectId si présents
+      const cleanId = studentId
+        .toString()
+        .replace(/^ObjectId\(['"](.+)['"]\)$/, "$1");
+
+      // Recherche par ID sous forme de chaîne
+      conversations = await Conversation.find({
+        $or: [
+          { studentId: cleanId },
+          { studentId: cleanId },
+          { studentId: { $regex: cleanId, $options: "i" } },
+        ],
+      })
+        .sort({ createdAt: -1 })
+        .lean<IConversation[]>();
+
+      console.log("Résultat recherche par ID nettoyé:", conversations.length);
+    }
+
+    // 4. Dernier recours: retourner toutes les conversations
+    if (!conversations || conversations.length === 0) {
+      console.log(
+        "Aucune conversation trouvée, retour de toutes les conversations disponibles"
+      );
+      conversations = allConversations.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    }
+
+    console.log(
+      "Conversations trouvées:",
+      conversations.length,
+      "Premier élément:",
+      conversations.length > 0 ? conversations[0]._id : "aucun"
+    );
+
+    return conversations;
+  } catch (error) {
+    console.error("Erreur dans getConversationsByStudent:", error);
+    // En cas d'erreur, retourner un tableau vide plutôt que de laisser l'erreur se propager
+    return [];
   }
-
-  console.log(
-    "Conversations trouvées:",
-    JSON.stringify(conversations, null, 2)
-  );
-
-  return conversations;
 }
 
 export async function deleteConversation(id: string): Promise<boolean> {

@@ -1,4 +1,10 @@
-import { useId } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { InfoIcon } from "lucide-react";
+import { useId, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { Label } from "../ui/label";
 import { Slider } from "../ui/slider";
@@ -24,12 +30,36 @@ export function MaxTokensSlider({
   const id = useId();
   const { control, watch } = useFormContext();
   const maxTokens = watch("maxTokens") || defaultValue;
+  const [open, setOpen] = useState(false);
 
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>
-        {label} ({maxTokens})
-      </Label>
+    <div className="p-4 bg-white rounded-lg shadow md:p-6">
+      <div className="flex items-center justify-between mb-2">
+        <Label htmlFor={id} className="text-sm font-medium">
+          {label} ({maxTokens})
+        </Label>
+        <Tooltip open={open} onOpenChange={setOpen}>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="text-gray-400 hover:text-gray-600 focus:outline-none"
+              onClick={() => setOpen(!open)}
+              aria-label="Afficher les informations sur les tokens"
+            >
+              <InfoIcon className="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent
+            side="right"
+            className="max-w-xs p-2 border border-gray-200"
+          >
+            <p className="text-xs">
+              Contrôle la longueur maximale de la réponse générée. Un token
+              correspond à un fragment de mot.
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
       <Controller
         name="maxTokens"
         control={control}
@@ -42,6 +72,7 @@ export function MaxTokensSlider({
             step={step}
             value={[field.value]}
             onValueChange={(value: number[]) => field.onChange(value[0])}
+            className="w-full"
           />
         )}
       />

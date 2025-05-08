@@ -184,7 +184,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         studentId: "STU123",
         nom: "Test",
         prenom: "Étudiant",
-        _id: "3",
+        _id: "6553f1ed4c3ef31ea8c03bc1",
         groupes: [],
         createdAt: new Date(),
         updatedAt: new Date(),

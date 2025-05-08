@@ -217,8 +217,13 @@ export function ChatInterface({
         maxTokens: existingConversation.maxTokens || 512,
         temperature: existingConversation.temperature || 0.7,
       });
+    }
+    // Si conversationId est une chaîne vide, cela signifie qu'on est en train d'initialiser une nouvelle conversation
+    else if (conversationId === "") {
+      // Pas besoin de réinitialiser les messages car ils sont déjà vides
+      // Garder les valeurs actuelles du formulaire qui ont déjà été initialisées correctement
     } else {
-      // Réinitialiser l'état pour une nouvelle conversation
+      // Réinitialiser l'état pour une nouvelle conversation (cas initial)
       setConversationId(null);
       setMessages([]);
       setConversationData(null);
@@ -234,7 +239,7 @@ export function ChatInterface({
         temperature: 0.7,
       });
     }
-  }, [existingConversation, methods]);
+  }, [existingConversation, methods, conversationId]);
 
   // Fonction simplifiée pour envoyer un prompt
   const handleSendPrompt = async (data: ChatData) => {
@@ -275,8 +280,10 @@ export function ChatInterface({
       // Mettre à jour immédiatement l'interface
       setMessages((prev) => [...prev, userMessage, loadingMessage]);
 
-      if (!conversationId) {
-        // Créer une nouvelle conversation
+      // Si conversationId est une chaîne vide ou null, c'est une nouvelle conversation
+      // (cas de fallback si la conversation n'a pas été créée par StudentDashboard)
+      if (!conversationId || conversationId === "") {
+        // Créer une nouvelle conversation avec tous les paramètres nécessaires
         const conversationResponse = await axios.post("/api/conversations", {
           studentId,
           groupId,
@@ -305,27 +312,7 @@ export function ChatInterface({
 
         // Récupérer la conversation complète
         const updatedMessages = await fetchConversation(newConversationId);
-
-        if (updatedMessages && updatedMessages.length >= 2) {
-          // Dernière réponse AI (dernier message ou avant-dernier si le dernier est temporaire)
-          const lastAiMessage = updatedMessages.findLast(
-            (m) =>
-              m.role === "ai" &&
-              !m.content.includes("Génération de la réponse en cours")
-          );
-
-          if (lastAiMessage) {
-            const aiMessageIndex = updatedMessages.findIndex(
-              (m) => m._id === lastAiMessage._id
-            );
-            if (aiMessageIndex !== -1) {
-              // Démarrer l'animation après un court délai
-              setTimeout(() => {
-                animateMessage(aiMessageIndex, lastAiMessage.content);
-              }, 300);
-            }
-          }
-        }
+        animateLastAiMessage(updatedMessages);
       } else {
         // Ajouter à une conversation existante
         await axios.post(`/api/conversations/${conversationId}/ai-response`, {
@@ -337,27 +324,7 @@ export function ChatInterface({
 
         // Récupérer les messages mis à jour
         const updatedMessages = await fetchConversation(conversationId);
-
-        if (updatedMessages && updatedMessages.length >= 2) {
-          // Dernière réponse AI
-          const lastAiMessage = updatedMessages.findLast(
-            (m) =>
-              m.role === "ai" &&
-              !m.content.includes("Génération de la réponse en cours")
-          );
-
-          if (lastAiMessage) {
-            const aiMessageIndex = updatedMessages.findIndex(
-              (m) => m._id === lastAiMessage._id
-            );
-            if (aiMessageIndex !== -1) {
-              // Démarrer l'animation après un court délai
-              setTimeout(() => {
-                animateMessage(aiMessageIndex, lastAiMessage.content);
-              }, 300);
-            }
-          }
-        }
+        animateLastAiMessage(updatedMessages);
       }
 
       // Réinitialiser le champ de prompt
@@ -383,6 +350,30 @@ export function ChatInterface({
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Fonction utilitaire pour animer le dernier message AI
+  const animateLastAiMessage = (messages: Message[] | null) => {
+    if (!messages || messages.length < 2) return;
+
+    // Dernière réponse AI (dernier message ou avant-dernier si le dernier est temporaire)
+    const lastAiMessage = messages.findLast(
+      (m) =>
+        m.role === "ai" &&
+        !m.content.includes("Génération de la réponse en cours")
+    );
+
+    if (lastAiMessage) {
+      const aiMessageIndex = messages.findIndex(
+        (m) => m._id === lastAiMessage._id
+      );
+      if (aiMessageIndex !== -1) {
+        // Démarrer l'animation après un court délai
+        setTimeout(() => {
+          animateMessage(aiMessageIndex, lastAiMessage.content);
+        }, 300);
+      }
     }
   };
 
@@ -541,12 +532,27 @@ export function ChatInterface({
           </p>
           <Button
             onClick={() => {
-              // Ne pas envoyer de message, juste afficher l'interface
-              setConversationId(""); // Un ID vide indique une nouvelle conversation en cours de création
+              // Initialiser directement une nouvelle conversation avec un ID vide
+              // pour permettre de commencer à interagir immédiatement
+              setConversationId("");
+
+              // Réinitialiser le formulaire avec des valeurs par défaut
+              // pour une nouvelle conversation
+              methods.reset({
+                titreConversation: `Nouvelle conversation - ${new Date().toLocaleDateString(
+                  "fr-FR"
+                )}`,
+                promptType: "one shot",
+                modelName: "openai",
+                prompt: "",
+                selectedPair: null,
+                maxTokens: 512,
+                temperature: 0.7,
+              });
             }}
             className="bg-indigo-600 hover:bg-indigo-700 text-white"
           >
-            Commencer une nouvelle conversation
+            Nouvelle conversation
           </Button>
         </div>
       )}
@@ -710,14 +716,14 @@ export function ChatInterface({
 
       {/* Boîte de dialogue de succès pour la soumission finale */}
       <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center text-green-600">
               <Check className="mr-2 h-5 w-5" />
               Version finale soumise avec succès
             </AlertDialogTitle>
           </AlertDialogHeader>
-          <div className="space-y-4 text-sm text-gray-500">
+          <div className="space-y-4 text-sm text-gray-500 overflow-auto flex-grow">
             <p>
               La version finale de votre conversation a été enregistrée avec
               succès.
@@ -725,16 +731,16 @@ export function ChatInterface({
 
             <div className="bg-gray-50 p-3 rounded-md">
               <h4 className="text-sm font-bold mb-1">Prompt sélectionné:</h4>
-              <p className="text-xs text-gray-700 mb-3 whitespace-pre-wrap">
+              <div className="text-xs text-gray-700 mb-3 whitespace-pre-wrap max-h-40 overflow-y-auto border border-gray-100 p-2 rounded">
                 {selectedFinalPrompt}
-              </p>
+              </div>
 
               <h4 className="text-sm font-bold mb-1">
                 Réponse IA sélectionnée:
               </h4>
-              <p className="text-xs text-gray-700 whitespace-pre-wrap">
+              <div className="text-xs text-gray-700 whitespace-pre-wrap max-h-60 overflow-y-auto border border-gray-100 p-2 rounded">
                 {selectedFinalResponse}
-              </p>
+              </div>
             </div>
           </div>
           <AlertDialogFooter>

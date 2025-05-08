@@ -57,6 +57,12 @@ interface ConversationSidebarProps {
   isMobileOpen?: boolean;
 }
 
+const CONVERSATIONS_STYLES = {
+  container: "flex-1 flex flex-col overflow-hidden",
+  scrollContainer: "flex-1 overflow-y-auto pb-10",
+  conversationsList: "space-y-3",
+};
+
 export function ConversationSidebar({
   studentId,
   selectedConversationId,
@@ -193,15 +199,27 @@ export function ConversationSidebar({
   // Récupérer les conversations de l'étudiant
   useEffect(() => {
     const fetchConversations = async () => {
-      if (!studentId) return;
+      if (!studentId) {
+        console.error("ID étudiant manquant");
+        setError("ID étudiant manquant");
+        setIsLoading(false);
+        return;
+      }
 
+      console.log("Chargement des conversations pour studentId:", studentId);
       setIsLoading(true);
       setError(null);
 
       try {
+        // Utiliser l'ID étudiant ou un ID de secours
+        const effectiveStudentId = studentId || "6553f1ed4c3ef31ea8c03bc1";
+
         // Utiliser un chemin d'URL relatif
+        console.log(
+          `Appel API: /api/conversations/student/${effectiveStudentId}?includeMessages=true&includeStats=true`
+        );
         const response = await axios.get(
-          `/api/conversations/student/${studentId}?includeMessages=true&includeStats=true`
+          `/api/conversations/student/${effectiveStudentId}?includeMessages=true&includeStats=true`
         );
 
         if (response.data.success) {
@@ -210,26 +228,40 @@ export function ConversationSidebar({
           // Si des conversations sont disponibles, les définir
           if (
             response.data.conversations &&
+            Array.isArray(response.data.conversations) &&
             response.data.conversations.length > 0
           ) {
             setConversations(response.data.conversations);
           } else {
+            console.log(
+              "Aucune conversation trouvée pour cet ID étudiant, essai avec l'API générale"
+            );
             // Essayer de récupérer toutes les conversations si aucune n'est trouvée pour l'ID spécifique
             const allResponse = await axios.get(`/api/conversations`);
             if (
               allResponse.data.success &&
-              allResponse.data.conversations?.length > 0
+              Array.isArray(allResponse.data.conversations) &&
+              allResponse.data.conversations.length > 0
             ) {
               console.log(
-                "Utilisation de toutes les conversations disponibles"
+                "Utilisation de toutes les conversations disponibles",
+                allResponse.data.conversations.length
               );
               setConversations(allResponse.data.conversations);
             } else {
+              console.error(
+                "Aucune conversation disponible dans l'API générale"
+              );
               setError("Aucune conversation disponible");
             }
           }
         } else {
-          setError("Impossible de charger les conversations");
+          console.error("Échec API avec message:", response.data.error);
+          setError(
+            `Impossible de charger les conversations: ${
+              response.data.error || "Erreur inconnue"
+            }`
+          );
         }
       } catch (err) {
         console.error("Erreur lors du chargement des conversations:", err);
@@ -237,16 +269,21 @@ export function ConversationSidebar({
 
         // En cas d'erreur, essayer de récupérer toutes les conversations
         try {
+          console.log("Tentative de récupération de toutes les conversations");
           const fallbackResponse = await axios.get(`/api/conversations`);
           if (
             fallbackResponse.data.success &&
-            fallbackResponse.data.conversations?.length > 0
+            Array.isArray(fallbackResponse.data.conversations) &&
+            fallbackResponse.data.conversations.length > 0
           ) {
             console.log(
-              "Fallback: Utilisation de toutes les conversations disponibles"
+              "Fallback: Utilisation de toutes les conversations disponibles",
+              fallbackResponse.data.conversations.length
             );
             setConversations(fallbackResponse.data.conversations);
             setError(null);
+          } else {
+            console.error("Aucune conversation disponible même en fallback");
           }
         } catch (fallbackErr) {
           console.error("Erreur de fallback:", fallbackErr);
@@ -278,6 +315,18 @@ export function ConversationSidebar({
       });
     }
   }, [conversations]);
+
+  // Débogage des conversations
+  useEffect(() => {
+    console.log("Affichage des conversations:", {
+      nombre: conversations.length,
+      conversations: conversations.map((c) => ({
+        id: c._id,
+        titre: c.titreConversation,
+      })),
+      isLoading,
+    });
+  }, [conversations, isLoading]);
 
   // Déterminer la classe CSS pour afficher/masquer la sidebar sur mobile
   const mobileClass = isMobileOpen ? "translate-x-0" : "-translate-x-full";
@@ -349,7 +398,7 @@ export function ConversationSidebar({
       )}
 
       <aside
-        className={`md:flex flex-col w-full md:w-80 lg:w-96 bg-gradient-to-b from-gray-900 to-gray-800 text-white p-4 h-full overflow-hidden ${className} fixed md:relative left-0 top-0 bottom-0 z-40 transition-all duration-300 ease-in-out ${mobileClass} md:translate-x-0 border-r border-indigo-500/20`}
+        className={`md:flex flex-col w-full md:w-80 lg:w-96 bg-gradient-to-b from-gray-900 to-gray-800 text-white p-4 h-full conversation-sidebar-container ${className} fixed md:relative left-0 top-0 bottom-0 z-40 transition-all duration-300 ease-in-out ${mobileClass} md:translate-x-0 border-r border-indigo-500/20`}
         aria-label="Historique des conversations"
       >
         <div className="flex items-center justify-between mb-6">
@@ -375,119 +424,124 @@ export function ConversationSidebar({
           </div>
         )}
 
-        <ScrollArea className="flex-1 pr-3 -mr-2 pb-5 conversation-history-scroll">
-          {isLoading ? (
-            // Affichage d'un skeleton loader pendant le chargement
-            <div className="space-y-4">
-              {Array(5)
-                .fill(0)
-                .map((_, i) => (
+        <div className={CONVERSATIONS_STYLES.container}>
+          <ScrollArea className="h-full pr-3 -mr-2 conversation-history-scroll">
+            {isLoading ? (
+              // Affichage d'un skeleton loader pendant le chargement
+              <div className="space-y-4">
+                {Array(5)
+                  .fill(0)
+                  .map((_, i) => (
+                    <div
+                      key={i}
+                      className="p-4 bg-gray-800/40 rounded-lg backdrop-blur-sm"
+                    >
+                      <Skeleton className="h-5 w-3/4 bg-gray-700 mb-3" />
+                      <Skeleton className="h-4 w-full bg-gray-700 mb-2" />
+                      <Skeleton className="h-4 w-2/3 bg-gray-700" />
+                    </div>
+                  ))}
+              </div>
+            ) : conversations.length === 0 ? (
+              <div className="text-gray-400 text-center mt-6 p-8 rounded-xl bg-gray-800/30 backdrop-blur-sm border border-gray-700/50">
+                <MessageCircle className="h-10 w-10 mx-auto mb-3 opacity-50 text-indigo-400" />
+                <p className="font-medium">Aucune conversation</p>
+                <p className="text-sm mt-2 text-gray-500">
+                  Cliquez sur &quot;Nouvelle conversation&quot; pour commencer
+                </p>
+              </div>
+            ) : (
+              <div className={CONVERSATIONS_STYLES.conversationsList}>
+                {/* Conversations triées par date (plus récentes en haut) */}
+                {conversations.map((conversation) => (
                   <div
-                    key={i}
-                    className="p-4 bg-gray-800/40 rounded-lg backdrop-blur-sm"
+                    key={conversation._id}
+                    className={`p-4 rounded-xl cursor-pointer transition-all shadow-sm hover:shadow-md group relative overflow-hidden ${
+                      selectedConversationId === conversation._id
+                        ? "bg-gradient-to-r from-indigo-600 to-indigo-500 shadow-lg shadow-indigo-700/20"
+                        : hasValidVersionFinale(conversation)
+                        ? "bg-gradient-to-r from-green-600/20 to-green-500/10 border-l-4 border-green-500/70 dark:bg-green-900/20"
+                        : "bg-gray-800/80 hover:bg-gray-700/80 backdrop-blur-sm border border-gray-700/50 hover:border-indigo-500/30"
+                    } transform transition-transform duration-200 ${
+                      selectedConversationId === conversation._id
+                        ? "scale-[1.02]"
+                        : "hover:scale-[1.02]"
+                    }`}
+                    onClick={() => onSelectConversation(conversation._id)}
+                    role="button"
+                    tabIndex={0}
+                    aria-selected={selectedConversationId === conversation._id}
                   >
-                    <Skeleton className="h-5 w-3/4 bg-gray-700 mb-3" />
-                    <Skeleton className="h-4 w-full bg-gray-700 mb-2" />
-                    <Skeleton className="h-4 w-2/3 bg-gray-700" />
-                  </div>
-                ))}
-            </div>
-          ) : conversations.length === 0 ? (
-            <div className="text-gray-400 text-center mt-6 p-8 rounded-xl bg-gray-800/30 backdrop-blur-sm border border-gray-700/50">
-              <MessageCircle className="h-10 w-10 mx-auto mb-3 opacity-50 text-indigo-400" />
-              <p className="font-medium">Aucune conversation</p>
-              <p className="text-sm mt-2 text-gray-500">
-                Cliquez sur &quot;Nouvelle conversation&quot; pour commencer
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {conversations.map((conversation) => (
-                <div
-                  key={conversation._id}
-                  className={`p-4 rounded-xl cursor-pointer transition-all shadow-sm hover:shadow-md group relative overflow-hidden ${
-                    selectedConversationId === conversation._id
-                      ? "bg-gradient-to-r from-indigo-600 to-indigo-500 shadow-lg shadow-indigo-700/20"
-                      : hasValidVersionFinale(conversation)
-                      ? "bg-gradient-to-r from-green-600/20 to-green-500/10 border-l-4 border-green-500/70 dark:bg-green-900/20"
-                      : "bg-gray-800/80 hover:bg-gray-700/80 backdrop-blur-sm border border-gray-700/50 hover:border-indigo-500/30"
-                  } transform transition-transform duration-200 ${
-                    selectedConversationId === conversation._id
-                      ? "scale-[1.02]"
-                      : "hover:scale-[1.02]"
-                  }`}
-                  onClick={() => onSelectConversation(conversation._id)}
-                  role="button"
-                  tabIndex={0}
-                  aria-selected={selectedConversationId === conversation._id}
-                >
-                  {/* Effet brillant sur hover */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/0 via-indigo-600/5 to-indigo-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 blur-md" />
+                    {/* Effet brillant sur hover */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/0 via-indigo-600/5 to-indigo-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 blur-md" />
 
-                  <div className="flex justify-between items-start mb-2 relative">
-                    <div className="flex items-center max-w-[80%]">
-                      {hasValidVersionFinale(conversation) ? (
-                        <span
-                          title="Version finale soumise"
-                          className="flex-shrink-0 mr-1.5 bg-green-500/20 p-1 rounded-full"
+                    <div className="flex justify-between items-start mb-2 relative">
+                      <div className="flex items-center max-w-[80%]">
+                        {hasValidVersionFinale(conversation) ? (
+                          <span
+                            title="Version finale soumise"
+                            className="flex-shrink-0 mr-1.5 bg-green-500/20 p-1 rounded-full"
+                          >
+                            <Check className="h-3.5 w-3.5 text-green-300" />
+                          </span>
+                        ) : (
+                          <span className="flex-shrink-0 mr-1.5 bg-indigo-500/20 p-1 rounded-full">
+                            <MessageCircle className="h-3.5 w-3.5 text-indigo-300" />
+                          </span>
+                        )}
+                        <h3
+                          className={`font-medium text-base truncate leading-tight ${
+                            hasValidVersionFinale(conversation) &&
+                            !(selectedConversationId === conversation._id)
+                              ? "text-green-200"
+                              : ""
+                          }`}
                         >
-                          <Check className="h-3.5 w-3.5 text-green-300" />
-                        </span>
-                      ) : (
-                        <span className="flex-shrink-0 mr-1.5 bg-indigo-500/20 p-1 rounded-full">
-                          <MessageCircle className="h-3.5 w-3.5 text-indigo-300" />
+                          {formatConversationTitle(conversation)}
+                        </h3>
+                      </div>
+                      <div className="flex-shrink-0 z-10">
+                        <button
+                          onClick={(e) =>
+                            handleDeleteClick(conversation._id, e)
+                          }
+                          className="text-red-400 transition-colors p-1 rounded-full hover:bg-red-500/20 hover:text-red-300 flex-shrink-0"
+                          aria-label="Supprimer cette conversation"
+                          title="Supprimer cette conversation"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full shrink-0 flex items-center ${getModelBadgeStyle(
+                          getActualModel(conversation)
+                        )}`}
+                      >
+                        <Sparkles className="h-3 w-3 mr-1 opacity-70" />
+                        {getActualModel(conversation)}
+                      </span>
+                      {hasValidVersionFinale(conversation) && (
+                        <span className="text-xs bg-gradient-to-r from-green-600 to-emerald-600 px-2 py-0.5 rounded-full text-white font-medium shrink-0 flex items-center">
+                          <Check className="h-3 w-3 mr-1" />
+                          Version finale
                         </span>
                       )}
-                      <h3
-                        className={`font-medium text-base truncate leading-tight ${
-                          hasValidVersionFinale(conversation) &&
-                          !(selectedConversationId === conversation._id)
-                            ? "text-green-200"
-                            : ""
-                        }`}
-                      >
-                        {formatConversationTitle(conversation)}
-                      </h3>
                     </div>
-                    <div className="flex-shrink-0 z-10">
-                      <button
-                        onClick={(e) => handleDeleteClick(conversation._id, e)}
-                        className="text-red-400 transition-colors p-1 rounded-full hover:bg-red-500/20 hover:text-red-300 flex-shrink-0"
-                        aria-label="Supprimer cette conversation"
-                        title="Supprimer cette conversation"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <p className="text-sm text-gray-300 line-clamp-2 mb-2 leading-snug">
+                      {getPreview(conversation)}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-auto flex items-center">
+                      <Clock className="h-3 w-3 mr-1 opacity-70" />
+                      {formatDate(conversation.createdAt)}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full shrink-0 flex items-center ${getModelBadgeStyle(
-                        getActualModel(conversation)
-                      )}`}
-                    >
-                      <Sparkles className="h-3 w-3 mr-1 opacity-70" />
-                      {getActualModel(conversation)}
-                    </span>
-                    {hasValidVersionFinale(conversation) && (
-                      <span className="text-xs bg-gradient-to-r from-green-600 to-emerald-600 px-2 py-0.5 rounded-full text-white font-medium shrink-0 flex items-center">
-                        <Check className="h-3 w-3 mr-1" />
-                        Version finale
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-300 line-clamp-2 mb-2 leading-snug">
-                    {getPreview(conversation)}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-auto flex items-center">
-                    <Clock className="h-3 w-3 mr-1 opacity-70" />
-                    {formatDate(conversation.createdAt)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </div>
 
         {/* Boîte de dialogue de confirmation de suppression */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
