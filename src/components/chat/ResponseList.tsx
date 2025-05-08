@@ -27,6 +27,8 @@ interface ResponseListProps {
     reponseIAFinale: string;
     soumisLe: string | Date;
   } | null;
+  streamingIndex?: number | null;
+  streamedResponse?: string;
 }
 
 // Fonction pour obtenir la couleur du badge selon le modèle
@@ -52,6 +54,8 @@ export function ResponseList({
   modelName = "IA",
   isDisabled = false,
   versionFinale = null,
+  streamingIndex = null,
+  streamedResponse = "",
 }: ResponseListProps) {
   const { control, watch, setValue } = useFormContext();
   const selectedPair = watch("selectedPair");
@@ -166,278 +170,216 @@ export function ResponseList({
     setValue("selectedPair", index);
   };
 
-  const renderMessage = (message: Message, index: number) => {
-    const isUserMessage = message.role === "user";
-    const isAIMessage = message.role === "ai" || message.role === "assistant";
-    const isTemporaryMessage = message._id?.startsWith("temp-");
-
-    // Déterminer la classe CSS pour le modèle d'IA
-    let modelBadgeClass = "bg-gray-700 text-white";
-
-    // Si c'est un message AI, déterminer la classe CSS en fonction du modèle utilisé
-    if (isAIMessage && message.modelUsed) {
-      const model = message.modelUsed.toLowerCase();
-      if (model.includes("openai") || model === "openai") {
-        modelBadgeClass = "bg-green-700 text-white";
-      } else if (model.includes("mistral") || model === "mistral") {
-        modelBadgeClass = "bg-blue-700 text-white";
-      }
-    }
-
-    // Le contenu du message avec gestion de l'état de chargement
-    const messageContent =
-      isTemporaryMessage && isAIMessage ? (
-        <div className="flex items-center space-x-3">
-          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-700"></div>
-          <p>{message.content}</p>
-        </div>
-      ) : (
-        <p className="whitespace-pre-wrap">{message.content}</p>
-      );
-
-    return (
-      <div className="flex items-start gap-3">
-        <Avatar className="h-8 w-8 mt-1">
-          <AvatarFallback className="bg-blue-100 text-blue-800">
-            🧑‍🎓
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1">
-          <Card
-            className={cn(
-              "bg-blue-50 border-blue-100 shadow-sm p-4 transition-all duration-200",
-              { "ring-2 ring-blue-300": selectedPair === index },
-              { "border-2 border-green-500": message.isVersionFinale }
-            )}
-          >
-            <CardContent className="p-0 space-y-2">
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-medium text-blue-800">Étudiant</span>
-                {message.timestamp && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <div className="flex items-center text-xs text-gray-500">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>{formatRelativeTime(message.timestamp)}</span>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {new Date(message.timestamp).toLocaleString("fr-FR")}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-              </div>
-              <div className="flex items-center gap-2 mb-1">
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full ${modelBadgeClass}`}
-                >
-                  {isAIMessage && `${message.modelUsed || "IA"}`}
-                  {isUserMessage && "Utilisateur"}
-                </span>
-                {/* Ajouter d'autres badges si nécessaire */}
-              </div>
-              {messageContent}
-              {message.tokenCount && (
-                <div className="flex items-center text-xs text-gray-500 mt-2">
-                  <BarChart2 className="h-3 w-3 mr-1" />
-                  <span>{message.tokenCount} tokens</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-4">
       <Label className="text-lg font-medium">Réponses disponibles</Label>
 
       <ScrollArea className="h-[550px] pr-4 overflow-y-auto" ref={scrollRef}>
         <div className="space-y-6">
-          {promptResponsePairs.map((pair, index) => (
-            <div
-              key={index}
-              className={cn("space-y-4 transition-all duration-300", {
-                "animate-in fade-in-50 zoom-in-95":
-                  index === promptResponsePairs.length - 1,
-              })}
-              ref={
-                index === promptResponsePairs.length - 1 ? lastMessageRef : null
-              }
-            >
-              {/* User message */}
-              <div className="flex items-start gap-3">
-                <Avatar className="h-8 w-8 mt-1">
-                  <AvatarFallback className="bg-blue-100 text-blue-800">
-                    🧑‍🎓
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <Card
-                    className={cn(
-                      "bg-blue-50 border-blue-100 shadow-sm p-4 transition-all duration-200",
-                      { "ring-2 ring-blue-300": selectedPair === index },
-                      { "border-2 border-green-500": pair.isVersionFinale }
-                    )}
-                  >
-                    <CardContent className="p-0 space-y-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-blue-800">
-                          Étudiant
-                        </span>
-                        {pair.promptTimestamp && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <div className="flex items-center text-xs text-gray-500">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  <span>
-                                    {formatRelativeTime(pair.promptTimestamp)}
-                                  </span>
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {new Date(pair.promptTimestamp).toLocaleString(
-                                  "fr-FR"
-                                )}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </div>
-                      <p className="text-gray-800 whitespace-pre-wrap">
-                        {pair.prompt}
-                      </p>
-                      {pair.promptTokens && (
-                        <div className="flex items-center text-xs text-gray-500 mt-2">
-                          <BarChart2 className="h-3 w-3 mr-1" />
-                          <span>{pair.promptTokens} tokens</span>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
+          {[...promptResponsePairs].reverse().map((pair, index) => {
+            // Calculer l'index réel dans le tableau original pour préserver le comportement de sélection
+            const originalIndex = promptResponsePairs.length - 1 - index;
 
-              {/* AI Response - Handle temporary responses specially */}
-              <div className="flex items-start gap-3 pl-8">
-                <Avatar className="h-8 w-8 mt-1">
-                  <AvatarFallback className="bg-indigo-100 text-indigo-800">
-                    🤖
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <Card
-                    className={cn(
-                      "bg-white border shadow-sm p-4 transition-all duration-200",
-                      { "ring-2 ring-indigo-300": selectedPair === index },
-                      { "border-2 border-green-500": pair.isVersionFinale }
-                    )}
-                  >
-                    <CardContent className="p-0 space-y-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-indigo-800">
-                            IA
+            return (
+              <div
+                key={originalIndex}
+                className={cn("space-y-4 transition-all duration-300", {
+                  "animate-in fade-in-50 zoom-in-95":
+                    originalIndex === promptResponsePairs.length - 1,
+                })}
+                ref={
+                  originalIndex === promptResponsePairs.length - 1
+                    ? lastMessageRef
+                    : null
+                }
+              >
+                {/* User message */}
+                <div className="flex items-start gap-3">
+                  <Avatar className="h-8 w-8 mt-1">
+                    <AvatarFallback className="bg-blue-100 text-blue-800">
+                      🧑‍🎓
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <Card
+                      className={cn(
+                        "bg-blue-50 border-blue-100 shadow-sm p-4 transition-all duration-200",
+                        {
+                          "ring-2 ring-blue-300":
+                            selectedPair === originalIndex,
+                        },
+                        { "border-2 border-green-500": pair.isVersionFinale }
+                      )}
+                    >
+                      <CardContent className="p-0 space-y-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-blue-800">
+                            Étudiant
                           </span>
-                          {pair.model && (
-                            <Badge
-                              variant="outline"
-                              className={getModelBadgeStyles(pair.model)}
-                            >
-                              {pair.model}
-                            </Badge>
+                          {pair.promptTimestamp && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <div className="flex items-center text-xs text-gray-500">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    <span>
+                                      {formatRelativeTime(pair.promptTimestamp)}
+                                    </span>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {new Date(
+                                    pair.promptTimestamp
+                                  ).toLocaleString("fr-FR")}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                         </div>
-                        {pair.responseTimestamp && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <div className="flex items-center text-xs text-gray-500">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  <span>
-                                    {formatRelativeTime(pair.responseTimestamp)}
-                                  </span>
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {new Date(
-                                  pair.responseTimestamp
-                                ).toLocaleString("fr-FR")}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </div>
-
-                      {/* Génération en cours ou réponse finale */}
-                      {pair.response.includes(
-                        "Génération de la réponse en cours"
-                      ) ? (
-                        <div className="flex items-center space-x-3">
-                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-700"></div>
-                          <p className="text-gray-500">
-                            Génération de la réponse...
-                          </p>
-                        </div>
-                      ) : (
                         <p className="text-gray-800 whitespace-pre-wrap">
-                          {pair.response}
+                          {pair.prompt}
                         </p>
-                      )}
+                        {pair.promptTokens && (
+                          <div className="flex items-center text-xs text-gray-500 mt-2">
+                            <BarChart2 className="h-3 w-3 mr-1" />
+                            <span>{pair.promptTokens} tokens</span>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
 
-                      {pair.responseTokens && (
-                        <div className="flex items-center text-xs text-gray-500 mt-2">
-                          <BarChart2 className="h-3 w-3 mr-1" />
-                          <span>{pair.responseTokens} tokens</span>
-                        </div>
+                {/* AI Response - Handle temporary responses specially */}
+                <div className="flex items-start gap-3 pl-8">
+                  <Avatar className="h-8 w-8 mt-1">
+                    <AvatarFallback className="bg-indigo-100 text-indigo-800">
+                      🤖
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <Card
+                      className={cn(
+                        "bg-white border shadow-sm p-4 transition-all duration-200",
+                        {
+                          "ring-2 ring-indigo-300":
+                            selectedPair === originalIndex,
+                        },
+                        { "border-2 border-green-500": pair.isVersionFinale }
                       )}
-                    </CardContent>
-                  </Card>
+                    >
+                      <CardContent className="p-0 space-y-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-indigo-800">
+                              IA
+                            </span>
+                            {pair.model && (
+                              <Badge
+                                variant="outline"
+                                className={getModelBadgeStyles(pair.model)}
+                              >
+                                {pair.model}
+                              </Badge>
+                            )}
+                          </div>
+                          {pair.responseTimestamp && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <div className="flex items-center text-xs text-gray-500">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    <span>
+                                      {formatRelativeTime(
+                                        pair.responseTimestamp
+                                      )}
+                                    </span>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {new Date(
+                                    pair.responseTimestamp
+                                  ).toLocaleString("fr-FR")}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
+
+                        {/* Génération en cours ou réponse finale */}
+                        {pair.response.includes(
+                          "Génération de la réponse en cours"
+                        ) ? (
+                          <div className="flex items-center space-x-3">
+                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-700"></div>
+                            <p className="text-gray-500">
+                              Génération de la réponse...
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-gray-800 whitespace-pre-wrap">
+                            {/* Afficher la version en streaming ou la réponse complète */}
+                            {originalIndex === streamingIndex
+                              ? streamedResponse
+                              : pair.response}
+                            {/* Ajouter un curseur clignotant pendant le streaming */}
+                            {originalIndex === streamingIndex && (
+                              <span className="inline-block w-2 h-4 ml-0.5 bg-indigo-600 animate-pulse"></span>
+                            )}
+                          </p>
+                        )}
+
+                        {pair.responseTokens && (
+                          <div className="flex items-center text-xs text-gray-500 mt-2">
+                            <BarChart2 className="h-3 w-3 mr-1" />
+                            <span>{pair.responseTokens} tokens</span>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Sélection de version finale */}
+                <div className="pl-12 mt-1">
+                  {!isDisabled ? (
+                    <div className="flex items-center space-x-2 pt-2">
+                      <Controller
+                        name="selectedPair"
+                        control={control}
+                        render={({ field }) => (
+                          <Checkbox
+                            id={`pair-${originalIndex}`}
+                            checked={field.value === originalIndex}
+                            onCheckedChange={() =>
+                              handleSelectionChange(originalIndex)
+                            }
+                          />
+                        )}
+                      />
+                      <Label
+                        htmlFor={`pair-${originalIndex}`}
+                        className="cursor-pointer text-indigo-700 font-medium"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectionChange(originalIndex);
+                        }}
+                      >
+                        Sélectionner comme version finale
+                      </Label>
+                    </div>
+                  ) : pair.isVersionFinale ? (
+                    <div className="flex items-center pt-2">
+                      <span className="text-green-600 font-medium flex items-center">
+                        <Check className="h-4 w-4 mr-1" />
+                        Version finale validée
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
-
-              {/* Sélection de version finale */}
-              <div className="pl-12 mt-1">
-                {!isDisabled ? (
-                  <div className="flex items-center space-x-2 pt-2">
-                    <Controller
-                      name="selectedPair"
-                      control={control}
-                      render={({ field }) => (
-                        <Checkbox
-                          id={`pair-${index}`}
-                          checked={field.value === index}
-                          onCheckedChange={() => handleSelectionChange(index)}
-                        />
-                      )}
-                    />
-                    <Label
-                      htmlFor={`pair-${index}`}
-                      className="cursor-pointer text-indigo-700 font-medium"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectionChange(index);
-                      }}
-                    >
-                      Sélectionner comme version finale
-                    </Label>
-                  </div>
-                ) : pair.isVersionFinale ? (
-                  <div className="flex items-center pt-2">
-                    <span className="text-green-600 font-medium flex items-center">
-                      <Check className="h-4 w-4 mr-1" />
-                      Version finale validée
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </ScrollArea>
     </div>

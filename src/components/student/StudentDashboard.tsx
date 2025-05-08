@@ -14,8 +14,8 @@ import { toast } from "react-hot-toast";
 export default function StudentDashboard() {
   const { user } = useAuth(); // récupération de l'utilisateur connecté
 
-  // Utiliser l'ID de l'utilisateur connecté s'il est disponible, sinon utiliser l'ID connu
-  const studentId = user?._id || "6553f1ed4c3ef31ea8c03bc1";
+  // Utiliser l'ID de l'utilisateur connecté s'il est disponible
+  const studentId = user?._id;
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedConversationId, setSelectedConversationId] = useState<
@@ -32,7 +32,13 @@ export default function StudentDashboard() {
   }, [user, studentId]);
 
   const loadConversation = async (conversationId: string) => {
-    if (isLoading || !studentId) return;
+    if (isLoading || !studentId) {
+      if (!studentId) {
+        toast.error("Utilisateur non connecté ou ID étudiant manquant");
+      }
+      return;
+    }
+
     setIsLoading(true);
 
     try {

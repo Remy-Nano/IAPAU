@@ -1,4 +1,4 @@
-// src/lib/controllers/userController.ts
+// src/lib/controllers/usrController.ts
 import { IUser, User } from "@/lib/models/user";
 import bcrypt from "bcrypt";
 
@@ -21,7 +21,7 @@ export async function register({
   password,
   role = "student",
 }: RegisterPayload): Promise<RegisterResult> {
-  // 1. Vérifier que l’email n’est pas déjà pris
+  // 1. Vérifier que l'email n'est pas déjà pris
   const existing = await User.findOne({ email });
   if (existing) {
     throw new Error("Cet email est déjà enregistré");
@@ -30,7 +30,7 @@ export async function register({
   // 2. Hasher le mot de passe
   const passwordHash = await bcrypt.hash(password, 10);
 
-  // 3. Créer l’utilisateur
+  // 3. Créer l'utilisateur
   const created = await User.create({
     prenom,
     nom,
@@ -40,7 +40,7 @@ export async function register({
   });
 
   // 4. Supprimer le mot de passe du résultat
-  // On récupère l’objet typé IUser
+  // On récupère l'objet typé IUser
   const userObj = created.toObject() as IUser;
   // On supprime proprement le passwordHash
   delete (userObj as Partial<IUser>).passwordHash;

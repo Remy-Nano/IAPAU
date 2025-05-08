@@ -1,6 +1,8 @@
 import { Mistral } from "@mistralai/mistralai";
 import { OpenAI } from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
+import { config } from "./config";
+import { convertRoleForAI } from "./utils/messageUtils";
 
 // Initialisation des clients
 const openai = new OpenAI({
@@ -10,18 +12,6 @@ const openai = new OpenAI({
 const mistral = new Mistral({
   apiKey: process.env.MISTRAL_API_KEY || "",
 });
-
-/**
- * Convertit le rôle depuis notre application vers le format attendu par les APIs
- */
-function convertRole(role: string): "user" | "assistant" | "system" {
-  if (role === "student" || role === "user") {
-    return "user";
-  } else if (role === "assistant" || role === "ai") {
-    return "assistant";
-  }
-  return "system";
-}
 
 /**
  * Génère une réponse IA en fonction du modèle spécifié
@@ -36,7 +26,7 @@ export async function generateAIResponse(
     if (modelName.toLowerCase().includes("openai") || modelName === "gpt") {
       // Convertir les messages pour le format OpenAI
       const messages: ChatCompletionMessageParam[] = history.map((msg) => ({
-        role: convertRole(msg.role),
+        role: convertRoleForAI(msg.role),
         content: msg.content,
       }));
 
@@ -44,7 +34,7 @@ export async function generateAIResponse(
       messages.push({ role: "user", content: prompt });
 
       const response = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
+        model: config.models.openai.defaultModel,
         messages,
         temperature: 0.7,
       });
@@ -66,7 +56,7 @@ export async function generateAIResponse(
         // Ajouter les messages d'historique
         for (const msg of history) {
           formattedMessages.push({
-            role: convertRole(msg.role),
+            role: convertRoleForAI(msg.role),
             content: msg.content,
           });
         }
@@ -76,7 +66,7 @@ export async function generateAIResponse(
 
         // Appel à l'API Mistral
         const response = await mistral.chat.complete({
-          model: "mistral-medium",
+          model: config.models.mistral.defaultModel,
           messages: formattedMessages as any, // Forcer le type pour contourner les limitations
         });
 

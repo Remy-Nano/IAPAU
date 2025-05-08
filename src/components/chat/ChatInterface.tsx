@@ -1,9 +1,11 @@
 "use client";
 
+import { config } from "@/lib/config";
+import { adaptMessagesRoles } from "@/lib/utils/messageUtils";
 import axios from "axios";
 import { Check, MessageSquare } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { Conversation, Message } from "../../types";
@@ -65,6 +67,13 @@ export function ChatInterface({
   const [selectedFinalResponse, setSelectedFinalResponse] =
     useState<string>("");
 
+  // Simplification: suppression de l'état isGeneratingResponse qui pouvait causer des boucles
+  // Utiliser des états spécifiques pour l'animation uniquement
+  const [streamingMessageIndex, setStreamingMessageIndex] = useState<
+    number | null
+  >(null);
+  const [streamedText, setStreamedText] = useState<string>("");
+
   // Références pour les formulaires
   const promptFormRef = useRef<HTMLFormElement>(null);
   const finalFormRef = useRef<HTMLFormElement>(null);
@@ -80,19 +89,11 @@ export function ChatInterface({
   });
 
   const currentModelName = methods.watch("modelName");
-  const selectedPair = methods.watch("selectedPair");
-
-  // Log de débogage pour voir l'état actuel de la sélection
-  console.log("État actuel:", {
-    selectedPair,
-    conversationId,
-    messagesCount: messages.length,
-  });
 
   // État pour les tokens de l'utilisateur
   const [tokensUsed, setTokensUsed] = useState<number>(0);
-  // Définir une valeur par défaut beaucoup plus élevée pour les tokens autorisés
-  const tokensAuthorized = 1000000;
+  // Utiliser la configuration centralisée pour la limite de tokens
+  const tokensAuthorized = config.tokens.defaultLimit;
 
   // État pour vérifier si la conversation a une version finale
   const hasVersionFinale = Boolean(
@@ -101,49 +102,93 @@ export function ChatInterface({
       conversationData.versionFinale.reponseIAFinale
   );
 
-  // Mettre à jour les messages pour s'assurer que le modèle est correctement défini
-  // et adapter les rôles au format attendu par l'interface
-  const adaptMessagesRoles = (messages: Message[]) => {
-    return messages.map((message: Message) => {
-      let role = message.role;
-
-      // Convertir les rôles backend en rôles frontend
-      if (message.role === "student") role = "user";
-      if (message.role === "assistant") role = "ai";
-
-      // Ajouter modelUsed si c'est un message IA sans modelUsed
-      if (
-        (message.role === "assistant" || message.role === "ai") &&
-        !message.modelUsed
-      ) {
-        return {
-          ...message,
-          role,
-          modelUsed: conversationData?.modelName || currentModelName,
-        };
+  // Fonction simplifiée pour déclencher l'animation d'un message
+  const animateMessage = useCallback(
+    (messageIndex: number, text: string) => {
+      if (messageIndex < 0 || messageIndex >= messages.length || !text) {
+        return;
       }
 
-      return { ...message, role };
-    });
-  };
+      // Initialiser l'animation
+      setStreamingMessageIndex(messageIndex);
+      setStreamedText("");
 
-  // Initialiser le composant avec la conversation existante si elle est fournie
+      let currentPosition = 0;
+      const speed = 15; // Caractères par tick
+
+      const animationInterval = setInterval(() => {
+        if (currentPosition >= text.length) {
+          clearInterval(animationInterval);
+          setStreamingMessageIndex(null);
+          setStreamedText("");
+          return;
+        }
+
+        const nextChars = text.substring(
+          currentPosition,
+          Math.min(currentPosition + speed, text.length)
+        );
+
+        setStreamedText((prev) => prev + nextChars);
+        currentPosition += speed;
+      }, 50);
+
+      // Nettoyer l'intervalle après 30 secondes au maximum
+      setTimeout(() => {
+        clearInterval(animationInterval);
+        setStreamingMessageIndex(null);
+        setStreamedText("");
+      }, 30000);
+    },
+    [messages.length]
+  );
+
+  // Fonction pour récupérer les messages d'une conversation
+  const fetchConversation = useCallback(
+    async (id: string) => {
+      try {
+        const response = await axios.get(`/api/conversations/${id}`);
+        if (response.data.conversation) {
+          const updatedMessages = adaptMessagesRoles(
+            response.data.conversation.messages,
+            response.data.conversation.modelName || currentModelName
+          );
+
+          setMessages(updatedMessages);
+          setConversationData({
+            ...response.data.conversation,
+            messages: updatedMessages,
+          });
+
+          // Mettre à jour les tokens utilisés si disponibles
+          if (response.data.conversation.statistiquesIA?.tokensTotal) {
+            setTokensUsed(
+              response.data.conversation.statistiquesIA.tokensTotal
+            );
+          }
+
+          return updatedMessages;
+        }
+      } catch (error) {
+        console.error(
+          "Erreur lors de la récupération de la conversation:",
+          error
+        );
+      }
+      return null;
+    },
+    [currentModelName]
+  );
+
+  // Initialiser le composant avec la conversation existante
   useEffect(() => {
     if (existingConversation) {
       setConversationId(existingConversation._id);
 
       // Adaptation des rôles et ajout du modelUsed si nécessaire
-      const updatedMessages = adaptMessagesRoles(existingConversation.messages);
-
-      console.log(
-        "Modèle utilisé dans la conversation chargée:",
-        existingConversation.modelName
-      );
-      console.log(
-        "Messages IA mis à jour avec le modèle:",
-        updatedMessages
-          .filter((m: Message) => m.role === "ai")
-          .map((m: Message) => m.modelUsed)
+      const updatedMessages = adaptMessagesRoles(
+        existingConversation.messages,
+        existingConversation.modelName || "openai"
       );
 
       setMessages(updatedMessages);
@@ -152,7 +197,7 @@ export function ChatInterface({
         messages: updatedMessages,
       });
 
-      // Mettre à jour les tokens utilisés si disponibles dans les statistiques
+      // Mettre à jour les tokens
       if (existingConversation.statistiquesIA?.tokensTotal) {
         setTokensUsed(existingConversation.statistiquesIA.tokensTotal);
       }
@@ -180,34 +225,10 @@ export function ChatInterface({
         selectedPair: null,
       });
     }
+  }, [existingConversation, methods]);
 
-    // Récupérer les informations de l'utilisateur, y compris les tokens
-    // Cette fonctionnalité semble ne pas être disponible sur le serveur,
-    // donc nous allons utiliser les statistiques de la conversation actuelle
-    // au lieu de faire une requête qui échoue
-    const updateTokensFromConversation = () => {
-      if (existingConversation?.statistiquesIA?.tokensTotal) {
-        setTokensUsed(existingConversation.statistiquesIA.tokensTotal);
-      } else if (conversationData?.statistiquesIA?.tokensTotal) {
-        setTokensUsed(conversationData.statistiquesIA.tokensTotal);
-      }
-      // Par défaut, on garde la valeur initiale de tokensAuthorized (1000000)
-    };
-
-    updateTokensFromConversation();
-  }, [
-    existingConversation,
-    methods,
-    conversationData?.statistiquesIA?.tokensTotal,
-  ]);
-
-  /**
-   * Gère l'envoi d'un nouveau prompt à l'IA
-   */
+  // Fonction simplifiée pour envoyer un prompt
   const handleSendPrompt = async (data: ChatData) => {
-    // Log du modèle demandé
-    console.log("Modèle demandé:", data.modelName);
-
     // Empêcher l'envoi si un prompt vide
     if (!data.prompt || data.prompt.trim() === "") {
       toast.error("Veuillez entrer un prompt avant d'envoyer");
@@ -225,26 +246,29 @@ export function ChatInterface({
     try {
       setIsLoading(true);
 
-      // Créer un ID unique pour le message utilisateur
-      const userMsgId = `temp-user-${Date.now()}`;
-
-      // Mettre à jour l'état local immédiatement pour afficher le message de l'utilisateur
+      // Afficher le message de l'utilisateur immédiatement
       const userMessage: Message = {
-        _id: userMsgId,
+        _id: `temp-user-${Date.now()}`,
         content: data.prompt,
         role: "user",
         timestamp: new Date(),
       };
 
-      // Ajouter le message utilisateur immédiatement à l'interface
-      setMessages((prev) => [...prev, userMessage]);
+      // Afficher une indication de chargement
+      const loadingMessage: Message = {
+        _id: `temp-ai-${Date.now()}`,
+        content: "Génération de la réponse en cours...",
+        role: "ai",
+        timestamp: new Date(),
+        modelUsed: data.modelName,
+      };
 
-      // Créer un ID unique pour le message IA temporaire
-      const tempAiMsgId = `temp-ai-${Date.now()}`;
+      // Mettre à jour immédiatement l'interface
+      setMessages((prev) => [...prev, userMessage, loadingMessage]);
 
       if (!conversationId) {
-        // Création d'une nouvelle conversation
-        console.log("Création d'une nouvelle conversation avec:", {
+        // Créer une nouvelle conversation
+        const conversationResponse = await axios.post("/api/conversations", {
           studentId,
           groupId,
           tacheId,
@@ -258,155 +282,69 @@ export function ChatInterface({
           prompt: data.prompt,
         });
 
-        // Ajouter un message temporaire pour signaler que l'IA est en train de répondre
-        const tempAiMessage: Message = {
-          _id: tempAiMsgId,
-          content: "Génération de la réponse en cours...",
-          role: "ai",
-          timestamp: new Date(),
-          modelUsed: data.modelName,
-        };
-
-        setMessages((prev) => [...prev, tempAiMessage]);
-
-        const response = await axios.post(
-          "http://localhost:3000/api/conversations",
-          {
-            studentId,
-            groupId,
-            tacheId,
-            modelName: data.modelName,
-            titreConversation:
-              data.titreConversation ||
-              `Conversation ${new Date().toLocaleDateString(
-                "fr-FR"
-              )} ${new Date().toLocaleTimeString("fr-FR")}`,
-            promptType: data.promptType,
-            prompt: data.prompt,
-          }
-        );
-
-        console.log("Nouvelle conversation créée:", response.data);
-        const newConversationId = response.data.conversation._id;
+        const newConversationId = conversationResponse.data.conversation._id;
         setConversationId(newConversationId);
 
-        // Assurons-nous que les messages contiennent bien modelUsed
-        const conversationMessages = response.data.conversation.messages;
-
-        // Adaptation des rôles et ajout du modelUsed si nécessaire
-        const messagesWithModel = adaptMessagesRoles(conversationMessages);
-
-        console.log(
-          "Messages avec modèle mis à jour:",
-          messagesWithModel
-            .filter((m: Message) => m.role === "ai")
-            .map((m: Message) => m.modelUsed)
-        );
-
-        // Remplacer notre message temporaire par le message réel
-        const finalMessages = messagesWithModel.map((msg) => {
-          // Remplacer le message utilisateur temporaire par celui retourné par l'API
-          if (msg.role === "user" && messagesWithModel.indexOf(msg) === 0) {
-            return {
-              ...msg,
-              _id: msg._id || userMsgId, // Conserver l'ID temporaire si l'API n'en a pas fourni
-            };
-          }
-          // Remplacer le message IA temporaire par celui retourné par l'API
-          if (msg.role === "ai" && messagesWithModel.indexOf(msg) === 1) {
-            return {
-              ...msg,
-              _id: msg._id || tempAiMsgId, // Conserver l'ID temporaire si l'API n'en a pas fourni
-            };
-          }
-          return msg;
-        });
-
-        setMessages(finalMessages);
-        setConversationData({
-          ...response.data.conversation,
-          messages: finalMessages,
-        });
-
-        // Notifier le parent de la création de la nouvelle conversation
         if (onConversationCreated) {
           onConversationCreated(newConversationId);
         }
+
+        // Attendre un moment pour permettre au serveur de traiter la réponse
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Récupérer la conversation complète
+        const updatedMessages = await fetchConversation(newConversationId);
+
+        if (updatedMessages && updatedMessages.length >= 2) {
+          // Dernière réponse AI (dernier message ou avant-dernier si le dernier est temporaire)
+          const lastAiMessage = updatedMessages.findLast(
+            (m) =>
+              m.role === "ai" &&
+              !m.content.includes("Génération de la réponse en cours")
+          );
+
+          if (lastAiMessage) {
+            const aiMessageIndex = updatedMessages.findIndex(
+              (m) => m._id === lastAiMessage._id
+            );
+            if (aiMessageIndex !== -1) {
+              // Démarrer l'animation après un court délai
+              setTimeout(() => {
+                animateMessage(aiMessageIndex, lastAiMessage.content);
+              }, 300);
+            }
+          }
+        }
       } else {
-        // Ajout d'un message à une conversation existante
-        console.log("Ajout d'un message:", {
-          conversationId,
+        // Ajouter à une conversation existante
+        await axios.post(`/api/conversations/${conversationId}/ai-response`, {
           prompt: data.prompt,
           modelName: data.modelName,
         });
 
-        // Ajouter un message temporaire pour signaler que l'IA est en train de répondre
-        const tempAiMessage: Message = {
-          _id: tempAiMsgId,
-          content: "Génération de la réponse en cours...",
-          role: "ai",
-          timestamp: new Date(),
-          modelUsed: data.modelName,
-        };
+        // Récupérer les messages mis à jour
+        const updatedMessages = await fetchConversation(conversationId);
 
-        setMessages((prev) => [...prev, tempAiMessage]);
+        if (updatedMessages && updatedMessages.length >= 2) {
+          // Dernière réponse AI
+          const lastAiMessage = updatedMessages.findLast(
+            (m) =>
+              m.role === "ai" &&
+              !m.content.includes("Génération de la réponse en cours")
+          );
 
-        const response = await axios.post(
-          `/api/conversations/${conversationId}/ai-response`,
-          {
-            prompt: data.prompt,
-            modelName: data.modelName,
+          if (lastAiMessage) {
+            const aiMessageIndex = updatedMessages.findIndex(
+              (m) => m._id === lastAiMessage._id
+            );
+            if (aiMessageIndex !== -1) {
+              // Démarrer l'animation après un court délai
+              setTimeout(() => {
+                animateMessage(aiMessageIndex, lastAiMessage.content);
+              }, 300);
+            }
           }
-        );
-
-        console.log("Réponse d'ajout de message:", response.data);
-
-        // Assurons-nous que les messages contiennent bien modelUsed
-        const conversationMessages = response.data.conversation.messages;
-
-        // Adaptation des rôles et ajout du modelUsed si nécessaire
-        const messagesWithModel = adaptMessagesRoles(conversationMessages);
-
-        console.log(
-          "Messages avec modèle mis à jour:",
-          messagesWithModel
-            .filter((m: Message) => m.role === "ai")
-            .map((m: Message) => m.modelUsed)
-        );
-
-        // Trouver les messages utilisateur et IA les plus récents de l'API
-        const latestUserMsgIndex = messagesWithModel.findLastIndex(
-          (m) => m.role === "user"
-        );
-        const latestAiMsgIndex = messagesWithModel.findLastIndex(
-          (m) => m.role === "ai"
-        );
-
-        if (latestUserMsgIndex >= 0 && latestAiMsgIndex >= 0) {
-          // Remplacer nos messages temporaires par les messages réels
-          const updatedMessages = [...messages]; // Copier notre liste de messages actuelle
-
-          // Supprimer le message IA temporaire
-          updatedMessages.pop();
-
-          // Ajouter la réponse réelle de l'IA
-          updatedMessages.push({
-            ...messagesWithModel[latestAiMsgIndex],
-            _id: messagesWithModel[latestAiMsgIndex]._id || tempAiMsgId,
-          });
-
-          // Mettre à jour l'état avec les messages mis à jour
-          setMessages(updatedMessages);
-        } else {
-          // Si on ne trouve pas les derniers messages, utiliser tous les messages de l'API
-          setMessages(messagesWithModel);
         }
-
-        // Mise à jour de la conversation complète
-        setConversationData({
-          ...response.data.conversation,
-          messages: messagesWithModel,
-        });
       }
 
       // Réinitialiser le champ de prompt
@@ -414,16 +352,9 @@ export function ChatInterface({
         ...methods.getValues(),
         prompt: "",
       });
-
-      // Mettre à jour les tokens utilisés depuis la réponse si disponible
-      if (conversationData?.statistiquesIA?.tokensTotal) {
-        setTokensUsed(conversationData.statistiquesIA.tokensTotal);
-      }
     } catch (error: unknown) {
       console.error("Erreur lors de l'envoi du prompt:", error);
-      // Affichage plus détaillé de l'erreur
       if (axios.isAxiosError(error) && error.response) {
-        console.error("Données de l'erreur:", error.response.data);
         toast.error(
           `Erreur: ${error.response.data.message || "Erreur de serveur"}`
         );
@@ -433,7 +364,7 @@ export function ChatInterface({
         toast.error("Erreur lors de l'envoi du prompt");
       }
 
-      // En cas d'erreur, supprimer le message temporaire de l'IA
+      // En cas d'erreur, supprimer les messages temporaires
       setMessages((prev) =>
         prev.filter((msg) => !msg._id?.startsWith("temp-"))
       );
@@ -699,6 +630,8 @@ export function ChatInterface({
                 modelName={currentModelName}
                 isDisabled={hasVersionFinale}
                 versionFinale={conversationData?.versionFinale}
+                streamingIndex={streamingMessageIndex}
+                streamedResponse={streamedText}
               />
 
               {/* Formulaire pour soumettre la version finale */}
@@ -771,10 +704,10 @@ export function ChatInterface({
               Version finale soumise avec succès
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-4">
-              <p>
+              <div>
                 La version finale de votre conversation a été enregistrée avec
                 succès.
-              </p>
+              </div>
 
               <div className="bg-gray-50 p-3 rounded-md">
                 <h4 className="text-sm font-bold mb-1">Prompt sélectionné:</h4>

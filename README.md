@@ -7,7 +7,7 @@ Une plateforme moderne de chat avec IA permettant aux étudiants d'interagir ave
 - **Multi-modèles d'IA** : Support pour OpenAI (GPT) et Mistral AI
 - **Historique de conversations** : Interface intuitive avec historique des échanges
 - **Version finale** : Sélection et sauvegarde d'une version finale des conversations
-- **Authentification** : Système de connexion sécurisé
+- **Authentification** : Système de connexion sécurisé avec magic link
 - **Interface responsive** : Compatible desktop et mobile
 - **Expérience utilisateur fluide** : Réponses en temps réel sans rechargement de page
 
@@ -69,20 +69,31 @@ prompt-challenge/
 ├── src/                       # Code source
 │   ├── app/                   # Pages et routes (Next.js App Router)
 │   │   ├── api/               # Routes API
+│   │   │   ├── auth/          # API d'authentification
+│   │   │   ├── conversations/ # API de gestion des conversations
+│   │   │   ├── login/         # API de connexion
+│   │   │   ├── users/         # API de gestion des utilisateurs
+│   │   │   └── health/        # API de vérification de santé
 │   │   ├── dashboard/         # Interface principale
 │   │   ├── login/             # Authentification
+│   │   ├── magic-link/        # Connexion par lien magique
+│   │   ├── unauthorized/      # Page d'accès non autorisé
 │   │   └── version-finale/    # Affichage des versions finales
 │   ├── components/            # Composants React
+│   │   ├── admin/             # Composants pour l'administration
+│   │   ├── auth/              # Composants d'authentification
 │   │   ├── chat/              # Composants de l'interface de chat
-│   │   ├── ui/                # Composants UI réutilisables
-│   │   └── ...
+│   │   ├── examiner/          # Composants pour les examinateurs
+│   │   ├── student/           # Composants pour les étudiants
+│   │   └── ui/                # Composants UI réutilisables
 │   ├── context/               # Contextes React (Auth, etc.)
 │   ├── lib/                   # Utilitaires et services
-│   │   ├── api/               # Clients API
 │   │   ├── models/            # Modèles de données MongoDB
-│   │   └── controllers/       # Contrôleurs API
+│   │   │   ├── user.ts        # Modèle utilisateur
+│   │   │   └── conversation.ts # Modèle de conversation
 │   └── types/                 # Définitions TypeScript
 ├── public/                    # Fichiers statiques
+├── middleware.ts              # Middleware Next.js (authentification)
 ├── package.json               # Dépendances et scripts
 └── next.config.ts             # Configuration Next.js
 ```
@@ -90,6 +101,7 @@ prompt-challenge/
 ## 🌈 Évolutions récentes
 
 - **Interface Utilisateur Améliorée** : Design moderne avec effets de transition et feedback visuel
+- **Authentification par magic link** : Connexion simplifiée et sécurisée
 - **Titres de conversations automatiques** : Format "Conversation JJ/MM/AAAA HH:MM:SS"
 - **Affichage en temps réel** : Les réponses s'affichent instantanément sans rechargement
 - **Indicateur de chargement** : Animation visuelle durant la génération des réponses
@@ -98,7 +110,7 @@ prompt-challenge/
 
 ## 🔄 Utilisation
 
-1. Connectez-vous à votre compte
+1. Connectez-vous à votre compte (par email ou magic link)
 2. Accédez au tableau de bord
 3. Créez une nouvelle conversation ou poursuivez une existante
 4. Sélectionnez le modèle d'IA souhaité (OpenAI ou Mistral)
@@ -107,12 +119,15 @@ prompt-challenge/
 
 ## 🛠️ Technologies utilisées
 
-- [Next.js 15](https://nextjs.org/) - Framework React
+- [Next.js 15.3.1](https://nextjs.org/) - Framework React
 - [React 19](https://reactjs.org/) - Bibliothèque UI
 - [MongoDB](https://www.mongodb.com/) - Base de données
+- [Mongoose 8.14.1](https://mongoosejs.com/) - ODM pour MongoDB
 - [Tailwind CSS 4](https://tailwindcss.com/) - Framework CSS
-- [OpenAI API](https://openai.com/api/) - API pour GPT
-- [Mistral AI](https://mistral.ai/) - Modèle d'IA alternatif
+- [OpenAI API 4.97.0](https://openai.com/api/) - API pour GPT
+- [Mistral AI 1.6.0](https://mistral.ai/) - Modèle d'IA alternatif
+- [JWT](https://jwt.io/) - Authentification sécurisée
+- [Radix UI](https://www.radix-ui.com/) - Composants UI accessibles
 
 ## 📝 Notes de développement
 
