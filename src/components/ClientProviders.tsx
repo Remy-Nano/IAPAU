@@ -4,7 +4,7 @@
 import { AuthDebug } from "@/components/auth/AuthDebug";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
-import { Toaster } from "react-hot-toast";
+import { Toaster } from "sonner";
 
 export default function ClientProviders({
   children,
@@ -15,7 +15,7 @@ export default function ClientProviders({
     <AuthProvider>
       <TooltipProvider>
         {children}
-        <Toaster position="top-right" />
+        <Toaster position="top-right" richColors />
         <AuthDebug />
       </TooltipProvider>
     </AuthProvider>

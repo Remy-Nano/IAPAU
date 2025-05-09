@@ -2,11 +2,21 @@ import { Hackathon, IHackathon } from "@/lib/models/hackathon";
 
 export async function getAllHackathons() {
   try {
+    console.log("🔍 getAllHackathons: Recherche de tous les hackathons");
     const data = await Hackathon.find().sort({ "dates.debut": -1 });
+    console.log(`✅ getAllHackathons: ${data.length} hackathons trouvés`);
     return data;
   } catch (err) {
-    console.error("Erreur getAllHackathons:", err);
-    throw err;
+    console.error("❌ Erreur getAllHackathons:", err);
+    // Afficher plus de détails sur l'erreur pour faciliter le débogage
+    if (err instanceof Error) {
+      console.error("Message d'erreur:", err.message);
+      console.error("Stack trace:", err.stack);
+    }
+    throw new Error(
+      "Impossible de récupérer les hackathons: " +
+        (err instanceof Error ? err.message : "Erreur inconnue")
+    );
   }
 }
 

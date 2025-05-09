@@ -42,16 +42,26 @@ export function HackathonManager() {
 
   const reload = async () => {
     try {
+      setLoading(true);
+      console.log("🔄 Rechargement de la liste des hackathons");
       const data = await fetchHackathons();
       setList(data);
+      console.log(`✅ ${data.length} hackathons chargés avec succès`);
     } catch (error) {
-      toast.error("Erreur lors du chargement des hackathons");
-      console.error(error);
+      console.error("❌ Erreur lors du chargement des hackathons:", error);
+      toast.error("Erreur lors du chargement des hackathons", {
+        description: "Veuillez rafraîchir la page et réessayer",
+        duration: 5000,
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    reload();
+    reload().catch((err) => {
+      console.error("❌ Erreur non gérée lors du chargement initial:", err);
+    });
   }, []);
 
   // Lire un hackathon

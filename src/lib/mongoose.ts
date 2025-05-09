@@ -11,9 +11,9 @@ declare global {
 }
 /* eslint-enable no-var */
 
-const uri = process.env.MONGODB_URI!;
+const uri = process.env.MONGODB_URI as string;
 if (!uri) {
-  throw new Error("🛑 MONGODB_URI non défini dans .env");
+  throw new Error("🛑 MONGODB_URI non défini dans .env.local");
 }
 
 if (!globalThis.mongooseCache) {
@@ -22,11 +22,40 @@ if (!globalThis.mongooseCache) {
 const cache = globalThis.mongooseCache;
 
 export default async function connectDB(): Promise<Mongoose> {
-  if (cache.conn) return cache.conn;
-  if (!cache.promise) {
-    cache.promise = mongoose.connect(uri);
+  try {
+    if (cache.conn) {
+      console.log("✅ Réutilisation de la connexion MongoDB existante");
+      return cache.conn;
+    }
+
+    if (!cache.promise) {
+      const opts = {
+        bufferCommands: false,
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+      };
+
+      console.log("🔌 Tentative de connexion à MongoDB...");
+      cache.promise = mongoose.connect(uri, opts);
+    }
+
+    cache.conn = await cache.promise;
+    const readyState = mongoose.connection.readyState;
+
+    console.log(`✅ MongoDB connecté, état : ${readyState}`);
+
+    return cache.conn;
+  } catch (err) {
+    console.error("❌ Erreur de connexion à MongoDB:", err);
+    if (err instanceof Error) {
+      console.error("Message d'erreur:", err.message);
+      console.error("Stack trace:", err.stack);
+    }
+    throw new Error(
+      `Erreur de connexion à MongoDB: ${
+        err instanceof Error ? err.message : "Erreur inconnue"
+      }`
+    );
   }
-  cache.conn = await cache.promise;
-  console.log("✅ MongoDB connecté, état :", mongoose.connection.readyState);
-  return cache.conn;
 }

@@ -6,12 +6,26 @@ import connectDB from "@/lib/mongoose";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
-  await connectDB();
+  console.log("📥 GET /api/hackathons - Début de la requête");
   try {
+    console.log("🔌 Connexion à la base de données...");
+    await connectDB();
+    console.log("✅ Connexion DB réussie, récupération des hackathons...");
+
     const hackathons = await getAllHackathons();
+    console.log(`✅ ${hackathons.length} hackathons récupérés avec succès`);
+
     return NextResponse.json(hackathons, { status: 200 });
   } catch (err: unknown) {
+    console.error("❌ Erreur GET /api/hackathons:", err);
     const msg = err instanceof Error ? err.message : "Erreur inconnue";
+
+    // Log plus détaillé pour le débogage
+    if (err instanceof Error) {
+      console.error("Message d'erreur:", err.message);
+      console.error("Stack trace:", err.stack);
+    }
+
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
