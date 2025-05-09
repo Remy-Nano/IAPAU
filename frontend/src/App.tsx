@@ -1,3 +1,63 @@
+// import React from "react";
+// import {
+//   Navigate,
+//   Route,
+//   BrowserRouter as Router,
+//   Routes,
+// } from "react-router-dom";
+// import { AuthPage } from "./components/auth/AuthPage";
+// import { MagicLinkPage } from "./components/auth/MagicLinkPage";
+// import { TestLogin } from "./components/auth/TestLogin";
+// import { DashboardRouter } from "./components/dashboard/DashboardRouter";
+// import { useAuth } from "./context/AuthContext";
+
+// // Composant protégé qui nécessite une authentification
+// const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
+//   children,
+// }) => {
+//   const { isAuthenticated } = useAuth();
+
+//   if (!isAuthenticated) {
+//     return <Navigate to="/auth" replace />;
+//   }
+
+//   return <>{children}</>;
+// };
+
+// // Application principale avec les routes
+// function App() {
+//   return (
+//     <Router>
+//       <Routes>
+//         <Route path="/auth" element={<AuthPage />} />
+//         <Route path="/auth/magic-link" element={<MagicLinkPage />} />
+
+//         {/* Routes de test pour faciliter l'accès aux différentes vues */}
+//         <Route
+//           path="/test-login/student"
+//           element={<TestLogin role="student" />}
+//         />
+//         <Route
+//           path="/test-login/examiner"
+//           element={<TestLogin role="examiner" />}
+//         />
+//         <Route path="/test-login/admin" element={<TestLogin role="admin" />} />
+
+//         <Route
+//           path="/"
+//           element={
+//             <ProtectedRoute>
+//               <DashboardRouter />
+//             </ProtectedRoute>
+//           }
+//         />
+//         <Route path="*" element={<Navigate to="/" replace />} />
+//       </Routes>
+//     </Router>
+//   );
+// }
+
+// src/App.tsx
 import React from "react";
 import {
   Navigate,
@@ -11,28 +71,29 @@ import { TestLogin } from "./components/auth/TestLogin";
 import { DashboardRouter } from "./components/dashboard/DashboardRouter";
 import { useAuth } from "./context/AuthContext";
 
+// ** 1. Importe ton composant de gestion des hackathons **
+import { HackathonManager } from "./components/hackathonManager";
+
 // Composant protégé qui nécessite une authentification
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { isAuthenticated } = useAuth();
-
   if (!isAuthenticated) {
     return <Navigate to="/auth" replace />;
   }
-
   return <>{children}</>;
 };
 
-// Application principale avec les routes
 function App() {
   return (
     <Router>
       <Routes>
+        {/* Authentification publique */}
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/auth/magic-link" element={<MagicLinkPage />} />
 
-        {/* Routes de test pour faciliter l'accès aux différentes vues */}
+        {/* Routes de test */}
         <Route
           path="/test-login/student"
           element={<TestLogin role="student" />}
@@ -41,8 +102,12 @@ function App() {
           path="/test-login/examiner"
           element={<TestLogin role="examiner" />}
         />
-        <Route path="/test-login/admin" element={<TestLogin role="admin" />} />
+        <Route
+          path="/test-login/admin"
+          element={<TestLogin role="admin" />}
+        />
 
+        {/* Dashboard + sous‐routes */}
         <Route
           path="/"
           element={
@@ -51,6 +116,18 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Page de gestion des hackathons */}
+        <Route
+          path="/hackathons"
+          element={
+            <ProtectedRoute>
+              <HackathonManager />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Catch‐all → renvoie vers le dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
