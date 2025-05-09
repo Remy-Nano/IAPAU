@@ -1,16 +1,15 @@
 "use client";
 
-import { AdminExaminersView } from "@/components/admin/AdminExaminersView";
-import { AdminStudentsView } from "@/components/admin/AdminStudentsView";
+import { EditableUsersTable } from "@/app/admin/users/components/EditableUsersTable";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { HackathonManager } from "@/components/HackathonManager";
 import { Brain, Code, Menu, Users, X } from "lucide-react";
 import { useState } from "react";
 
 export default function AdminDashboard() {
-  const [currentView, setCurrentView] = useState<
-    "students" | "examiners" | "hackathons"
-  >("students");
+  const [currentView, setCurrentView] = useState<"users" | "hackathons">(
+    "users"
+  );
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -37,34 +36,18 @@ export default function AdminDashboard() {
         <div className="mt-8 space-y-2">
           <div
             onClick={() => {
-              setCurrentView("students");
+              setCurrentView("users");
               setSidebarOpen(false);
             }}
             className={`p-3 rounded-lg cursor-pointer ${
-              currentView === "students"
+              currentView === "users"
                 ? "bg-indigo-600"
                 : "bg-gray-800 hover:bg-gray-700"
             }`}
           >
             <div className="flex items-center space-x-2">
               <Users size={18} />
-              <span className="font-medium">Gestion des étudiants</span>
-            </div>
-          </div>
-          <div
-            onClick={() => {
-              setCurrentView("examiners");
-              setSidebarOpen(false);
-            }}
-            className={`p-3 rounded-lg cursor-pointer ${
-              currentView === "examiners"
-                ? "bg-indigo-600"
-                : "bg-gray-800 hover:bg-gray-700"
-            }`}
-          >
-            <div className="flex items-center space-x-2">
-              <Users size={18} />
-              <span className="font-medium">Gestion des examinateurs</span>
+              <span className="font-medium">Gestion des utilisateurs</span>
             </div>
           </div>
 
@@ -81,7 +64,7 @@ export default function AdminDashboard() {
           >
             <div className="flex items-center space-x-2">
               <Code size={18} />
-              <span className="font-medium">Hackathons</span>
+              <span className="font-medium">Gestion des Hackathons</span>
             </div>
           </div>
         </div>
@@ -92,11 +75,9 @@ export default function AdminDashboard() {
         {/* Header */}
         <header className="bg-white shadow-sm p-4 flex justify-between items-center">
           <h1 className="text-xl font-semibold text-gray-800">
-            {currentView === "students"
-              ? "Gestion des étudiants"
-              : currentView === "examiners"
-              ? "Gestion des examinateurs"
-              : "Gestion des hackathons"}
+            {currentView === "users"
+              ? "Gestion des utilisateurs"
+              : "Gestion des Hackathons"}
           </h1>
           <div className="flex items-center space-x-4">
             <div className="px-4 py-2 bg-purple-200 text-purple-800 rounded-lg">
@@ -107,11 +88,11 @@ export default function AdminDashboard() {
         </header>
 
         {/* Current View */}
-        <div className="flex-1 overflow-auto">
-          {currentView === "students" ? (
-            <AdminStudentsView />
-          ) : currentView === "examiners" ? (
-            <AdminExaminersView />
+        <div className="flex-1 overflow-auto p-6">
+          {currentView === "users" ? (
+            <div className="bg-white rounded-lg shadow p-6">
+              <EditableUsersTable />
+            </div>
           ) : (
             <HackathonManager />
           )}

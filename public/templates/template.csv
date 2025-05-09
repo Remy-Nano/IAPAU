@@ -1,0 +1,5 @@
+nom,prenom,email,password,dateNaissance,role,numeroEtudiant
+Dupont,Jean,jean.dupont@exemple.fr,Mot2passe!,1990-01-01,student,12345678
+Martin,Sophie,sophie.martin@exemple.fr,Mot2passe!,1992-05-15,student,23456789
+Durand,Pierre,pierre.durand@exemple.fr,Mot2passe!,1985-11-20,examiner,
+Leroy,Marie,marie.leroy@exemple.fr,Mot2passe!,1980-07-10,admin, 
