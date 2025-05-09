@@ -1,0 +1,136 @@
+.table-container {
+  max-width: 6xl;
+  margin: 0 auto;
+  padding: 1.5rem;
+  background: var(--background);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.table-header {
+  font-size: 1.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 1.5rem;
+}
+
+.table-search {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.table-search input {
+  width: 100%;
+  max-width: 28rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.table-search input:focus {
+  outline: none;
+  border-color: #64748b;
+  box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2);
+}
+
+.table-search button {
+  padding: 0.5rem 1rem;
+  background: #64748b;
+  color: var(--background);
+  border-radius: 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.table-search button:hover {
+  background: #475569;
+}
+
+.table {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+}
+
+.table th {
+  padding: 0.75rem 1.5rem;
+  background: #f8fafc;
+  color: var(--foreground);
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.table td {
+  padding: 1rem 1.5rem;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.table tr {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.table input,
+.table select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.table input:focus,
+.table select:focus {
+  outline: none;
+  border-color: #64748b;
+  box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2);
+}
+
+.table button {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  border-radius: 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.table button.edit {
+  color: #3b82f6;
+}
+
+.table button.edit:hover {
+  color: #2563eb;
+}
+
+.table button.save {
+  background: #10b981;
+  color: var(--background);
+}
+
+.table button.save:hover {
+  background: #059669;
+}
+
+.table button.cancel {
+  background: #ef4444;
+  color: var(--background);
+}
+
+.table button.cancel:hover {
+  background: #dc2626;
+}
+
+.table button.delete {
+  color: #ef4444;
+}
+
+.table button.delete:hover {
+  color: #dc2626;
+}
