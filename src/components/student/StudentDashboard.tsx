@@ -4,8 +4,16 @@ import { LogoutButton } from "@/components/auth/LogoutButton";
 import { ChatInterface } from "@/components/chat/ChatInterface";
 import { ConversationSidebar } from "@/components/chat/ConversationSidebar";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
 import { Conversation } from "@/types";
+import { Hackathon } from "@/types/Hackathon";
 import axios from "axios";
 import { Menu, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -30,11 +38,49 @@ export default function StudentDashboard() {
   // Ajout d'un état pour forcer le rafraîchissement des conversations
   const [refreshConversations, setRefreshConversations] = useState(0);
 
+  // États pour gérer les hackathons
+  const [hackathons, setHackathons] = useState<Hackathon[]>([]);
+  const [selectedHackathon, setSelectedHackathon] = useState<string>("");
+  const [loadingHackathons, setLoadingHackathons] = useState(false);
+
   // Forcer un rafraîchissement des conversations
   const forceRefreshConversations = () => {
     console.log("Forçage du rafraîchissement des conversations");
     setRefreshConversations((prev) => prev + 1);
   };
+
+  // Charger la liste des hackathons disponibles
+  useEffect(() => {
+    const fetchHackathons = async () => {
+      try {
+        setLoadingHackathons(true);
+        const response = await axios.get("/api/hackathons");
+        // Filtrer les hackathons actifs avec une condition plus souple
+        const activeHackathons = response.data.filter((h: Hackathon) => {
+          if (!h.statut) return false;
+          const statut = h.statut.toLowerCase();
+          return (
+            statut.includes("en cours") ||
+            statut.includes("actif") ||
+            statut === "test"
+          ); // Inclure aussi les hackathons de test
+        });
+        setHackathons(activeHackathons);
+
+        // Si des hackathons sont disponibles, sélectionner le premier par défaut
+        if (activeHackathons.length > 0) {
+          setSelectedHackathon(activeHackathons[0]._id);
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des hackathons:", error);
+        toast.error("Impossible de charger les hackathons disponibles");
+      } finally {
+        setLoadingHackathons(false);
+      }
+    };
+
+    fetchHackathons();
+  }, []);
 
   useEffect(() => {
     // Log pour debug
@@ -87,12 +133,21 @@ export default function StudentDashboard() {
     setSelectedConversationId(null);
     setSidebarOpen(false);
 
+    // Vérifier qu'un hackathon est sélectionné
+    if (!selectedHackathon) {
+      toast.error(
+        "Veuillez sélectionner un hackathon avant de commencer une conversation"
+      );
+      return;
+    }
+
     // Créer immédiatement une nouvelle conversation vide
     try {
       const conversationResponse = await axios.post("/api/conversations", {
         studentId,
         tacheId: defaultTacheId, // Ajouter l'ID de tâche par défaut
         groupId: defaultGroupId, // Ajouter l'ID de groupe par défaut
+        hackathonId: selectedHackathon, // Ajouter l'ID du hackathon sélectionné
         titreConversation: `Conversation ${new Date().toLocaleDateString(
           "fr-FR"
         )} ${new Date().toLocaleTimeString("fr-FR")}`,
@@ -131,6 +186,15 @@ export default function StudentDashboard() {
       setCurrentConversation(null);
       setSelectedConversationId(null);
     }
+  };
+
+  const handleHackathonChange = (hackathonId: string) => {
+    setSelectedHackathon(hackathonId);
+    // Réinitialiser la conversation en cours
+    setCurrentConversation(null);
+    setSelectedConversationId(null);
+    // Forcer le rafraîchissement des conversations pour afficher celles du nouveau hackathon
+    forceRefreshConversations();
   };
 
   return (
@@ -179,12 +243,34 @@ export default function StudentDashboard() {
         isMobileOpen={sidebarOpen}
         className="shadow-lg"
         key={`sidebar-${refreshConversations}`} // Forcer le remontage du composant quand refreshConversations change
+        hackathonId={selectedHackathon} // Passer l'ID du hackathon sélectionné
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         <header className="bg-white/80 backdrop-blur-sm shadow-sm p-4 pl-14 md:pl-4 flex justify-between items-center">
-          <div className="px-4 py-2 bg-indigo-100 rounded-lg font-medium text-indigo-800">
-            Hackathon IA
+          <div className="flex items-center space-x-4">
+            <Select
+              value={selectedHackathon}
+              onValueChange={handleHackathonChange}
+              disabled={loadingHackathons}
+            >
+              <SelectTrigger className="w-[220px] bg-indigo-100 text-indigo-800 border-indigo-200 focus:ring-indigo-300">
+                <SelectValue placeholder="Sélectionner un hackathon" />
+              </SelectTrigger>
+              <SelectContent>
+                {hackathons.length === 0 ? (
+                  <SelectItem value="none" disabled>
+                    Aucun hackathon disponible
+                  </SelectItem>
+                ) : (
+                  hackathons.map((hackathon) => (
+                    <SelectItem key={hackathon._id} value={hackathon._id}>
+                      {hackathon.nom}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Bouton flottant pour nouvelle conversation (visible sur mobile) */}
@@ -205,10 +291,36 @@ export default function StudentDashboard() {
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100/50 backdrop-blur-sm">
-          <ChatInterface
-            existingConversation={currentConversation}
-            onConversationCreated={handleConversationCreated}
-          />
+          {selectedHackathon ? (
+            <ChatInterface
+              existingConversation={currentConversation}
+              onConversationCreated={handleConversationCreated}
+              hackathonId={selectedHackathon}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center p-8 max-w-md bg-white rounded-xl shadow-lg">
+                <h2 className="text-2xl font-bold text-indigo-700 mb-4">
+                  Bienvenue dans le Hackathon IA
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  Veuillez sélectionner un hackathon dans la liste déroulante en
+                  haut pour commencer à interagir avec l'IA.
+                </p>
+                {hackathons.length === 0 && !loadingHackathons && (
+                  <p className="text-amber-600">
+                    Aucun hackathon actif n'est disponible pour le moment.
+                    Veuillez contacter votre administrateur.
+                  </p>
+                )}
+                {loadingHackathons && (
+                  <p className="text-indigo-600">
+                    Chargement des hackathons disponibles...
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

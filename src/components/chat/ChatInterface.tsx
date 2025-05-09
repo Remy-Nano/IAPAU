@@ -43,6 +43,7 @@ interface ChatData {
 interface ChatInterfaceProps {
   existingConversation?: Conversation | null;
   onConversationCreated?: (conversationId: string) => void;
+  hackathonId?: string;
 }
 
 /**
@@ -51,6 +52,7 @@ interface ChatInterfaceProps {
 export function ChatInterface({
   existingConversation = null,
   onConversationCreated,
+  hackathonId,
 }: ChatInterfaceProps) {
   // Récupération des paramètres d'URL avec des valeurs par défaut
   const params = useParams();
@@ -249,17 +251,17 @@ export function ChatInterface({
       return;
     }
 
-    // Empêcher l'envoi si la conversation a une version finale
-    if (hasVersionFinale) {
+    // Vérifier la présence d'un hackathon sélectionné
+    if (!hackathonId) {
       toast.error(
-        "Cette conversation a déjà été soumise en version finale et ne peut plus être modifiée"
+        "Veuillez sélectionner un hackathon avant d'envoyer un message"
       );
       return;
     }
 
-    try {
-      setIsLoading(true);
+    setIsLoading(true);
 
+    try {
       // Afficher le message de l'utilisateur immédiatement
       const userMessage: Message = {
         _id: `temp-user-${Date.now()}`,
@@ -288,6 +290,7 @@ export function ChatInterface({
           studentId,
           groupId,
           tacheId,
+          hackathonId, // Ajout de l'ID du hackathon sélectionné
           modelName: data.modelName,
           titreConversation:
             data.titreConversation ||

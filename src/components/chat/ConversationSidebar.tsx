@@ -32,6 +32,7 @@ interface ConversationItem {
   modelName: string;
   titreConversation: string;
   createdAt: string;
+  hackathonId?: string;
   messages?: {
     content: string;
     role: string;
@@ -55,6 +56,7 @@ interface ConversationSidebarProps {
   onConversationDeleted?: (conversationId: string) => void;
   className?: string;
   isMobileOpen?: boolean;
+  hackathonId?: string;
 }
 
 const CONVERSATIONS_STYLES = {
@@ -71,8 +73,12 @@ export function ConversationSidebar({
   onConversationDeleted,
   className = "",
   isMobileOpen = false,
+  hackathonId,
 }: ConversationSidebarProps) {
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const [filteredConversations, setFilteredConversations] = useState<
+    ConversationItem[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeletingConversation, setIsDeletingConversation] = useState(false);
@@ -196,6 +202,18 @@ export function ConversationSidebar({
     }
   };
 
+  // Filtrer les conversations par hackathon
+  useEffect(() => {
+    if (hackathonId) {
+      const filtered = conversations.filter(
+        (conv) => conv.hackathonId === hackathonId
+      );
+      setFilteredConversations(filtered);
+    } else {
+      setFilteredConversations(conversations);
+    }
+  }, [conversations, hackathonId]);
+
   // Récupérer les conversations de l'étudiant
   useEffect(() => {
     const fetchConversations = async () => {
@@ -249,45 +267,20 @@ export function ConversationSidebar({
               );
               setConversations(allResponse.data.conversations);
             } else {
-              console.error(
-                "Aucune conversation disponible dans l'API générale"
-              );
-              setError("Aucune conversation disponible");
+              console.log("Aucune conversation disponible");
+              setConversations([]);
             }
           }
         } else {
-          console.error("Échec API avec message:", response.data.error);
+          console.error("Erreur API:", response.data.message);
           setError(
-            `Impossible de charger les conversations: ${
-              response.data.error || "Erreur inconnue"
-            }`
+            response.data.message ||
+              "Erreur lors du chargement des conversations"
           );
         }
-      } catch (err) {
-        console.error("Erreur lors du chargement des conversations:", err);
-        setError("Erreur de connexion au serveur");
-
-        // En cas d'erreur, essayer de récupérer toutes les conversations
-        try {
-          console.log("Tentative de récupération de toutes les conversations");
-          const fallbackResponse = await axios.get(`/api/conversations`);
-          if (
-            fallbackResponse.data.success &&
-            Array.isArray(fallbackResponse.data.conversations) &&
-            fallbackResponse.data.conversations.length > 0
-          ) {
-            console.log(
-              "Fallback: Utilisation de toutes les conversations disponibles",
-              fallbackResponse.data.conversations.length
-            );
-            setConversations(fallbackResponse.data.conversations);
-            setError(null);
-          } else {
-            console.error("Aucune conversation disponible même en fallback");
-          }
-        } catch (fallbackErr) {
-          console.error("Erreur de fallback:", fallbackErr);
-        }
+      } catch (error) {
+        console.error("Erreur de chargement des conversations:", error);
+        setError("Erreur lors du chargement des conversations");
       } finally {
         setIsLoading(false);
       }
@@ -442,102 +435,120 @@ export function ConversationSidebar({
                     </div>
                   ))}
               </div>
-            ) : conversations.length === 0 ? (
+            ) : filteredConversations.length === 0 ? (
               <div className="text-gray-400 text-center mt-6 p-8 rounded-xl bg-gray-800/30 backdrop-blur-sm border border-gray-700/50">
                 <MessageCircle className="h-10 w-10 mx-auto mb-3 opacity-50 text-indigo-400" />
-                <p className="font-medium">Aucune conversation</p>
+                <p className="font-medium">
+                  {hackathonId
+                    ? "Aucune conversation trouvée pour ce hackathon."
+                    : "Aucune conversation trouvée."}
+                </p>
                 <p className="text-sm mt-2 text-gray-500">
-                  Cliquez sur &quot;Nouvelle conversation&quot; pour commencer
+                  <Button
+                    onClick={onNewConversation}
+                    variant="outline"
+                    className="mx-auto mt-2 border-gray-600 text-gray-300 hover:bg-gray-700"
+                  >
+                    Nouvelle conversation
+                  </Button>
                 </p>
               </div>
             ) : (
               <div className={CONVERSATIONS_STYLES.conversationsList}>
                 {/* Conversations triées par date (plus récentes en haut) */}
-                {conversations.map((conversation) => (
-                  <div
-                    key={conversation._id}
-                    className={`p-4 rounded-xl cursor-pointer transition-all shadow-sm hover:shadow-md group relative overflow-hidden ${
-                      selectedConversationId === conversation._id
-                        ? "bg-gradient-to-r from-indigo-600 to-indigo-500 shadow-lg shadow-indigo-700/20"
-                        : hasValidVersionFinale(conversation)
-                        ? "bg-gradient-to-r from-green-600/20 to-green-500/10 border-l-4 border-green-500/70 dark:bg-green-900/20"
-                        : "bg-gray-800/80 hover:bg-gray-700/80 backdrop-blur-sm border border-gray-700/50 hover:border-indigo-500/30"
-                    } transform transition-transform duration-200 ${
-                      selectedConversationId === conversation._id
-                        ? "scale-[1.02]"
-                        : "hover:scale-[1.02]"
-                    }`}
-                    onClick={() => onSelectConversation(conversation._id)}
-                    role="button"
-                    tabIndex={0}
-                    aria-selected={selectedConversationId === conversation._id}
-                  >
-                    {/* Effet brillant sur hover */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/0 via-indigo-600/5 to-indigo-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 blur-md" />
+                {filteredConversations
+                  .sort(
+                    (a, b) =>
+                      new Date(b.createdAt).getTime() -
+                      new Date(a.createdAt).getTime()
+                  )
+                  .map((conversation) => (
+                    <div
+                      key={conversation._id}
+                      className={`p-4 rounded-xl cursor-pointer transition-all shadow-sm hover:shadow-md group relative overflow-hidden ${
+                        selectedConversationId === conversation._id
+                          ? "bg-gradient-to-r from-indigo-600 to-indigo-500 shadow-lg shadow-indigo-700/20"
+                          : hasValidVersionFinale(conversation)
+                          ? "bg-gradient-to-r from-green-600/20 to-green-500/10 border-l-4 border-green-500/70 dark:bg-green-900/20"
+                          : "bg-gray-800/80 hover:bg-gray-700/80 backdrop-blur-sm border border-gray-700/50 hover:border-indigo-500/30"
+                      } transform transition-transform duration-200 ${
+                        selectedConversationId === conversation._id
+                          ? "scale-[1.02]"
+                          : "hover:scale-[1.02]"
+                      }`}
+                      onClick={() => onSelectConversation(conversation._id)}
+                      role="button"
+                      tabIndex={0}
+                      aria-selected={
+                        selectedConversationId === conversation._id
+                      }
+                    >
+                      {/* Effet brillant sur hover */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/0 via-indigo-600/5 to-indigo-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 blur-md" />
 
-                    <div className="flex justify-between items-start mb-2 relative">
-                      <div className="flex items-center max-w-[80%]">
-                        {hasValidVersionFinale(conversation) ? (
-                          <span
-                            title="Version finale soumise"
-                            className="flex-shrink-0 mr-1.5 bg-green-500/20 p-1 rounded-full"
+                      <div className="flex justify-between items-start mb-2 relative">
+                        <div className="flex items-center max-w-[80%]">
+                          {hasValidVersionFinale(conversation) ? (
+                            <span
+                              title="Version finale soumise"
+                              className="flex-shrink-0 mr-1.5 bg-green-500/20 p-1 rounded-full"
+                            >
+                              <Check className="h-3.5 w-3.5 text-green-300" />
+                            </span>
+                          ) : (
+                            <span className="flex-shrink-0 mr-1.5 bg-indigo-500/20 p-1 rounded-full">
+                              <MessageCircle className="h-3.5 w-3.5 text-indigo-300" />
+                            </span>
+                          )}
+                          <h3
+                            className={`font-medium text-base truncate leading-tight ${
+                              hasValidVersionFinale(conversation) &&
+                              !(selectedConversationId === conversation._id)
+                                ? "text-green-200"
+                                : ""
+                            }`}
                           >
-                            <Check className="h-3.5 w-3.5 text-green-300" />
-                          </span>
-                        ) : (
-                          <span className="flex-shrink-0 mr-1.5 bg-indigo-500/20 p-1 rounded-full">
-                            <MessageCircle className="h-3.5 w-3.5 text-indigo-300" />
+                            {formatConversationTitle(conversation)}
+                          </h3>
+                        </div>
+                        <div className="flex-shrink-0 z-10">
+                          <button
+                            onClick={(e) =>
+                              handleDeleteClick(conversation._id, e)
+                            }
+                            className="text-red-400 transition-colors p-1 rounded-full hover:bg-red-500/20 hover:text-red-300 flex-shrink-0"
+                            aria-label="Supprimer cette conversation"
+                            title="Supprimer cette conversation"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full shrink-0 flex items-center ${getModelBadgeStyle(
+                            getActualModel(conversation)
+                          )}`}
+                        >
+                          <Sparkles className="h-3 w-3 mr-1 opacity-70" />
+                          {getActualModel(conversation)}
+                        </span>
+                        {hasValidVersionFinale(conversation) && (
+                          <span className="text-xs bg-gradient-to-r from-green-600 to-emerald-600 px-2 py-0.5 rounded-full text-white font-medium shrink-0 flex items-center">
+                            <Check className="h-3 w-3 mr-1" />
+                            Version finale
                           </span>
                         )}
-                        <h3
-                          className={`font-medium text-base truncate leading-tight ${
-                            hasValidVersionFinale(conversation) &&
-                            !(selectedConversationId === conversation._id)
-                              ? "text-green-200"
-                              : ""
-                          }`}
-                        >
-                          {formatConversationTitle(conversation)}
-                        </h3>
                       </div>
-                      <div className="flex-shrink-0 z-10">
-                        <button
-                          onClick={(e) =>
-                            handleDeleteClick(conversation._id, e)
-                          }
-                          className="text-red-400 transition-colors p-1 rounded-full hover:bg-red-500/20 hover:text-red-300 flex-shrink-0"
-                          aria-label="Supprimer cette conversation"
-                          title="Supprimer cette conversation"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                      <p className="text-sm text-gray-300 line-clamp-2 mb-2 leading-snug">
+                        {getPreview(conversation)}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-auto flex items-center">
+                        <Clock className="h-3 w-3 mr-1 opacity-70" />
+                        {formatDate(conversation.createdAt)}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full shrink-0 flex items-center ${getModelBadgeStyle(
-                          getActualModel(conversation)
-                        )}`}
-                      >
-                        <Sparkles className="h-3 w-3 mr-1 opacity-70" />
-                        {getActualModel(conversation)}
-                      </span>
-                      {hasValidVersionFinale(conversation) && (
-                        <span className="text-xs bg-gradient-to-r from-green-600 to-emerald-600 px-2 py-0.5 rounded-full text-white font-medium shrink-0 flex items-center">
-                          <Check className="h-3 w-3 mr-1" />
-                          Version finale
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-300 line-clamp-2 mb-2 leading-snug">
-                      {getPreview(conversation)}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-auto flex items-center">
-                      <Clock className="h-3 w-3 mr-1 opacity-70" />
-                      {formatDate(conversation.createdAt)}
-                    </p>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </ScrollArea>
