@@ -1,6 +1,6 @@
 # Prompt Challenge - Interface de Chat IA
 
-Une plateforme moderne de chat avec IA permettant aux étudiants d'interagir avec différents modèles d'intelligence artificielle, de sauvegarder leurs conversations et de soumettre des versions finales.
+Une plateforme moderne de chat avec IA permettant aux étudiants d'interagir avec différents modèles d'intelligence artificielle, de sauvegarder leurs conversations et de soumettre des versions finales. Inclut également une gestion des utilisateurs, des imports CSV et des hackathons.
 
 ## 🌟 Fonctionnalités
 
@@ -12,13 +12,16 @@ Une plateforme moderne de chat avec IA permettant aux étudiants d'interagir ave
 - **Expérience utilisateur fluide** : Réponses en temps réel sans rechargement de page
 - **Personnalisation avancée** : Contrôle de température et nombre maximum de tokens
 - **Statistiques de conversation** : Analyse des interactions et métriques d'utilisation
+- **Gestion des utilisateurs** : Interface d'administration pour créer, modifier et supprimer des utilisateurs
+- **Import CSV** : Importation en masse d'utilisateurs via fichiers CSV
+- **Gestion des hackathons** : Organisation et suivi des événements de hackathon
 
 ## 🔧 Prérequis
 
 - Node.js 20.x ou supérieur
 - MongoDB (local ou Atlas)
 - Clés API pour les modèles d'IA (OpenAI, Mistral)
-- XAMPP (si besoin d'un environnement local pour MongoDB)
+- XAMPP pour l'environnement local (optionnel, si vous préférez MongoDB local)
 
 ## 🚀 Installation
 
@@ -35,7 +38,36 @@ cd prompt-challenge
 npm install
 ```
 
-3. **Configurer les variables d'environnement**
+3. **Configurer MongoDB**
+
+Deux options s'offrent à vous :
+
+**Option 1 : MongoDB Atlas (Cloud)**
+
+- Créez un compte sur [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+- Créez un nouveau cluster (la version gratuite est suffisante)
+- Configurez l'accès réseau pour autoriser votre IP
+- Créez un utilisateur de base de données
+- Obtenez votre URI de connexion (à utiliser dans les variables d'environnement)
+
+**Option 2 : MongoDB Local (avec XAMPP)**
+
+- Installez [XAMPP](https://www.apachefriends.org/index.html)
+- Démarrez les services Apache et MongoDB
+- La base de données sera accessible sur `mongodb://localhost:27017`
+
+4. **Obtenir les clés API pour les modèles d'IA**
+
+- Pour OpenAI (GPT) :
+
+  - Créez un compte sur [OpenAI](https://platform.openai.com/)
+  - Générez une clé API dans la section "API Keys"
+
+- Pour Mistral AI :
+  - Créez un compte sur [Mistral AI](https://console.mistral.ai/)
+  - Générez une clé API dans votre espace développeur
+
+5. **Configurer les variables d'environnement**
 
 Créez un fichier `.env.local` à la racine du projet avec les variables suivantes :
 
@@ -44,7 +76,7 @@ Créez un fichier `.env.local` à la racine du projet avec les variables suivant
 MONGODB_URI=votre_uri_mongodb
 
 # JWT
-JWT_SECRET=votre_clé_secrète
+JWT_SECRET=votre_clé_secrète_pour_jwt
 
 # OpenAI
 OPENAI_API_KEY=votre_clé_api_openai
@@ -54,15 +86,35 @@ MISTRAL_API_KEY=votre_clé_api_mistral
 
 # Configuration app
 NEXT_PUBLIC_API_URL=http://localhost:3000/api
+
+# Email (pour magic link)
+EMAIL_SERVER=smtp://utilisateur:mot_de_passe@votreserveur:port
+EMAIL_FROM=email@exemple.com
 ```
 
-4. **Démarrer le serveur de développement**
+6. **Initialiser la base de données (optionnel)**
+
+Pour créer un utilisateur administrateur initial :
+
+```bash
+# Cette commande initialisera la base de données avec un administrateur
+node scripts/init-db.js
+```
+
+7. **Démarrer le serveur de développement**
 
 ```bash
 npm run dev
 ```
 
 L'application sera accessible à l'adresse [http://localhost:3000](http://localhost:3000).
+
+8. **Création du build de production (optionnel)**
+
+```bash
+npm run build
+npm start
+```
 
 ## 📁 Structure du projet
 
@@ -73,9 +125,11 @@ prompt-challenge/
 │   │   ├── api/               # Routes API
 │   │   │   ├── auth/          # API d'authentification
 │   │   │   ├── conversations/ # API de gestion des conversations
-│   │   │   ├── login/         # API de connexion
 │   │   │   ├── users/         # API de gestion des utilisateurs
+│   │   │   ├── hackathons/    # API de gestion des hackathons
 │   │   │   └── health/        # API de vérification de santé
+│   │   ├── admin/             # Interface d'administration
+│   │   │   └── users/         # Gestion des utilisateurs (CRUD + import)
 │   │   ├── dashboard/         # Interface principale
 │   │   ├── login/             # Authentification
 │   │   ├── magic-link/        # Connexion par lien magique
@@ -83,23 +137,15 @@ prompt-challenge/
 │   │   └── version-finale/    # Affichage des versions finales
 │   ├── components/            # Composants React
 │   │   ├── auth/              # Composants d'authentification
+│   │   ├── admin/             # Composants d'administration
 │   │   ├── chat/              # Composants de l'interface de chat
-│   │   │   ├── ChatInterface.tsx        # Interface principale de chat
-│   │   │   ├── ConversationSidebar.tsx  # Barre latérale des conversations
-│   │   │   ├── ResponseList.tsx         # Liste des réponses
-│   │   │   ├── PromptInput.tsx          # Saisie de prompt
-│   │   │   ├── ModelSelect.tsx          # Sélection du modèle d'IA
-│   │   │   ├── TemperatureSlider.tsx    # Contrôle de température
-│   │   │   ├── MaxTokensSlider.tsx      # Limitation de tokens
-│   │   │   ├── TokenCounter.tsx         # Compteur de tokens
-│   │   │   ├── ConversationStats.tsx    # Statistiques de conversation
-│   │   │   └── SubmitFinalButton.tsx    # Soumission version finale
 │   │   └── ui/                # Composants UI réutilisables
 │   ├── context/               # Contextes React (Auth, etc.)
 │   ├── lib/                   # Utilitaires et services
 │   │   ├── models/            # Modèles de données MongoDB
 │   │   │   ├── user.ts        # Modèle utilisateur
-│   │   │   └── conversation.ts # Modèle de conversation
+│   │   │   ├── conversation.ts # Modèle de conversation
+│   │   │   └── hackathon.ts   # Modèle de hackathon
 │   └── types/                 # Définitions TypeScript
 ├── public/                    # Fichiers statiques
 ├── middleware.ts              # Middleware Next.js (authentification)
@@ -121,24 +167,13 @@ prompt-challenge/
 - ✅ **Interface utilisateur moderne** : Composants Radix UI et TailwindCSS 4
 - ✅ **Stockage de données MongoDB** : Modèles utilisateurs et conversations
 - ✅ **Soumission de version finale** : Sauvegarde d'une conversation comme version finale
+- ✅ **Gestion des utilisateurs** : Interface admin pour créer/éditer/supprimer des utilisateurs
+- ✅ **Import CSV d'utilisateurs** : Import en masse avec validation
+- ✅ **Gestion des hackathons** : Création et suivi d'événements de hackathon
 
-### Fonctionnalités en cours de développement
+## 🔄 Guide d'utilisation
 
-- 🔄 **Optimisation des performances** : Amélioration du chargement des conversations
-- 🔄 **Exportation de conversations** : Format PDF et partage de liens
-- 🔄 **Interface d'administration** : Tableau de bord pour les administrateurs
-- 🔄 **Analyse des prompts** : Système de suggestion pour améliorer les prompts
-- 🔄 **Mode hors-ligne** : Fonctionnement en cas de perte de connexion
-
-### Améliorations techniques récentes
-
-- **Utilisation de React 19** : Mise à niveau vers la dernière version avec améliorations de performance
-- **TailwindCSS 4** : Mise à jour vers la dernière version du framework CSS
-- **Turbopack** : Activation du bundler pour des performances de développement améliorées
-- **TypeScript stricte** : Types rigoureux pour une meilleure qualité de code
-- **Optimisation MongoDB** : Schémas et indexes optimisés pour les performances
-
-## 🔄 Utilisation
+### Interface utilisateur standard
 
 1. Connectez-vous à votre compte (par email ou magic link)
 2. Accédez au tableau de bord
@@ -148,6 +183,22 @@ prompt-challenge/
 6. Envoyez votre prompt et recevez une réponse en temps réel
 7. Consultez les statistiques de votre conversation
 8. Sélectionnez une version finale pour la soumettre définitivement
+
+### Interface d'administration
+
+1. Connectez-vous avec un compte administrateur
+2. Accédez à la section d'administration via le menu
+3. Gérez les utilisateurs (création, modification, suppression)
+4. Importez des utilisateurs en masse via CSV (modèle disponible)
+5. Gérez les hackathons (création, dates, participants)
+
+### Import CSV d'utilisateurs
+
+1. Accédez à la section Admin > Utilisateurs > Import
+2. Téléchargez le modèle CSV fourni
+3. Remplissez le fichier avec les informations des utilisateurs
+4. Importez le fichier dans l'interface
+5. Validez les données et confirmez l'import
 
 ## 🛠️ Technologies utilisées
 
@@ -161,14 +212,34 @@ prompt-challenge/
 - [JWT](https://jwt.io/) - Authentification sécurisée
 - [Radix UI](https://www.radix-ui.com/) - Composants UI accessibles
 - [Turbopack](https://turbo.build/pack) - Bundler nouvelle génération pour Next.js
+- [Zod](https://zod.dev) - Validation de schémas TypeScript
+- [React Hook Form](https://react-hook-form.com/) - Gestion de formulaires
 
-## 📝 Notes de développement
+## 📝 Résolution de problèmes courants
 
-- Utilisation de `npm run dev --turbopack` pour un développement rapide
-- Structure modulaire avec composants spécialisés pour le chat
-- Interface réactive avec comptage de tokens en temps réel
-- Système de sliders pour ajuster les paramètres IA facilement
-- Modèles de données MongoDB optimisés pour les requêtes fréquentes
+### Connexion à MongoDB
+
+Si vous rencontrez des problèmes de connexion à MongoDB :
+
+- Vérifiez que l'URI dans votre fichier `.env.local` est correct
+- Assurez-vous que l'utilisateur a les droits d'accès nécessaires
+- Si vous utilisez MongoDB Atlas, vérifiez que votre IP est autorisée
+
+### Problèmes avec les clés API
+
+Si les modèles d'IA ne répondent pas :
+
+- Vérifiez que vos clés API sont valides et correctement configurées
+- Confirmez que vous avez du crédit disponible sur vos comptes d'API
+- Assurez-vous que les clés sont correctement formatées dans le fichier `.env.local`
+
+### Démarrage serveur
+
+Si vous rencontrez des erreurs au démarrage du serveur :
+
+- Nettoyez le cache avec `npm run clean` puis réessayez
+- Vérifiez que toutes les dépendances sont installées avec `npm install`
+- Assurez-vous d'utiliser Node.js 20.x ou supérieur
 
 ## 🔜 Prochaines étapes
 
