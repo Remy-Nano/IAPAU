@@ -12,18 +12,30 @@ type Props = {
   };
 };
 
-export async function GET(_request: NextRequest, { params }: Props) {
+export async function GET(request: NextRequest, { params }: Props) {
   await connectDB();
   try {
-    const id = params.id;
-    console.log(`GET /api/hackathons/${id}`);
-    const hackathon = await getHackathonById(id);
-    return NextResponse.json(hackathon, { status: 200 });
+    const hackathon = await getHackathonById(params.id);
+
+    // Vérifier si on demande uniquement les tâches
+    const url = new URL(request.url);
+    const tasksOnly = url.searchParams.get("tasksOnly") === "true";
+
+    if (tasksOnly) {
+      // Retourner seulement les tâches formatées
+      const formattedTasks = hackathon.taches.map((tache, index) => ({
+        id: `${params.id}-task-${index}`, // ID unique pour chaque tâche
+        nom: tache,
+        hackathonId: params.id,
+      }));
+
+      return NextResponse.json({ success: true, taches: formattedTasks });
+    }
+
+    return NextResponse.json(hackathon);
   } catch (err: unknown) {
-    console.error(`Erreur GET /api/hackathons/${params.id}:`, err);
-    const msg = err instanceof Error ? err.message : "Erreur inconnue";
-    const status = msg === "Hackathon non trouvé" ? 404 : 500;
-    return NextResponse.json({ error: msg }, { status });
+    const msg = err instanceof Error ? err.message : "Erreur";
+    return NextResponse.json({ error: msg }, { status: 404 });
   }
 }
 

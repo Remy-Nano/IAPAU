@@ -22,17 +22,31 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const withFinalVersion =
       url.searchParams.get("withFinalVersion") === "true";
+    const hackathonId = url.searchParams.get("hackathonId");
+    const tacheId = url.searchParams.get("tacheId");
 
-    let query = {};
+    const query: {
+      $and?: Array<Record<string, unknown>>;
+      hackathonId?: string;
+      tacheId?: string;
+    } = {};
 
     // Filtrer les conversations avec versionFinale non vide
     if (withFinalVersion) {
-      query = {
-        $and: [
-          { "versionFinale.promptFinal": { $exists: true, $ne: "" } },
-          { "versionFinale.reponseIAFinale": { $exists: true, $ne: "" } },
-        ],
-      };
+      query.$and = [
+        { "versionFinale.promptFinal": { $exists: true, $ne: "" } },
+        { "versionFinale.reponseIAFinale": { $exists: true, $ne: "" } },
+      ];
+    }
+
+    // Filtrer par hackathon si spécifié
+    if (hackathonId && hackathonId !== "all") {
+      query.hackathonId = hackathonId;
+    }
+
+    // Filtrer par tâche si spécifié
+    if (tacheId && tacheId !== "all") {
+      query.tacheId = tacheId;
     }
 
     const conversations = await Conversation.find(query)

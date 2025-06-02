@@ -1,6 +1,6 @@
+import { Conversation } from "@/lib/models/conversation";
 import { Evaluation } from "@/lib/models/evaluation";
 import connectDB from "@/lib/mongoose";
-import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -9,6 +9,14 @@ export async function POST(request: Request) {
 
     const { conversationId, studentId, examinerId, note, comment } =
       await request.json();
+
+    console.log("DEBUG API - Received data:", {
+      conversationId,
+      studentId,
+      examinerId,
+      note,
+      comment: comment?.substring(0, 50) + "...",
+    });
 
     // Validation des champs obligatoires
     if (!conversationId || !studentId || !examinerId || !note || !comment) {
@@ -37,26 +45,29 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validation des ObjectId
-    if (
-      !Types.ObjectId.isValid(conversationId) ||
-      !Types.ObjectId.isValid(studentId) ||
-      !Types.ObjectId.isValid(examinerId)
-    ) {
+    // Récupérer la conversation pour obtenir hackathonId et tacheId
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) {
       return NextResponse.json(
-        { error: "Les IDs fournis ne sont pas valides" },
-        { status: 400 }
+        { error: "Conversation introuvable" },
+        { status: 404 }
       );
     }
 
-    // Création de l'évaluation
+    // Création de l'évaluation avec hackathonId et tacheId automatiques
     const evaluation = await Evaluation.create({
       conversationId,
       studentId,
       examinerId,
+      hackathonId: conversation.hackathonId,
+      tacheId: conversation.tacheId,
       note,
       comment: comment.trim(),
     });
+
+    console.log("DEBUG API - Evaluation created:", evaluation._id);
+    console.log("DEBUG API - With hackathonId:", conversation.hackathonId);
+    console.log("DEBUG API - With tacheId:", conversation.tacheId);
 
     return NextResponse.json({ success: true, evaluation }, { status: 200 });
   } catch (error: unknown) {

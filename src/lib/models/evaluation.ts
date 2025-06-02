@@ -1,10 +1,11 @@
 import { Document, Schema, model, models } from "mongoose";
 
 export interface IEvaluation extends Document {
-  conversationId: Schema.Types.ObjectId;
-  studentId: Schema.Types.ObjectId;
-  examinerId: Schema.Types.ObjectId;
-  hackathonId?: Schema.Types.ObjectId;
+  conversationId: string;
+  studentId: string;
+  examinerId: string;
+  hackathonId?: string;
+  tacheId?: string;
   note: number;
   comment: string;
   gradedAt: Date;
@@ -15,23 +16,22 @@ export interface IEvaluation extends Document {
 const evaluationSchema = new Schema<IEvaluation>(
   {
     conversationId: {
-      type: Schema.Types.ObjectId,
-      ref: "Conversation",
+      type: String,
       required: true,
     },
     studentId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       required: true,
     },
     examinerId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       required: true,
     },
     hackathonId: {
-      type: Schema.Types.ObjectId,
-      ref: "Hackathon",
+      type: String,
+    },
+    tacheId: {
+      type: String,
     },
     note: {
       type: Number,
@@ -55,21 +55,9 @@ const evaluationSchema = new Schema<IEvaluation>(
 // Index unique sur la combinaison examinerId + conversationId
 evaluationSchema.index({ examinerId: 1, conversationId: 1 }, { unique: true });
 
-// Middleware pour déduire hackathonId depuis la conversation
-evaluationSchema.pre("save", async function (next) {
-  if (!this.hackathonId && this.conversationId) {
-    try {
-      const { Conversation } = await import("./conversation");
-      const conversation = await Conversation.findById(this.conversationId);
-      if (conversation?.hackathonId) {
-        this.hackathonId = conversation.hackathonId as Schema.Types.ObjectId;
-      }
-    } catch (error) {
-      console.warn("Impossible de récupérer hackathonId:", error);
-    }
-  }
-  next();
-});
+// Forcer la suppression du modèle existant s'il existe
+if (models.Evaluation) {
+  delete models.Evaluation;
+}
 
-export const Evaluation =
-  models.Evaluation || model<IEvaluation>("Evaluation", evaluationSchema);
+export const Evaluation = model<IEvaluation>("Evaluation", evaluationSchema);
