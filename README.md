@@ -1,264 +1,351 @@
-# Prompt Challenge - Interface de Chat IA
+# 🚀 **Prompt Challenge Platform**
 
-Une plateforme moderne de chat avec IA permettant aux étudiants d'interagir avec différents modèles d'intelligence artificielle, de sauvegarder leurs conversations et de soumettre des versions finales. Inclut également une gestion des utilisateurs, des imports CSV et des hackathons.
+_Plateforme d'évaluation IA pour hackathons - Architecture Next.js/MERN avec Domain-Driven Design_
 
-## 🌟 Fonctionnalités
+[![Next.js](https://img.shields.io/badge/Next.js-15.3.1-000000?style=flat&logo=nextdotjs)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat&logo=typescript)](https://www.typescriptlang.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat&logo=mongodb)](https://www.mongodb.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.x-06B6D4?style=flat&logo=tailwindcss)](https://tailwindcss.com/)
 
-- **Multi-modèles d'IA** : Support pour OpenAI (GPT) et Mistral AI
-- **Historique de conversations** : Interface intuitive avec historique des échanges
-- **Version finale** : Sélection et sauvegarde d'une version finale des conversations
-- **Authentification** : Système de connexion sécurisé avec magic link
-- **Interface responsive** : Compatible desktop et mobile
-- **Expérience utilisateur fluide** : Réponses en temps réel sans rechargement de page
-- **Personnalisation avancée** : Contrôle de température et nombre maximum de tokens
-- **Statistiques de conversation** : Analyse des interactions et métriques d'utilisation
-- **Gestion des utilisateurs** : Interface d'administration pour créer, modifier et supprimer des utilisateurs
-- **Import CSV** : Importation en masse d'utilisateurs via fichiers CSV
-- **Gestion des hackathons** : Organisation et suivi des événements de hackathon
+---
 
-## 🔧 Prérequis
+## 📋 **Table des matières**
 
-- Node.js 20.x ou supérieur
-- MongoDB (local ou Atlas)
-- Clés API pour les modèles d'IA (OpenAI, Mistral)
-- XAMPP pour l'environnement local (optionnel, si vous préférez MongoDB local)
+1. [Vue d'ensemble](#-vue-densemble)
+2. [Architecture du projet](#-architecture-du-projet)
+3. [Bonnes pratiques appliquées](#-bonnes-pratiques-appliquées)
+4. [Guide de contribution](#-guide-de-contribution)
+5. [Évolutions futures](#-évolutions-futures)
+6. [Démarrage rapide](#-démarrage-rapide)
+7. [Scripts utilitaires](#-scripts-utilitaires)
 
-## 🚀 Installation
+---
 
-1. **Cloner le dépôt**
+## 🎯 **Vue d'ensemble**
 
-```bash
-git clone https://github.com/votre-utilisateur/prompt-challenge.git
-cd prompt-challenge
-```
+**Prompt Challenge** est une solution complète d'évaluation et de notation pour hackathons utilisant l'intelligence artificielle. La plateforme permet aux jurys d'évaluer les conversations entre étudiants et différents modèles d'IA (OpenAI, Mistral, Claude, etc.) de manière structurée et transparente.
 
-2. **Installer les dépendances**
+### **Fonctionnalités principales**
 
-```bash
-npm install
-```
+- 🤖 **Multi-IA** : Intégration avec OpenAI, Mistral, et extensible à d'autres fournisseurs
+- 👥 **Gestion des rôles** : Étudiants, jurys, administrateurs
+- 📊 **Évaluation structurée** : Grille de notation standardisée avec commentaires
+- 🔐 **Sécurité avancée** : Authentification sécurisée, hachage bcrypt, validation Zod
+- 🌐 **Interface moderne** : UI responsive avec ShadCN/ui et Tailwind CSS
 
-3. **Configurer MongoDB**
+### **Stack technique**
 
-Deux options s'offrent à vous :
+- **Frontend** : Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Backend** : Next.js API Routes, Mongoose, MongoDB Atlas
+- **UI** : ShadCN/ui, Radix UI, Lucide React
+- **Validation** : Zod, React Hook Form
+- **Auth** : JWT, bcryptjs, Magic Links
+- **IA** : OpenAI API, Mistral API (extensible)
 
-**Option 1 : MongoDB Atlas (Cloud)**
+---
 
-- Créez un compte sur [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-- Créez un nouveau cluster (la version gratuite est suffisante)
-- Configurez l'accès réseau pour autoriser votre IP
-- Créez un utilisateur de base de données
-- Obtenez votre URI de connexion (à utiliser dans les variables d'environnement)
+## 🏗️ **Architecture du projet**
 
-**Option 2 : MongoDB Local (avec XAMPP)**
-
-- Installez [XAMPP](https://www.apachefriends.org/index.html)
-- Démarrez les services Apache et MongoDB
-- La base de données sera accessible sur `mongodb://localhost:27017`
-
-4. **Obtenir les clés API pour les modèles d'IA**
-
-- Pour OpenAI (GPT) :
-
-  - Créez un compte sur [OpenAI](https://platform.openai.com/)
-  - Générez une clé API dans la section "API Keys"
-
-- Pour Mistral AI :
-  - Créez un compte sur [Mistral AI](https://console.mistral.ai/)
-  - Générez une clé API dans votre espace développeur
-
-5. **Configurer les variables d'environnement**
-
-Créez un fichier `.env.local` à la racine du projet avec les variables suivantes :
-
-```env
-# MongoDB
-MONGODB_URI=votre_uri_mongodb
-
-# JWT
-JWT_SECRET=votre_clé_secrète_pour_jwt
-
-# OpenAI
-OPENAI_API_KEY=votre_clé_api_openai
-
-# Mistral AI
-MISTRAL_API_KEY=votre_clé_api_mistral
-
-# Configuration app
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
-
-# Email (pour magic link)
-EMAIL_SERVER=smtp://utilisateur:mot_de_passe@votreserveur:port
-EMAIL_FROM=email@exemple.com
-```
-
-6. **Initialiser la base de données (optionnel)**
-
-Pour créer un utilisateur administrateur initial :
-
-```bash
-# Cette commande initialisera la base de données avec un administrateur
-node scripts/init-db.js
-```
-
-7. **Démarrer le serveur de développement**
-
-```bash
-npm run dev
-```
-
-L'application sera accessible à l'adresse [http://localhost:3000](http://localhost:3000).
-
-8. **Création du build de production (optionnel)**
-
-```bash
-npm run build
-npm start
-```
-
-## 📁 Structure du projet
+### **Structure des dossiers**
 
 ```
 prompt-challenge/
-├── src/                       # Code source
-│   ├── app/                   # Pages et routes (Next.js App Router)
-│   │   ├── api/               # Routes API
-│   │   │   ├── auth/          # API d'authentification
-│   │   │   ├── conversations/ # API de gestion des conversations
-│   │   │   ├── users/         # API de gestion des utilisateurs
-│   │   │   ├── hackathons/    # API de gestion des hackathons
-│   │   │   └── health/        # API de vérification de santé
-│   │   ├── admin/             # Interface d'administration
-│   │   │   └── users/         # Gestion des utilisateurs (CRUD + import)
-│   │   ├── dashboard/         # Interface principale
-│   │   ├── login/             # Authentification
-│   │   ├── magic-link/        # Connexion par lien magique
-│   │   ├── unauthorized/      # Page d'accès non autorisé
-│   │   └── version-finale/    # Affichage des versions finales
-│   ├── components/            # Composants React
-│   │   ├── auth/              # Composants d'authentification
-│   │   ├── admin/             # Composants d'administration
-│   │   ├── chat/              # Composants de l'interface de chat
-│   │   └── ui/                # Composants UI réutilisables
-│   ├── context/               # Contextes React (Auth, etc.)
-│   ├── lib/                   # Utilitaires et services
-│   │   ├── models/            # Modèles de données MongoDB
-│   │   │   ├── user.ts        # Modèle utilisateur
-│   │   │   ├── conversation.ts # Modèle de conversation
-│   │   │   └── hackathon.ts   # Modèle de hackathon
-│   └── types/                 # Définitions TypeScript
-├── public/                    # Fichiers statiques
-├── middleware.ts              # Middleware Next.js (authentification)
-├── package.json               # Dépendances et scripts
-└── next.config.ts             # Configuration Next.js
+├── 📁 src/
+│   ├── 📁 app/                    # Pages & API Routes (Next.js 14+)
+│   │   ├── 📁 api/               # Routes API backend
+│   │   │   ├── auth/             # Authentification
+│   │   │   ├── users/            # Gestion utilisateurs
+│   │   │   ├── conversations/    # Gestion conversations
+│   │   │   ├── evaluations/      # Système d'évaluation
+│   │   │   └── hackathons/       # Gestion hackathons
+│   │   ├── 📁 admin/             # Interface administration
+│   │   ├── 📁 dashboard/         # Tableaux de bord
+│   │   └── 📁 login/             # Pages authentification
+│   ├── 📁 components/            # Composants React organisés par domaine
+│   │   ├── 📁 ui/               # Composants ShadCN/ui réutilisables
+│   │   ├── 📁 auth/             # Composants authentification
+│   │   ├── 📁 admin/            # Composants administration
+│   │   ├── 📁 chat/             # Interface conversation IA
+│   │   ├── 📁 student/          # Interface étudiants
+│   │   └── 📁 examiner/         # Interface jurys
+│   ├── 📁 lib/                   # Logique backend et services
+│   │   ├── 📁 models/           # Modèles Mongoose
+│   │   ├── 📁 services/         # Logique métier centralisée
+│   │   ├── 📁 controllers/      # Contrôleurs HTTP
+│   │   ├── 📁 utils/            # Utilitaires partagés
+│   │   └── mongoose.ts          # Configuration base de données
+│   ├── 📁 types/                # Types TypeScript partagés
+│   └── 📁 context/              # Contextes React globaux
+├── 📁 scripts/                   # Scripts de maintenance et audit
+├── 📁 public/                    # Assets statiques
+└── 📄 Configuration files        # Next.js, TypeScript, ESLint, etc.
 ```
 
-## 🌈 État d'avancement du projet
+### **Séparation des responsabilités**
 
-### Fonctionnalités implémentées
+#### **Frontend (`/src/app/` + `/src/components/`)**
 
-- ✅ **Architecture complète Next.js 15** : Structure App Router moderne avec API routes
-- ✅ **Interface de chat fonctionnelle** : Interactions en temps réel avec les modèles d'IA
-- ✅ **Intégration multi-modèles** : Support OpenAI (v4.97.0) et Mistral AI (v1.6.0)
-- ✅ **Système d'authentification** : Magic link et JWT pour la sécurité
-- ✅ **Gestion des conversations** : Création, lecture, historique et suppression
-- ✅ **Middleware d'authentification** : Protection des routes privées
-- ✅ **Personnalisation des paramètres d'IA** : Contrôle de température et limite de tokens
-- ✅ **Interface utilisateur moderne** : Composants Radix UI et TailwindCSS 4
-- ✅ **Stockage de données MongoDB** : Modèles utilisateurs et conversations
-- ✅ **Soumission de version finale** : Sauvegarde d'une conversation comme version finale
-- ✅ **Gestion des utilisateurs** : Interface admin pour créer/éditer/supprimer des utilisateurs
-- ✅ **Import CSV d'utilisateurs** : Import en masse avec validation
-- ✅ **Gestion des hackathons** : Création et suivi d'événements de hackathon
+- **Pages** : Routage et layout dans `/src/app/`
+- **Composants UI** : Interface utilisateur pure dans `/src/components/ui/`
+- **Composants métier** : Logique business dans `/src/components/{domain}/`
 
-## 🔄 Guide d'utilisation
+#### **Backend (`/src/lib/`)**
 
-### Interface utilisateur standard
+- **Models** : Schémas Mongoose et validation données
+- **Services** : Logique métier centralisée et réutilisable
+- **Controllers** : Gestion des requêtes HTTP et réponses
+- **Utils** : Fonctions utilitaires transversales
 
-1. Connectez-vous à votre compte (par email ou magic link)
-2. Accédez au tableau de bord
-3. Créez une nouvelle conversation ou poursuivez une existante
-4. Sélectionnez le modèle d'IA souhaité (OpenAI ou Mistral)
-5. Ajustez les paramètres (température, tokens maximum) selon vos besoins
-6. Envoyez votre prompt et recevez une réponse en temps réel
-7. Consultez les statistiques de votre conversation
-8. Sélectionnez une version finale pour la soumettre définitivement
+#### **Types (`/src/types/`)**
 
-### Interface d'administration
+- Types TypeScript partagés entre frontend et backend
+- Interfaces de validation et de données métier
 
-1. Connectez-vous avec un compte administrateur
-2. Accédez à la section d'administration via le menu
-3. Gérez les utilisateurs (création, modification, suppression)
-4. Importez des utilisateurs en masse via CSV (modèle disponible)
-5. Gérez les hackathons (création, dates, participants)
+---
 
-### Import CSV d'utilisateurs
+## ✨ **Bonnes pratiques appliquées**
 
-1. Accédez à la section Admin > Utilisateurs > Import
-2. Téléchargez le modèle CSV fourni
-3. Remplissez le fichier avec les informations des utilisateurs
-4. Importez le fichier dans l'interface
-5. Validez les données et confirmez l'import
+### **1. Domain-Driven Design (DDD)**
 
-## 🛠️ Technologies utilisées
+Chaque domaine métier a sa propre organisation :
 
-- [Next.js 15.3.1](https://nextjs.org/) - Framework React avec App Router
-- [React 19](https://reactjs.org/) - Bibliothèque UI dernière version
-- [MongoDB](https://www.mongodb.com/) - Base de données NoSQL
-- [Mongoose 8.14.1](https://mongoosejs.com/) - ODM pour MongoDB
-- [Tailwind CSS 4](https://tailwindcss.com/) - Framework CSS utility-first
-- [OpenAI API 4.97.0](https://openai.com/api/) - API pour GPT
-- [Mistral AI 1.6.0](https://mistral.ai/) - Modèle d'IA alternatif
-- [JWT](https://jwt.io/) - Authentification sécurisée
-- [Radix UI](https://www.radix-ui.com/) - Composants UI accessibles
-- [Turbopack](https://turbo.build/pack) - Bundler nouvelle génération pour Next.js
-- [Zod](https://zod.dev) - Validation de schémas TypeScript
-- [React Hook Form](https://react-hook-form.com/) - Gestion de formulaires
+```typescript
+// Exemple : Domaine "Users"
+/src/components/admin/users/     # UI spécifique aux utilisateurs
+/src/lib/services/userService.ts # Logique métier utilisateurs
+/src/lib/models/user.ts          # Modèle de données utilisateur
+/src/types/userValidation.ts     # Types et validations
+```
 
-## 📝 Résolution de problèmes courants
+### **2. Séparation stricte des préoccupations**
 
-### Connexion à MongoDB
+```typescript
+// ✅ Route API minimaliste
+export async function POST(request: Request) {
+  await connectDB();
+  const data = await request.json();
 
-Si vous rencontrez des problèmes de connexion à MongoDB :
+  try {
+    const user = await createUser(data); // ← Logique dans le service
+    return NextResponse.json({ user }, { status: 201 });
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+}
 
-- Vérifiez que l'URI dans votre fichier `.env.local` est correct
-- Assurez-vous que l'utilisateur a les droits d'accès nécessaires
-- Si vous utilisez MongoDB Atlas, vérifiez que votre IP est autorisée
+// ✅ Service avec logique métier
+export async function createUser(data: CreateUserData) {
+  // Validation, hachage, création en base...
+  const passwordHash = await bcrypt.hash(data.password, 10);
+  return await User.create({ ...data, passwordHash });
+}
+```
 
-### Problèmes avec les clés API
+### **3. Type Safety & Validation**
 
-Si les modèles d'IA ne répondent pas :
+- **Zod** pour la validation des données d'entrée
+- **TypeScript strict** pour la cohérence du code
+- **Interfaces partagées** entre frontend et backend
 
-- Vérifiez que vos clés API sont valides et correctement configurées
-- Confirmez que vous avez du crédit disponible sur vos comptes d'API
-- Assurez-vous que les clés sont correctement formatées dans le fichier `.env.local`
+```typescript
+// Types centralisés
+export interface CreateUserData {
+  prenom: string;
+  nom: string;
+  email: string;
+  password: string;
+  role?: UserRole;
+}
+```
 
-### Démarrage serveur
+### **4. Gestion des erreurs robuste**
 
-Si vous rencontrez des erreurs au démarrage du serveur :
+```typescript
+// Gestion d'erreurs structurée avec codes HTTP appropriés
+if (error.code === 11000) {
+  return NextResponse.json(
+    { error: "Une évaluation existe déjà pour cette combinaison" },
+    { status: 409 }
+  );
+}
+```
 
-- Nettoyez le cache avec `npm run clean` puis réessayez
-- Vérifiez que toutes les dépendances sont installées avec `npm install`
-- Assurez-vous d'utiliser Node.js 20.x ou supérieur
+### **5. ShadCN/ui : Extensibilité Future-Proof**
 
-## 🔜 Prochaines étapes
+Les composants ShadCN/ui non utilisés sont **intentionnellement conservés** :
 
-- Implémentation de tests automatisés avec Jest et React Testing Library
-- Intégration de nouveaux modèles d'IA (Claude, Ollama, etc.)
-- Système de suggestions de prompts basé sur l'historique
-- Mode collaboratif pour partager des sessions de chat
-- Amélioration des analytics pour l'utilisateur et l'administrateur
+- **Extensibilité** : Ajout rapide de nouvelles fonctionnalités
+- **Cohérence** : Design system uniforme
+- **Maintenance** : Pas de réinstallation/reconfiguration
 
-## 🤝 Contribution
+### **6. Scripts de maintenance intégrés**
 
-Les contributions sont les bienvenues ! Pour contribuer :
+- `scripts/find-unused-components.js` : Audit des composants orphelins
+- `scripts/analyze-api-architecture.js` : Évaluation de la qualité de l'architecture API
 
-1. Forkez le projet
-2. Créez votre branche (`git checkout -b feature/AmazingFeature`)
-3. Commitez vos changements (`git commit -m 'Add some AmazingFeature'`)
-4. Poussez vers la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrez une Pull Request
+---
 
-## 📄 Licence
+## 🛠️ **Guide de contribution**
 
-Distribué sous la licence MIT. Voir `LICENSE` pour plus d'informations.
+### **Standards de code**
+
+- **Naming** : camelCase pour les variables, PascalCase pour les composants
+- **Exports** : Named exports préférés aux default exports
+- **Imports** : Utilisez les alias `@/` pour les imports absolus
+- **Types** : Toujours typer les paramètres et retours de fonction
+
+```typescript
+// ✅ Bon exemple
+export async function createEvaluation(
+  data: CreateEvaluationData
+): Promise<IEvaluation> {
+  // Implementation...
+}
+
+// ❌ À éviter
+export default function createEvaluation(data: any): any {
+  // Implementation...
+}
+```
+
+---
+
+## 🚀 **Évolutions futures**
+
+### **1. Intégration de nouveaux modèles d'IA**
+
+#### **Guide step-by-step**
+
+1. **Créer le service IA** :
+
+   ```typescript
+   // /src/lib/services/anthropicService.ts
+   export class AnthropicService implements IAIService {
+     async generateResponse(prompt: string): Promise<string> {
+       // Implémentation Claude API
+     }
+   }
+   ```
+
+2. **Ajouter la configuration** :
+
+   ```typescript
+   // /src/lib/config.ts
+   export const AI_PROVIDERS = {
+     openai: { name: "OpenAI GPT-4", apiKey: process.env.OPENAI_API_KEY },
+     mistral: { name: "Mistral 7B", apiKey: process.env.MISTRAL_API_KEY },
+     claude: { name: "Claude 3", apiKey: process.env.ANTHROPIC_API_KEY }, // ← Nouveau
+   };
+   ```
+
+3. **Étendre le sélecteur frontend** :
+
+   ```tsx
+   // Modifier le composant ModelSelect
+   const availableModels = [
+     { id: "openai", name: "OpenAI GPT-4" },
+     { id: "mistral", name: "Mistral 7B" },
+     { id: "claude", name: "Claude 3" }, // ← Nouveau
+   ];
+   ```
+
+4. **Variables d'environnement** :
+   ```bash
+   # .env.local
+   ANTHROPIC_API_KEY=your_claude_api_key_here
+   ```
+
+#### **Sécurité des clés API**
+
+- **Développement** : `.env.local` (gitignore)
+- **Client** : Jamais exposer les clés côté frontend
+
+### **2. Gestion dynamique des groupes**
+
+#### **Refonte du système de groupes**
+
+**Discuter avec le maître d'œuvre** :
+
+- Définir la structure des groupes
+- Règles d'affectation automatique vs manuelle
+- Permissions par groupe
+
+### **3. Roadmap technique**
+
+#### **Court terme**
+
+- [ ] Intégration Claude et Deepseek
+- [ ] Tests unitaires complets (Jest + React Testing Library)
+- [ ] Monitoring et logs avancés
+- [ ] Cache Redis pour les performances
+
+---
+
+## 🏃‍♂️ **Démarrage rapide**
+
+### **Prérequis**
+
+- Node.js 18+
+- MongoDB Atlas (ou instance locale)
+- Clés API IA (OpenAI, Mistral)
+
+### **Installation**
+
+```bash
+# 1. Cloner le repository
+git clone https://github.com/your-org/prompt-challenge.git
+cd prompt-challenge
+
+# 2. Installer les dépendances
+npm install
+
+# 3. Configuration environnement
+cp .env.example .env.local
+# Éditer .env.local avec vos clés API
+
+# 4. Lancer en développement
+npm run dev
+```
+
+### **Variables d'environnement**
+
+```bash
+# .env.local
+MONGODB_URI=mongodb+srv://...
+NEXTAUTH_SECRET=your-secret-key
+OPENAI_API_KEY=sk-...
+MISTRAL_API_KEY=your-mistral-key
+JWT_SECRET=your-jwt-secret
+```
+
+### **Premier démarrage**
+
+1. 🌐 Ouvrir http://localhost:3000
+2. 👤 Créer un compte administrateur
+3. 🗂️ Configurer un hackathon
+4. 👥 Importer des utilisateurs (CSV)
+5. 🚀 Tester une conversation IA
+
+---
+
+## 🔧 **Scripts utilitaires**
+
+# Build et vérification
+
+npm run build
+npm run lint
+
+````
+
+### **Scripts personnalisés**
+
+```bash
+# Développement avec hot reload
+npm run dev
+
+# Build de production
+npm run build && npm start
+
+# Linting et formatage
+npm run lint
+````
