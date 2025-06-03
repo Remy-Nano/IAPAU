@@ -11,7 +11,7 @@ export const LogoutButton: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    router.push("/auth"); // ✅ redirection vers la page d'authentification
+    router.push("/login"); // ✅ redirection vers la page de login
   };
 
   return (

@@ -24,7 +24,7 @@ export const StudentAuth: React.FC<StudentAuthProps> = ({ email }) => {
 
       <div className="flex justify-center mt-6">
         <button
-          onClick={() => (window.location.href = "/auth")}
+          onClick={() => (window.location.href = "/login")}
           className="px-4 py-2 text-purple-600 border border-purple-600 rounded-md hover:bg-purple-50"
         >
           Retour
