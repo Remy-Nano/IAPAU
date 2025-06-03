@@ -4,8 +4,8 @@ import { config } from "@/lib/config";
 import { adaptMessagesRoles } from "@/lib/utils/messageUtils";
 import axios from "axios";
 import { Check, MessageSquare } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { Conversation, Message } from "../../types";
@@ -19,11 +19,9 @@ import {
 } from "../ui/alert-dialog";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Separator } from "../ui/separator";
 import { ConversationStats } from "./ConversationStats";
 import { MaxTokensSlider } from "./MaxTokensSlider";
 import { ModelSelect } from "./ModelSelect";
-import { PromptInput } from "./PromptInput";
 import { PromptTypeSelect } from "./PromptTypeSelect";
 import { ResponseList } from "./ResponseList";
 import { SubmitFinalButton } from "./SubmitFinalButton";
@@ -42,27 +40,18 @@ interface ChatData {
 
 interface ChatInterfaceProps {
   existingConversation?: Conversation | null;
-  onConversationCreated?: (conversationId: string) => void;
-  hackathonId?: string;
 }
 
 /**
- * Interface principale de chat permettant d'interagir avec différentes IA
+ * Interface principale de chat permettant d'afficher les conversations
+ * La saisie de prompts est maintenant gérée par FixedPromptInput
  */
 export function ChatInterface({
   existingConversation = null,
-  onConversationCreated,
-  hackathonId,
 }: ChatInterfaceProps) {
-  // Récupération des paramètres d'URL avec des valeurs par défaut
-  const params = useParams();
-  const studentId = (params.studentId as string) || "6553f1ed4c3ef31ea8c03bc1";
-  const groupId = (params.groupId as string) || "6553f1ed4c3ef31ea8c03bc2";
-  const tacheId = (params.tacheId as string) || "6553f1ed4c3ef31ea8c03bc3";
-
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [conversationData, setConversationData] = useState<Conversation | null>(
     null
@@ -72,15 +61,7 @@ export function ChatInterface({
   const [selectedFinalResponse, setSelectedFinalResponse] =
     useState<string>("");
 
-  // Simplification: suppression de l'état isGeneratingResponse qui pouvait causer des boucles
-  // Utiliser des états spécifiques pour l'animation uniquement
-  const [streamingMessageIndex, setStreamingMessageIndex] = useState<
-    number | null
-  >(null);
-  const [streamedText, setStreamedText] = useState<string>("");
-
   // Références pour les formulaires
-  const promptFormRef = useRef<HTMLFormElement>(null);
   const finalFormRef = useRef<HTMLFormElement>(null);
 
   const methods = useForm<ChatData>({
@@ -107,84 +88,6 @@ export function ChatInterface({
     conversationData?.versionFinale &&
       conversationData.versionFinale.promptFinal &&
       conversationData.versionFinale.reponseIAFinale
-  );
-
-  // Fonction simplifiée pour déclencher l'animation d'un message
-  const animateMessage = useCallback(
-    (messageIndex: number, text: string) => {
-      if (messageIndex < 0 || messageIndex >= messages.length || !text) {
-        return;
-      }
-
-      // Initialiser l'animation
-      setStreamingMessageIndex(messageIndex);
-      setStreamedText("");
-
-      let currentPosition = 0;
-      const speed = 15; // Caractères par tick
-
-      const animationInterval = setInterval(() => {
-        if (currentPosition >= text.length) {
-          clearInterval(animationInterval);
-          setStreamingMessageIndex(null);
-          setStreamedText("");
-          return;
-        }
-
-        const nextChars = text.substring(
-          currentPosition,
-          Math.min(currentPosition + speed, text.length)
-        );
-
-        setStreamedText((prev) => prev + nextChars);
-        currentPosition += speed;
-      }, 50);
-
-      // Nettoyer l'intervalle après 30 secondes au maximum
-      setTimeout(() => {
-        clearInterval(animationInterval);
-        setStreamingMessageIndex(null);
-        setStreamedText("");
-      }, 30000);
-    },
-    [messages.length]
-  );
-
-  // Fonction pour récupérer les messages d'une conversation
-  const fetchConversation = useCallback(
-    async (id: string) => {
-      try {
-        const response = await axios.get(`/api/conversations/${id}`);
-        if (response.data.conversation) {
-          const updatedMessages = adaptMessagesRoles(
-            response.data.conversation.messages,
-            response.data.conversation.modelName || currentModelName
-          );
-
-          setMessages(updatedMessages);
-          setConversationData({
-            ...response.data.conversation,
-            messages: updatedMessages,
-          });
-
-          // Mettre à jour les tokens utilisés si disponibles
-          if (response.data.conversation.statistiquesIA?.tokensTotal) {
-            setTokensUsed(
-              response.data.conversation.statistiquesIA.tokensTotal
-            );
-          }
-
-          return updatedMessages;
-        }
-      } catch (error) {
-        console.error(
-          "Erreur lors de la récupération de la conversation:",
-          error
-        );
-      }
-      return null;
-    },
-    [currentModelName]
   );
 
   // Initialiser le composant avec la conversation existante
@@ -243,142 +146,8 @@ export function ChatInterface({
     }
   }, [existingConversation, methods, conversationId]);
 
-  // Fonction simplifiée pour envoyer un prompt
-  const handleSendPrompt = async (data: ChatData) => {
-    // Empêcher l'envoi si un prompt vide
-    if (!data.prompt || data.prompt.trim() === "") {
-      toast.error("Veuillez entrer un prompt avant d'envoyer");
-      return;
-    }
-
-    // Vérifier la présence d'un hackathon sélectionné
-    if (!hackathonId) {
-      toast.error(
-        "Veuillez sélectionner un hackathon avant d'envoyer un message"
-      );
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // Afficher le message de l'utilisateur immédiatement
-      const userMessage: Message = {
-        _id: `temp-user-${Date.now()}`,
-        content: data.prompt,
-        role: "user",
-        timestamp: new Date(),
-      };
-
-      // Afficher une indication de chargement
-      const loadingMessage: Message = {
-        _id: `temp-ai-${Date.now()}`,
-        content: "Génération de la réponse en cours...",
-        role: "ai",
-        timestamp: new Date(),
-        modelUsed: data.modelName,
-      };
-
-      // Mettre à jour immédiatement l'interface
-      setMessages((prev) => [...prev, userMessage, loadingMessage]);
-
-      // Si conversationId est une chaîne vide ou null, c'est une nouvelle conversation
-      // (cas de fallback si la conversation n'a pas été créée par StudentDashboard)
-      if (!conversationId || conversationId === "") {
-        // Créer une nouvelle conversation avec tous les paramètres nécessaires
-        const conversationResponse = await axios.post("/api/conversations", {
-          studentId,
-          groupId,
-          tacheId,
-          hackathonId, // Ajout de l'ID du hackathon sélectionné
-          modelName: data.modelName,
-          titreConversation:
-            data.titreConversation ||
-            `Conversation ${new Date().toLocaleDateString(
-              "fr-FR"
-            )} ${new Date().toLocaleTimeString("fr-FR")}`,
-          promptType: data.promptType,
-          prompt: data.prompt,
-          maxTokens: data.maxTokens,
-          temperature: data.temperature,
-        });
-
-        const newConversationId = conversationResponse.data.conversation._id;
-        setConversationId(newConversationId);
-
-        if (onConversationCreated) {
-          onConversationCreated(newConversationId);
-        }
-
-        // Attendre un moment pour permettre au serveur de traiter la réponse
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Récupérer la conversation complète
-        const updatedMessages = await fetchConversation(newConversationId);
-        animateLastAiMessage(updatedMessages);
-      } else {
-        // Ajouter à une conversation existante
-        await axios.post(`/api/conversations/${conversationId}/ai-response`, {
-          prompt: data.prompt,
-          modelName: data.modelName,
-          maxTokens: data.maxTokens,
-          temperature: data.temperature,
-        });
-
-        // Récupérer les messages mis à jour
-        const updatedMessages = await fetchConversation(conversationId);
-        animateLastAiMessage(updatedMessages);
-      }
-
-      // Réinitialiser le champ de prompt
-      methods.reset({
-        ...methods.getValues(),
-        prompt: "",
-      });
-    } catch (error: unknown) {
-      console.error("Erreur lors de l'envoi du prompt:", error);
-      if (axios.isAxiosError(error) && error.response) {
-        toast.error(
-          `Erreur: ${error.response.data.message || "Erreur de serveur"}`
-        );
-      } else if (axios.isAxiosError(error) && error.request) {
-        toast.error("Le serveur ne répond pas. Vérifiez la connexion.");
-      } else {
-        toast.error("Erreur lors de l'envoi du prompt");
-      }
-
-      // En cas d'erreur, supprimer les messages temporaires
-      setMessages((prev) =>
-        prev.filter((msg) => !msg._id?.startsWith("temp-"))
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Fonction utilitaire pour animer le dernier message AI
-  const animateLastAiMessage = (messages: Message[] | null) => {
-    if (!messages || messages.length < 2) return;
-
-    // Dernière réponse AI (dernier message ou avant-dernier si le dernier est temporaire)
-    const lastAiMessage = messages.findLast(
-      (m) =>
-        m.role === "ai" &&
-        !m.content.includes("Génération de la réponse en cours")
-    );
-
-    if (lastAiMessage) {
-      const aiMessageIndex = messages.findIndex(
-        (m) => m._id === lastAiMessage._id
-      );
-      if (aiMessageIndex !== -1) {
-        // Démarrer l'animation après un court délai
-        setTimeout(() => {
-          animateMessage(aiMessageIndex, lastAiMessage.content);
-        }, 300);
-      }
-    }
-  };
+  // Fonction simplifiée pour envoyer un prompt - maintenant gérée par FixedPromptInput
+  // const handleSendPrompt = async (data: ChatData) => {
 
   /**
    * Gère la soumission de la version finale
@@ -563,158 +332,159 @@ export function ChatInterface({
       {/* Interface de chat normale (même quand conversationId est une chaîne vide) */}
       {((conversationId !== null && conversationId !== undefined) ||
         existingConversation !== null) && (
-        <Card className="w-full max-w-4xl mx-auto bg-white shadow-lg border-gray-200 hover:shadow-xl transition-shadow duration-300">
-          <CardHeader className="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-t-lg">
-            <CardTitle className="text-xl font-bold">
-              Interface de Chat IA
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6 p-6">
-            {/* Affichage des statistiques de la conversation si disponible */}
-            {conversationData && (
-              <ConversationStats conversation={conversationData} />
-            )}
+        <>
+          {/* Contenu principal du chat avec padding bottom pour la zone fixe */}
+          <div className="w-full pb-56">
+            <Card className="bg-white shadow-2xl border-2 border-indigo-200/60 hover:border-indigo-300/80 hover:shadow-indigo-100/50 transition-all duration-300 rounded-xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-indigo-600 via-indigo-600 to-purple-600 text-white rounded-t-xl border-b border-indigo-400/30">
+                <CardTitle className="text-xl font-bold flex items-center">
+                  <div className="w-2 h-2 bg-white rounded-full mr-3 animate-pulse"></div>
+                  Interface de Chat IA
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6 p-6 border-l-4 border-indigo-500/20">
+                {/* Affichage des statistiques de la conversation si disponible */}
+                {conversationData && (
+                  <ConversationStats conversation={conversationData} />
+                )}
 
-            {/* Indicateur de version finale */}
-            {hasVersionFinale && (
-              <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-md flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
-                  <div>
-                    <p className="text-green-800 font-medium">
-                      Version finale soumise
-                    </p>
-                    <p className="text-green-600 text-sm">
-                      Cette conversation a été finalisée et ne peut plus être
-                      modifiée.
-                    </p>
+                {/* Indicateur de version finale */}
+                {hasVersionFinale && (
+                  <div className="bg-emerald-50 border-l-4 border-emerald-500 border border-emerald-200/50 p-4 rounded-lg shadow-sm flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <Check className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                      <div>
+                        <p className="text-emerald-800 font-medium">
+                          Version finale soumise
+                        </p>
+                        <p className="text-emerald-600 text-sm">
+                          Cette conversation a été finalisée et ne peut plus
+                          être modifiée.
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="border-emerald-500 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-600"
+                      onClick={() =>
+                        router.push(`/version-finale/${conversationId}`)
+                      }
+                    >
+                      Voir la version finale
+                    </Button>
                   </div>
-                </div>
-                <Button
-                  variant="outline"
-                  className="border-green-500 text-green-700 hover:bg-green-50"
-                  onClick={() =>
-                    router.push(`/version-finale/${conversationId}`)
-                  }
-                >
-                  Voir la version finale
-                </Button>
-              </div>
-            )}
+                )}
 
-            {/* Section compteur de tokens et options */}
-            <div className="space-y-6">
-              {/* Compteur de tokens et configuration */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Compteur de tokens */}
-                <div className="bg-gray-50 rounded-lg p-4 shadow-sm md:col-span-1">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">
-                    Crédits de tokens
-                  </h3>
-                  <TokenCounter
-                    tokensUsed={tokensUsed}
-                    tokensAuthorized={tokensAuthorized}
+                {/* Section compteur de tokens et options */}
+                <div className="space-y-6">
+                  {/* Compteur de tokens et configuration */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Compteur de tokens */}
+                    <div className="bg-gradient-to-br from-slate-50 to-gray-100 border border-slate-200 rounded-xl p-4 shadow-sm md:col-span-1">
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">
+                        Crédits de tokens
+                      </h3>
+                      <TokenCounter
+                        tokensUsed={tokensUsed}
+                        tokensAuthorized={tokensAuthorized}
+                      />
+                      <p className="text-xs text-gray-500 mt-2">
+                        Tokens utilisés dans cette conversation
+                      </p>
+                    </div>
+
+                    {/* Options de modèle et type de prompt */}
+                    <div className="md:col-span-2 flex flex-col space-y-4 bg-gradient-to-br from-indigo-50/80 to-purple-50/80 border border-indigo-200/40 rounded-xl p-4 shadow-sm">
+                      <ModelSelect />
+                      <MaxTokensSlider />
+                      <TemperatureSlider />
+                      <PromptTypeSelect />
+                    </div>
+                  </div>
+
+                  {/* Séparateur */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gradient-to-r from-indigo-200 via-purple-200 to-indigo-200"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-4 bg-white text-gray-500 font-medium">
+                        Messages
+                      </span>
+                    </div>
+                  </div>
+
+                  <ResponseList
+                    messages={messages}
+                    isLoading={isLoading}
+                    modelName={currentModelName}
+                    isDisabled={hasVersionFinale}
+                    versionFinale={conversationData?.versionFinale}
+                    streamingIndex={null}
+                    streamedResponse={""}
                   />
-                  <p className="text-xs text-gray-500 mt-2">
-                    Tokens utilisés dans cette conversation
-                  </p>
+
+                  {/* Formulaire pour soumettre la version finale */}
+                  {!hasVersionFinale && (
+                    <form
+                      ref={finalFormRef}
+                      id="final-form"
+                      onSubmit={(e) => {
+                        // Intercepter et analyser l'événement de soumission
+                        console.log("ÉVÉNEMENT DE SOUMISSION CAPTURÉ!", {
+                          timeStamp: e.timeStamp,
+                          type: e.type,
+                          target: e.target,
+                          currentTarget: e.currentTarget,
+                          defaultPrevented: e.defaultPrevented,
+                        });
+
+                        // Bloquer l'action par défaut
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        // Log des données actuelles
+                        console.log("Formulaire final soumis manuellement");
+                        console.log(
+                          "Données actuelles du formulaire:",
+                          methods.getValues()
+                        );
+
+                        // Vérifier qu'on a une paire sélectionnée
+                        const pairValue = methods.getValues().selectedPair;
+                        if (pairValue === null || pairValue === undefined) {
+                          console.error(
+                            "ERREUR: Aucune paire sélectionnée lors de la soumission"
+                          );
+                          toast.error(
+                            "Veuillez sélectionner une réponse avant de soumettre"
+                          );
+                          return false;
+                        }
+
+                        // Appeler directement handleSubmitFinal
+                        console.log("Appel direct de handleSubmitFinal");
+                        try {
+                          handleSubmitFinal(methods.getValues());
+                        } catch (err) {
+                          console.error("Erreur lors de l'appel manuel:", err);
+                        }
+
+                        console.log("Fin du handler de soumission");
+                        return false;
+                      }}
+                    >
+                      <SubmitFinalButton
+                        isSubmitting={isSubmitting}
+                        disabled={messages.length === 0}
+                      />
+                    </form>
+                  )}
                 </div>
-
-                {/* Options de modèle et type de prompt */}
-                <div className="md:col-span-2 flex flex-col space-y-4">
-                  <ModelSelect />
-                  <MaxTokensSlider />
-                  <TemperatureSlider />
-                  <PromptTypeSelect />
-                </div>
-              </div>
-
-              {/* Séparateur */}
-              <Separator className="my-2" />
-
-              {/* Formulaire pour envoyer un prompt */}
-              <form
-                ref={promptFormRef}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  methods.handleSubmit(handleSendPrompt)(e);
-                }}
-              >
-                <PromptInput
-                  isLoading={isLoading}
-                  isDisabled={hasVersionFinale}
-                />
-              </form>
-
-              <ResponseList
-                messages={messages}
-                isLoading={isLoading}
-                modelName={currentModelName}
-                isDisabled={hasVersionFinale}
-                versionFinale={conversationData?.versionFinale}
-                streamingIndex={streamingMessageIndex}
-                streamedResponse={streamedText}
-              />
-
-              {/* Formulaire pour soumettre la version finale */}
-              {!hasVersionFinale && (
-                <form
-                  ref={finalFormRef}
-                  id="final-form"
-                  onSubmit={(e) => {
-                    // Intercepter et analyser l'événement de soumission
-                    console.log("ÉVÉNEMENT DE SOUMISSION CAPTURÉ!", {
-                      timeStamp: e.timeStamp,
-                      type: e.type,
-                      target: e.target,
-                      currentTarget: e.currentTarget,
-                      defaultPrevented: e.defaultPrevented,
-                    });
-
-                    // Bloquer l'action par défaut
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    // Log des données actuelles
-                    console.log("Formulaire final soumis manuellement");
-                    console.log(
-                      "Données actuelles du formulaire:",
-                      methods.getValues()
-                    );
-
-                    // Vérifier qu'on a une paire sélectionnée
-                    const pairValue = methods.getValues().selectedPair;
-                    if (pairValue === null || pairValue === undefined) {
-                      console.error(
-                        "ERREUR: Aucune paire sélectionnée lors de la soumission"
-                      );
-                      toast.error(
-                        "Veuillez sélectionner une réponse avant de soumettre"
-                      );
-                      return false;
-                    }
-
-                    // Appeler directement handleSubmitFinal
-                    console.log("Appel direct de handleSubmitFinal");
-                    try {
-                      handleSubmitFinal(methods.getValues());
-                    } catch (err) {
-                      console.error("Erreur lors de l'appel manuel:", err);
-                    }
-
-                    console.log("Fin du handler de soumission");
-                    return false;
-                  }}
-                >
-                  <SubmitFinalButton
-                    isSubmitting={isSubmitting}
-                    disabled={messages.length === 0}
-                  />
-                </form>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </div>
+        </>
       )}
 
       {/* Boîte de dialogue de succès pour la soumission finale */}

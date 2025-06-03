@@ -3,6 +3,7 @@
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { ChatInterface } from "@/components/chat/ChatInterface";
 import { ConversationSidebar } from "@/components/chat/ConversationSidebar";
+import { FixedPromptInput } from "@/components/chat/FixedPromptInput";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -42,6 +43,9 @@ export default function StudentDashboard() {
   const [hackathons, setHackathons] = useState<Hackathon[]>([]);
   const [selectedHackathon, setSelectedHackathon] = useState<string>("");
   const [loadingHackathons, setLoadingHackathons] = useState(false);
+
+  // États pour la zone de saisie fixe
+  const [isPromptLoading, setIsPromptLoading] = useState(false);
 
   // Forcer un rafraîchissement des conversations
   const forceRefreshConversations = () => {
@@ -197,6 +201,53 @@ export default function StudentDashboard() {
     forceRefreshConversations();
   };
 
+  // Fonction pour gérer l'envoi de prompt depuis la zone fixe
+  const handleSendPrompt = async (prompt: string) => {
+    if (!selectedHackathon) {
+      toast.error(
+        "Veuillez sélectionner un hackathon avant d'envoyer un message"
+      );
+      return;
+    }
+
+    if (!selectedConversationId) {
+      toast.error("Veuillez sélectionner ou créer une conversation");
+      return;
+    }
+
+    setIsPromptLoading(true);
+
+    try {
+      // Envoyer le prompt à la conversation active
+      await axios.post(
+        `/api/conversations/${selectedConversationId}/ai-response`,
+        {
+          prompt,
+          modelName: "openai", // Modèle par défaut
+          maxTokens: 512,
+          temperature: 0.7,
+        }
+      );
+
+      // Recharger la conversation pour afficher la nouvelle réponse
+      await loadConversation(selectedConversationId);
+
+      toast.success("Message envoyé avec succès");
+    } catch (error) {
+      console.error("Erreur lors de l'envoi du prompt:", error);
+      toast.error("Erreur lors de l'envoi du message");
+    } finally {
+      setIsPromptLoading(false);
+    }
+  };
+
+  // Déterminer si la conversation actuelle a une version finale
+  const hasVersionFinale = Boolean(
+    currentConversation?.versionFinale &&
+      currentConversation.versionFinale.promptFinal &&
+      currentConversation.versionFinale.reponseIAFinale
+  );
+
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
       <button
@@ -207,31 +258,6 @@ export default function StudentDashboard() {
         }
       >
         {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
-
-      {/* Ajout d'un bouton de rafraîchissement */}
-      <button
-        className="hidden md:flex fixed top-4 right-20 z-50 p-2.5 rounded-lg bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors"
-        onClick={forceRefreshConversations}
-        aria-label="Rafraîchir les conversations"
-        title="Rafraîchir les conversations"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M21 2v6h-6"></path>
-          <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
-          <path d="M3 22v-6h6"></path>
-          <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
-        </svg>
       </button>
 
       <ConversationSidebar
@@ -290,13 +316,49 @@ export default function StudentDashboard() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100/50 backdrop-blur-sm">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100/50 backdrop-blur-sm pb-56">
           {selectedHackathon ? (
-            <ChatInterface
-              existingConversation={currentConversation}
-              onConversationCreated={handleConversationCreated}
-              hackathonId={selectedHackathon}
-            />
+            hasVersionFinale ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center p-8 max-w-md bg-white rounded-xl shadow-lg border-l-4 border-emerald-500">
+                  <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg
+                      className="w-8 h-8 text-emerald-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M5 13l4 4L19 7"
+                      ></path>
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-bold text-emerald-700 mb-4">
+                    Version finale soumise
+                  </h2>
+                  <p className="text-gray-600 mb-6">
+                    Cette conversation a été finalisée et ne peut plus être
+                    modifiée. Vous pouvez consulter votre version finale.
+                  </p>
+                  <button
+                    onClick={() =>
+                      window.open(
+                        `/version-finale/${selectedConversationId}`,
+                        "_blank"
+                      )
+                    }
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                  >
+                    Voir la version finale
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <ChatInterface existingConversation={currentConversation} />
+            )
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-center p-8 max-w-md bg-white rounded-xl shadow-lg">
@@ -305,11 +367,11 @@ export default function StudentDashboard() {
                 </h2>
                 <p className="text-gray-600 mb-6">
                   Veuillez sélectionner un hackathon dans la liste déroulante en
-                  haut pour commencer à interagir avec l'IA.
+                  haut pour commencer à interagir avec l&apos;IA.
                 </p>
                 {hackathons.length === 0 && !loadingHackathons && (
                   <p className="text-amber-600">
-                    Aucun hackathon actif n'est disponible pour le moment.
+                    Aucun hackathon actif n&apos;est disponible pour le moment.
                     Veuillez contacter votre administrateur.
                   </p>
                 )}
@@ -323,6 +385,15 @@ export default function StudentDashboard() {
           )}
         </div>
       </div>
+
+      {/* Zone de saisie fixe pour les prompts */}
+      {selectedHackathon && selectedConversationId && !hasVersionFinale && (
+        <FixedPromptInput
+          onSendPrompt={handleSendPrompt}
+          isLoading={isPromptLoading}
+          isDisabled={hasVersionFinale}
+        />
+      )}
     </div>
   );
 }
