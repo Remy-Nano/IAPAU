@@ -2,6 +2,11 @@
 
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { useAuth } from "@/context/AuthContext";
+import {
+  Evaluation,
+  EvaluationForm,
+  ExaminerConversation,
+} from "@/types/conversation";
 import { Brain, Home, Menu, Star, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -31,32 +36,6 @@ const sliderStyles = `
   }
 `;
 
-interface Conversation {
-  _id: string;
-  studentId: string;
-  versionFinale: {
-    promptFinal: string;
-    reponseIAFinale: string;
-    soumisLe: Date;
-  };
-  createdAt: Date;
-}
-
-interface Evaluation {
-  _id: string;
-  conversationId: string;
-  note: number;
-  comment: string;
-  gradedAt: Date;
-  populatedConversation?: {
-    versionFinale: {
-      promptFinal: string;
-      reponseIAFinale: string;
-    };
-    createdAt: Date;
-  };
-}
-
 interface HackathonOption {
   _id: string;
   nom: string;
@@ -73,11 +52,6 @@ interface TacheOption {
   hackathonId: string;
 }
 
-interface EvaluationForm {
-  note: number;
-  comment: string;
-}
-
 export default function ExaminerDashboard() {
   const { user } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState<
@@ -89,7 +63,9 @@ export default function ExaminerDashboard() {
   const [selectedHackathon, setSelectedHackathon] = useState<string>("all");
   const [selectedTache, setSelectedTache] = useState<string>("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversations, setConversations] = useState<ExaminerConversation[]>(
+    []
+  );
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [hackathons, setHackathons] = useState<HackathonOption[]>([]);
   const [taches, setTaches] = useState<TacheOption[]>([]);

@@ -1,6 +1,6 @@
 "use client";
 
-import { EditableUsersTable } from "@/app/admin/users/components/EditableUsersTable";
+import { EditableUsersTable } from "@/components/admin/users/EditableUsersTable";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { HackathonManager } from "@/components/HackathonManager";
 import { Brain, Code, Menu, Users, X } from "lucide-react";

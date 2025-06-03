@@ -4,6 +4,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
+import { FormData, userValidationSchema } from "@/types/userValidation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -11,7 +12,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import useSWR from "swr";
-import { FormData, userValidationSchema } from "../types/userValidation";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 

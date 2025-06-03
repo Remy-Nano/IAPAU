@@ -1,7 +1,7 @@
 "use client";
 
+import { EditableUsersTable } from "@/components/admin/users/EditableUsersTable";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { EditableUsersTable } from "./components/EditableUsersTable";
 
 export default function UsersPage() {
   return (

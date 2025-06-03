@@ -1,5 +1,17 @@
 import axios from "axios";
 // Importations simples pour gérer les dates
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { ConversationItem } from "@/types/conversation";
 import { format } from "date-fns";
 import {
   Brain,
@@ -12,41 +24,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "../ui/alert-dialog";
-import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
 import { Skeleton } from "../ui/skeleton";
-
-// Type pour les données de conversation dans la sidebar
-interface ConversationItem {
-  _id: string;
-  modelName: string;
-  titreConversation: string;
-  createdAt: string;
-  hackathonId?: string;
-  messages?: {
-    content: string;
-    role: string;
-    modelUsed?: string;
-  }[];
-  versionFinale?: {
-    promptFinal: string;
-    reponseIAFinale: string;
-    soumisLe: string;
-  };
-  statistiquesIA?: {
-    modelUtilise: string;
-  };
-}
 
 interface ConversationSidebarProps {
   studentId: string;

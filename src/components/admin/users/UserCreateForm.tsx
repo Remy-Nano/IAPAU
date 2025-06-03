@@ -2,11 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FormData, userValidationSchema } from "@/types/userValidation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { FormData, userValidationSchema } from "../types/userValidation";
 import { UserModal } from "./UserModal";
 
 interface UserCreateFormProps {
