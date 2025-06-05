@@ -92,6 +92,19 @@ export const AuthManager: React.FC = () => {
 
         <CredentialsInfo />
       </div>
+
+      {/* Footer discret avec email de support */}
+      <footer className="absolute bottom-4 w-full text-center">
+        <p className="text-xs text-gray-400 opacity-70">
+          Besoin d&apos;aide ? Contactez-nous à{" "}
+          <a
+            href="mailto:support@support.fr"
+            className="text-gray-500 hover:text-gray-600 underline"
+          >
+            support@support.fr
+          </a>
+        </p>
+      </footer>
     </div>
   );
 };
