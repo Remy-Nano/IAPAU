@@ -2,14 +2,14 @@ import {
   createHackathon,
   getAllHackathons,
 } from "@/lib/controllers/hackathonController";
-import connectDB from "@/lib/mongoose";
+import { connectToDatabase } from "@/lib/mongoose";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
   console.log("📥 GET /api/hackathons - Début de la requête");
   try {
     console.log("🔌 Connexion à la base de données...");
-    await connectDB();
+    await connectToDatabase();
     console.log("✅ Connexion DB réussie, récupération des hackathons...");
 
     const hackathons = await getAllHackathons();
@@ -31,7 +31,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  await connectDB();
+  await connectToDatabase();
   try {
     const data = await request.json();
     console.log(

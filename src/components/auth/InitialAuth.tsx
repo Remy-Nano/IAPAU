@@ -1,23 +1,41 @@
 import React, { useState } from "react";
 
 interface InitialAuthProps {
-  onSubmit: (email: string) => void;
+  onSubmit: (email: string) => Promise<void>;
 }
 
 export const InitialAuth: React.FC<InitialAuthProps> = ({ onSubmit }) => {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
+    // Validation de l'email
     if (!email.trim()) {
       setError("Veuillez entrer une adresse email");
+      setLoading(false);
       return;
     }
 
-    onSubmit(email);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Format d'email invalide");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await onSubmit(email.trim());
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Une erreur est survenue';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fillEmail = (emailType: "student" | "examiner" | "admin") => {
@@ -85,9 +103,10 @@ export const InitialAuth: React.FC<InitialAuthProps> = ({ onSubmit }) => {
 
         <button
           type="submit"
-          className="w-full py-2 sm:py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white text-sm sm:text-base font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+          disabled={loading}
         >
-          Se connecter
+          {loading ? 'Chargement...' : 'Continuer'}
         </button>
       </form>
     </div>

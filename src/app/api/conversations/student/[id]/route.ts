@@ -1,5 +1,5 @@
 import { getConversationsByStudent } from "@/lib/controllers/conversationController";
-import connectDB from "@/lib/mongoose";
+import { connectToDatabase } from "@/lib/mongoose";
 import { NextResponse } from "next/server";
 
 interface Context {
@@ -15,7 +15,7 @@ export async function GET(request: Request, context: Context) {
     const url = new URL(request.url);
     const includeMessages = url.searchParams.get("includeMessages") === "true";
 
-    await connectDB();
+    await connectToDatabase();
     const conversations = await getConversationsByStudent(id);
 
     // Si on ne veut pas inclure les messages, on les filtre

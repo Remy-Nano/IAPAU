@@ -1,10 +1,21 @@
-import React from "react";
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 interface StudentAuthProps {
   email: string;
 }
 
 export const StudentAuth: React.FC<StudentAuthProps> = ({ email }) => {
+  const router = useRouter();
+
+  // Redirection automatique après 5 secondes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      router.push('/dashboard/student');
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [router]);
+
   return (
     <div className="w-full max-w-md mx-auto p-8 rounded-lg border border-gray-200 shadow-md">
       <h2 className="text-3xl font-bold text-center mb-8">
@@ -18,13 +29,13 @@ export const StudentAuth: React.FC<StudentAuthProps> = ({ email }) => {
         </p>
         <p className="text-green-600 text-sm">
           Veuillez vérifier votre boîte mail ({email}) et cliquez sur le lien
-          pour vous connecter.
+          pour vous connecter. Vous serez automatiquement redirigé vers l'interface de chat dans quelques secondes.
         </p>
       </div>
 
       <div className="flex justify-center mt-6">
         <button
-          onClick={() => (window.location.href = "/login")}
+          onClick={() => router.push('/login')}
           className="px-4 py-2 text-purple-600 border border-purple-600 rounded-md hover:bg-purple-50"
         >
           Retour

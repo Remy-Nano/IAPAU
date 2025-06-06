@@ -1,10 +1,10 @@
-import connectDB from "@/lib/mongoose";
+import { connectToDatabase } from "@/lib/mongoose";
 import { processCSVImport } from "@/lib/services/importService";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    await connectDB();
+    await connectToDatabase();
 
     // Traitement multipart form-data pour récupérer le fichier CSV
     const formData = await req.formData();

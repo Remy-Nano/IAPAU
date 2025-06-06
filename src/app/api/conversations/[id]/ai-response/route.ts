@@ -3,7 +3,7 @@ import {
   addMessage,
   getConversation,
 } from "@/lib/controllers/conversationController";
-import connectDB from "@/lib/mongoose";
+import { connectToDatabase } from "@/lib/mongoose";
 import { NextResponse } from "next/server";
 
 interface Params {
@@ -11,7 +11,7 @@ interface Params {
 }
 
 export async function POST(request: Request, { params }: Params) {
-  await connectDB();
+  await connectToDatabase();
 
   try {
     // Attendre les paramètres avant d'y accéder (requis dans Next.js 15)

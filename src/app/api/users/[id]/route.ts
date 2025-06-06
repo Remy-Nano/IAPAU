@@ -1,11 +1,11 @@
 import { User } from "@/lib/models/user";
-import connectDB from "@/lib/mongoose";
+import { connectToDatabase } from "@/lib/mongoose";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 
 export async function GET(_: Request, { params }: { params: { id: string } }) {
   try {
-    await connectDB();
+    await connectToDatabase();
     const id = params.id;
     const user = await User.findById(id).lean();
     if (!user) {
@@ -29,7 +29,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectDB();
+    await connectToDatabase();
     const data = await request.json();
     const id = params.id;
 
@@ -82,7 +82,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectDB();
+    await connectToDatabase();
     const id = params.id;
     const deleted = await User.findByIdAndDelete(id).lean();
     if (!deleted) {

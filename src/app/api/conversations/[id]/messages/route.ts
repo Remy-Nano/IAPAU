@@ -1,6 +1,6 @@
 // src/app/api/conversations/[id]/messages/route.ts
 import { addMessage } from "@/lib/controllers/conversationController";
-import connectDB from "@/lib/mongoose";
+import { connectToDatabase } from "@/lib/mongoose";
 import { NextResponse } from "next/server";
 
 interface Params {
@@ -8,7 +8,7 @@ interface Params {
 }
 
 export async function POST(request: Request, { params }: Params) {
-  await connectDB();
+  await connectToDatabase();
   const payload = await request.json();
   try {
     // Attendre les paramètres avant d'y accéder (requis dans Next.js 15)

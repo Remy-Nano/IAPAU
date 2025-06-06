@@ -10,7 +10,7 @@ import { InitialAuth } from "./InitialAuth";
 import { StudentAuth } from "./StudentAuth";
 
 export const AuthManager: React.FC = () => {
-  const { loginWithEmail, loginWithCredentials } = useAuth();
+  const { loginWithEmail, loginWithCredentials, loading, error: authError } = useAuth();
   const router = useRouter(); // ✅ remplacement de useNavigate
   const [currentStep, setCurrentStep] = useState<
     "initial" | "student" | "examiner" | "admin"
@@ -20,7 +20,15 @@ export const AuthManager: React.FC = () => {
 
   const handleInitialSubmit = async (email: string) => {
     try {
+      setError("");
       setEmail(email);
+      
+      // Utiliser l'erreur du contexte si elle existe
+      if (authError) {
+        setError(authError);
+        return;
+      }
+
       const userType = await loginWithEmail(email);
 
       if (!userType) {

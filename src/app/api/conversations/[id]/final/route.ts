@@ -1,5 +1,5 @@
 import { Conversation, IConversation } from "@/lib/models/conversation";
-import connectDB from "@/lib/mongoose";
+import { connectToDatabase } from "@/lib/mongoose";
 import { FlattenMaps } from "mongoose";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -16,7 +16,7 @@ interface ConversationDocument extends FlattenMaps<IConversation> {
 }
 
 export async function PATCH(request: Request, { params }: Params) {
-  await connectDB();
+  await connectToDatabase();
 
   try {
     // Attendre les paramètres avant d'y accéder (requis dans Next.js 15)
@@ -78,7 +78,7 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 export async function GET(request: Request, { params }: Params) {
-  await connectDB();
+  await connectToDatabase();
 
   try {
     // Attendre les paramètres avant d'y accéder (requis dans Next.js 15)

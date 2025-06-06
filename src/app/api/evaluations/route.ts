@@ -1,10 +1,10 @@
-import connectDB from "@/lib/mongoose";
+import { connectToDatabase } from "@/lib/mongoose";
 import { createEvaluation } from "@/lib/services/evaluationService";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    await connectDB();
+    await connectToDatabase();
     const data = await request.json();
 
     console.log("DEBUG API - Received data:", {

@@ -1,5 +1,5 @@
 import { Evaluation } from "@/lib/models/evaluation";
-import connectDB from "@/lib/mongoose";
+import { connectToDatabase } from "@/lib/mongoose";
 import { NextResponse } from "next/server";
 
 interface Params {
@@ -10,7 +10,7 @@ export async function GET(request: Request, { params }: Params) {
   try {
     console.log("=== API EVALUATIONS START ===");
 
-    await connectDB();
+    await connectToDatabase();
     console.log("✅ Database connected");
 
     const resolvedParams = await params;

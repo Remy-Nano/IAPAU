@@ -3,7 +3,7 @@ import {
   deleteConversation,
   getConversation,
 } from "@/lib/controllers/conversationController";
-import connectDB from "@/lib/mongoose";
+import { connectToDatabase } from "@/lib/mongoose";
 import { NextResponse } from "next/server";
 
 interface Params {
@@ -11,7 +11,7 @@ interface Params {
 }
 
 export async function GET(_: Request, { params }: Params) {
-  await connectDB();
+  await connectToDatabase();
   const resolvedParams = await params;
   const convo = await getConversation(resolvedParams.id);
   if (!convo) {
@@ -25,7 +25,7 @@ export async function GET(_: Request, { params }: Params) {
 
 export async function DELETE(_: Request, { params }: Params) {
   try {
-    await connectDB();
+    await connectToDatabase();
     const resolvedParams = await params;
     const success = await deleteConversation(resolvedParams.id);
 

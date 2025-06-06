@@ -3,7 +3,7 @@ import {
   getHackathonById,
   updateHackathon,
 } from "@/lib/controllers/hackathonController";
-import connectDB from "@/lib/mongoose";
+import { connectToDatabase } from "@/lib/mongoose";
 import { NextRequest, NextResponse } from "next/server";
 
 type Props = {
@@ -13,7 +13,7 @@ type Props = {
 };
 
 export async function GET(request: NextRequest, { params }: Props) {
-  await connectDB();
+  await connectToDatabase();
   try {
     const hackathon = await getHackathonById(params.id);
 
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest, { params }: Props) {
 }
 
 export async function PATCH(request: NextRequest, { params }: Props) {
-  await connectDB();
+  await connectToDatabase();
   try {
     const id = params.id;
     console.log(`PATCH /api/hackathons/${id}`);
@@ -65,7 +65,7 @@ export async function PATCH(request: NextRequest, { params }: Props) {
 }
 
 export async function DELETE(_request: NextRequest, { params }: Props) {
-  await connectDB();
+  await connectToDatabase();
   try {
     const id = params.id;
     console.log(`DELETE /api/hackathons/${id}`);

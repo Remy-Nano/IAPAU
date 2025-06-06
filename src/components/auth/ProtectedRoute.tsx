@@ -3,9 +3,10 @@
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import { UserRole } from "@/models/User";
 
 type ProtectedRouteProps = {
-  allowedRoles: string[];
+  allowedRoles: UserRole[];
   children: React.ReactNode;
 };
 
@@ -35,10 +36,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         console.log("Redirection vers /login - Non authentifié");
         setRedirected(true);
         router.push("/login");
-      } else if (!allowedRoles.includes(userRole ?? "")) {
-        console.log(
-          `Redirection vers /unauthorized - Rôle non autorisé: ${userRole}`
-        );
+      } else if (!allowedRoles.includes(userRole as UserRole)) {
+        console.log(`Redirection vers /unauthorized - Rôle non autorisé: ${userRole}`);
         setRedirected(true);
         router.push("/unauthorized");
       }
@@ -47,7 +46,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return () => clearTimeout(timeoutId);
   }, [isAuthenticated, userRole, router, allowedRoles, redirected]);
 
-  if (!isAuthenticated || !allowedRoles.includes(userRole ?? "")) {
+  if (!isAuthenticated || !allowedRoles.map(role => role as UserRole).includes(userRole as UserRole)) {
     console.log("Rendu null - Conditions non remplies");
     return null; // Ou un spinner de chargement si tu veux
   }

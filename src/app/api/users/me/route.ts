@@ -1,12 +1,12 @@
 // src/app/api/users/me/route.ts
 import { IUser, User } from "@/lib/models/user";
-import connectDB from "@/lib/mongoose";
+import { connectToDatabase } from "@/lib/mongoose";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   // 1. Se connecter à MongoDB
-  await connectDB();
+  await connectToDatabase();
 
   // 2. Récupérer le header Authorization
   const authHeader = request.headers.get("authorization") || "";

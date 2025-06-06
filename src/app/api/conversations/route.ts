@@ -1,11 +1,11 @@
 // src/app/api/conversations/route.ts
 import { createConversation } from "@/lib/controllers/conversationController";
-import connectDB from "@/lib/mongoose";
+import { connectToDatabase } from "@/lib/mongoose";
 import { getConversationsWithFilters } from "@/lib/services/conversationService";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-  await connectDB();
+  await connectToDatabase();
   const data = await request.json();
   try {
     const convo = await createConversation(data);
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-  await connectDB();
+  await connectToDatabase();
   try {
     const url = new URL(request.url);
     const withFinalVersion =

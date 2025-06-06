@@ -1,10 +1,10 @@
-import connectDB from "@/lib/mongoose";
+import { connectToDatabase } from "@/lib/mongoose";
 import { createUser, getAllUsers } from "@/lib/services/userService";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    await connectDB();
+    await connectToDatabase();
     const users = await getAllUsers();
     return NextResponse.json(users);
   } catch (error) {
@@ -18,7 +18,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await connectDB();
+    await connectToDatabase();
     const data = await request.json();
     const newUser = await createUser(data);
     return NextResponse.json(newUser, { status: 201 });

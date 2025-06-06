@@ -26,6 +26,8 @@ type AuthContextType = {
   user: (Student | Examiner | Admin) | null;
   userRole: UserRole | null;
   isAuthenticated: boolean;
+  loading: boolean;
+  error: string | null;
   loginWithEmail: (email: string) => Promise<UserRole | null>;
   loginWithCredentials: (
     email: string,
@@ -34,22 +36,6 @@ type AuthContextType = {
   ) => Promise<void>;
   loginWithMagicLink: (token: string) => Promise<void>;
   logout: () => void;
-};
-
-// Identifiants prédéfinis pour la connexion
-const PREDEFINED_CREDENTIALS = {
-  admin: {
-    email: "admin@example.com",
-    password: "admin123",
-  },
-  examiner: {
-    email: "examiner@example.com",
-    password: "examiner123",
-  },
-  student: {
-    email: "student@example.com",
-    // Les étudiants se connectent via un lien magique
-  },
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -67,6 +53,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<(Student | Examiner | Admin) | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Vérifier le localStorage au chargement, mais seulement côté client
@@ -84,25 +72,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Fonction pour vérifier le type d'utilisateur à partir de l'email
   const loginWithEmail = async (email: string): Promise<UserRole | null> => {
     try {
-      // Vérification des emails prédéfinis
-      let role: UserRole | null = null;
-
-      if (email === PREDEFINED_CREDENTIALS.admin.email) {
-        role = "admin";
-      } else if (email === PREDEFINED_CREDENTIALS.examiner.email) {
-        role = "examiner";
-      } else if (email === PREDEFINED_CREDENTIALS.student.email) {
-        role = "student";
-        // Simuler l'envoi d'un email avec un lien magique
-        console.log(`Envoi d'un lien magique à ${email}`);
-      } else {
-        return null;
+      setLoading(true);
+      setError(null);
+      
+      // Validation de l'email côté client
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new Error('Format d\'email invalide');
       }
 
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la connexion');
+      }
+
+      const data = await response.json();
+      const role = data.role as UserRole;
       return role;
     } catch (error) {
-      console.error("Erreur de vérification d'email:", error);
-      throw error;
+      console.error('Erreur lors de la connexion:', error);
+      setError(error instanceof Error ? error.message : 'Une erreur est survenue');
+      setLoading(false);
+      return null;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -113,51 +114,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     role: "examiner" | "admin"
   ) => {
     try {
-      // Vérification des identifiants
-      const validCredentials =
-        (role === "admin" &&
-          email === PREDEFINED_CREDENTIALS.admin.email &&
-          password === PREDEFINED_CREDENTIALS.admin.password) ||
-        (role === "examiner" &&
-          email === PREDEFINED_CREDENTIALS.examiner.email &&
-          password === PREDEFINED_CREDENTIALS.examiner.password);
+      // Vérifier l'utilisateur dans la base de données
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, role }),
+      });
 
-      if (!validCredentials) {
-        throw new Error("Identifiants invalides");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Identifiants invalides");
       }
 
-      let userData: Examiner | Admin;
-
-      if (role === "examiner") {
-        userData = {
-          id: "1",
-          email,
-          role: "examiner",
-          firstName: "Examinateur",
-          lastName: "Test",
-          nom: "Test",
-          prenom: "Examinateur",
-          _id: "1",
-          groupes: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-      } else {
-        userData = {
-          id: "2",
-          email,
-          role: "admin",
-          firstName: "Admin",
-          lastName: "Système",
-          nom: "Système",
-          prenom: "Admin",
-          _id: "2",
-          groupes: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-      }
-
+      const userData = await response.json();
       setUser(userData);
       setUserRole(role);
       setInStorage("user", JSON.stringify(userData));
@@ -171,29 +142,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Fonction pour se connecter avec un lien magique (étudiants)
   const loginWithMagicLink = async (token: string) => {
     try {
-      // Simulation de vérification du token pour le développement frontend
-      // Dans une implémentation réelle, vous enverriez le token au backend pour validation
-      console.log(`Vérification du token: ${token}`);
+      // Vérifier le token auprès du backend
+      const response = await fetch('/api/auth/magic-link/verify', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Le token est passé dans l'URL par le middleware
+      });
 
-      const mockStudent: Student = {
-        id: "3",
-        email: PREDEFINED_CREDENTIALS.student.email,
-        role: "student",
-        firstName: "Étudiant",
-        lastName: "Test",
-        studentId: "STU123",
-        nom: "Test",
-        prenom: "Étudiant",
-        _id: "6553f1ed4c3ef31ea8c03bc1",
-        groupes: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      if (!response.ok) {
+        throw new Error("Lien magique invalide ou expiré");
+      }
 
-      setUser(mockStudent);
-      setUserRole("student");
-      setInStorage("user", JSON.stringify(mockStudent));
-      setInStorage("userRole", "student");
+      // Le backend gère déjà la redirection, donc on ne fait rien ici
     } catch (error) {
       console.error("Erreur de connexion avec lien magique:", error);
       throw error;
@@ -213,6 +175,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         user,
         userRole,
         isAuthenticated: !!user,
+        loading,
+        error,
         loginWithEmail,
         loginWithCredentials,
         loginWithMagicLink,
