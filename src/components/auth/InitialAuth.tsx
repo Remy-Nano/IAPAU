@@ -26,7 +26,7 @@ export const InitialAuth: React.FC<InitialAuthProps> = ({ onSubmit }) => {
         setEmail("student@example.com");
         break;
       case "examiner":
-        setEmail("examiner@example.com");
+        setEmail("pierre.durand@example.fr");
         break;
       case "admin":
         setEmail("admin@example.com");

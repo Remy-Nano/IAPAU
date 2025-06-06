@@ -34,9 +34,16 @@ export async function GET(request: Request) {
     // Vérifier la validité du token JWT
     jwt.verify(token, process.env.JWT_SECRET!);
 
-    // Rediriger vers le dashboard étudiant
-    const redirectUrl = new URL("/dashboard/student", request.url);
-    return NextResponse.redirect(redirectUrl);
+    // Retourner les infos utilisateur au lieu de rediriger
+    return NextResponse.json({
+      success: true,
+      user: {
+        email: user.email,
+        role: user.role,
+        prenom: user.prenom,
+        nom: user.nom,
+      },
+    });
   } catch (error) {
     console.error("Erreur lors de la vérification du lien magique:", error);
     const errorMessage =

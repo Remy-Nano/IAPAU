@@ -5,7 +5,7 @@ interface ExaminerAuthProps {
 }
 
 export const ExaminerAuth: React.FC<ExaminerAuthProps> = ({ onSubmit }) => {
-  const [email, setEmail] = useState("examiner@example.com");
+  const [email, setEmail] = useState("pierre.durand@example.fr");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 

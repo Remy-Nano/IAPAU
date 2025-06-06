@@ -42,7 +42,7 @@ export const CredentialsInfo: React.FC = () => {
             </li>
             <li>
               <span className="font-medium">Examinateur:</span>{" "}
-              examiner@example.com /{" "}
+              pierre.durand@example.fr /{" "}
               <span className="font-mono bg-gray-100 p-0.5 rounded">
                 examiner123
               </span>

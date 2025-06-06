@@ -43,7 +43,7 @@ const PREDEFINED_CREDENTIALS = {
     password: "admin123",
   },
   examiner: {
-    email: "examiner@example.com",
+    email: "pierre.durand@example.fr", // Email réel de la base
     password: "examiner123",
   },
   student: {
@@ -84,25 +84,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Fonction pour vérifier le type d'utilisateur à partir de l'email
   const loginWithEmail = async (email: string): Promise<UserRole | null> => {
     try {
-      // Vérification des emails prédéfinis
-      let role: UserRole | null = null;
+      // Appel à l'API backend au lieu des vérifications hardcodées
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
 
-      if (email === PREDEFINED_CREDENTIALS.admin.email) {
-        role = "admin";
-      } else if (email === PREDEFINED_CREDENTIALS.examiner.email) {
-        role = "examiner";
-      } else if (email === PREDEFINED_CREDENTIALS.student.email) {
-        role = "student";
-        // Simuler l'envoi d'un email avec un lien magique
-        console.log(`Envoi d'un lien magique à ${email}`);
-      } else {
+      if (!response.ok) {
+        console.error("Erreur API:", response.status);
         return null;
       }
 
-      return role;
+      const data = await response.json();
+      console.log("Réponse API login:", data);
+
+      // Conversion du rôle retourné par l'API
+      if (data.role === "etudiant") {
+        return "student";
+      } else if (data.role === "examinateur") {
+        return "examiner";
+      } else if (data.role === "admin") {
+        return "admin";
+      }
+
+      return null;
     } catch (error) {
       console.error("Erreur de vérification d'email:", error);
-      throw error;
+      return null;
     }
   };
 
@@ -171,28 +182,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Fonction pour se connecter avec un lien magique (étudiants)
   const loginWithMagicLink = async (token: string) => {
     try {
-      // Simulation de vérification du token pour le développement frontend
-      // Dans une implémentation réelle, vous enverriez le token au backend pour validation
       console.log(`Vérification du token: ${token}`);
 
-      const mockStudent: Student = {
+      // Appel à l'API pour vérifier le token
+      const response = await fetch(
+        `/api/auth/magic-link/verify?token=${token}`,
+        {
+          method: "GET",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Token invalide ou expiré");
+      }
+
+      // Si la vérification réussit, créer l'utilisateur étudiant
+      const data = await response.json();
+      console.log("Données utilisateur reçues:", data);
+
+      // Créer l'utilisateur étudiant avec les vraies données
+      const student: Student = {
         id: "3",
-        email: PREDEFINED_CREDENTIALS.student.email,
+        email: data.user.email,
         role: "student",
-        firstName: "Étudiant",
-        lastName: "Test",
+        firstName: data.user.prenom,
+        lastName: data.user.nom,
         studentId: "STU123",
-        nom: "Test",
-        prenom: "Étudiant",
+        nom: data.user.nom,
+        prenom: data.user.prenom,
         _id: "6553f1ed4c3ef31ea8c03bc1",
         groupes: [],
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
-      setUser(mockStudent);
+      setUser(student);
       setUserRole("student");
-      setInStorage("user", JSON.stringify(mockStudent));
+      setInStorage("user", JSON.stringify(student));
       setInStorage("userRole", "student");
     } catch (error) {
       console.error("Erreur de connexion avec lien magique:", error);

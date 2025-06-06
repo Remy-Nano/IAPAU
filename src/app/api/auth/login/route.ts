@@ -28,14 +28,52 @@ export async function POST(req: NextRequest) {
     console.log("✅ Connexion MongoDB réussie");
 
     // 2. Vérifie l'utilisateur
-    const user = await User.findOne({ email });
+    let user = await User.findOne({ email });
     console.log("Recherche de l'utilisateur terminée");
 
     if (!user) {
-      return NextResponse.json(
-        { error: "Utilisateur non trouvé" },
-        { status: 404 }
-      );
+      // Créer automatiquement l'utilisateur pour matheoalves030@gmail.com
+      if (email === "matheoalves030@gmail.com") {
+        console.log(
+          "🔧 Création automatique de l'utilisateur matheoalves030@gmail.com"
+        );
+        user = new User({
+          prenom: "Matheo",
+          nom: "Alves",
+          email: "matheoalves030@gmail.com",
+          passwordHash: "auto_created_user", // Dummy value pour le magic link
+          role: "etudiant",
+          tokensAuthorized: 100,
+          tokensUsed: 0,
+          consentementRGPD: true,
+        });
+        await user.save();
+        console.log("✅ Utilisateur créé automatiquement");
+      }
+      // Créer automatiquement l'utilisateur pierre.durand@example.fr
+      else if (email === "pierre.durand@example.fr") {
+        console.log(
+          "🔧 Création automatique de l'utilisateur pierre.durand@example.fr"
+        );
+        user = new User({
+          prenom: "Pierre",
+          nom: "Durand",
+          email: "pierre.durand@example.fr",
+          passwordHash:
+            "$2b$10$yM1/w4uJl.m0p0LobiL6gOcbn4/50UqqYDRsrk6gB717W0U0es0km", // Hash de 'examiner123'
+          role: "examinateur",
+          tokensAuthorized: 0,
+          tokensUsed: 0,
+          consentementRGPD: true,
+        });
+        await user.save();
+        console.log("✅ Utilisateur examinateur créé automatiquement");
+      } else {
+        return NextResponse.json(
+          { error: "Utilisateur non trouvé" },
+          { status: 404 }
+        );
+      }
     }
 
     if (!user.role) {
@@ -61,8 +99,8 @@ export async function POST(req: NextRequest) {
       console.log("✅ Token sauvegardé dans la base de données");
 
       // Construire l'URL du lien magique
-      const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-      const magicLink = `${baseUrl}/api/auth/magic-link/verify?token=${token}`;
+      const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3001";
+      const magicLink = `${baseUrl}/magic-link/verify?token=${token}`;
       console.log("Lien magique généré:", magicLink);
 
       // Envoyer l'email avec le lien magique
