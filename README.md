@@ -13,271 +13,128 @@ _Plateforme d'évaluation IA pour hackathons - Architecture Next.js/MERN avec Do
 
 1. [Vue d'ensemble](#-vue-densemble)
 2. [Architecture du projet](#-architecture-du-projet)
-3. [Bonnes pratiques appliquées](#-bonnes-pratiques-appliquées)
-4. [Guide de contribution](#-guide-de-contribution)
-5. [Évolutions futures](#-évolutions-futures)
-6. [Démarrage rapide](#-démarrage-rapide)
-7. [Scripts utilitaires](#-scripts-utilitaires)
+3. [Fonctionnalités implémentées](#-fonctionnalités-implémentées)
+4. [Démarrage rapide](#-démarrage-rapide)
+5. [Configuration](#-configuration)
+6. [Bonnes pratiques appliquées](#-bonnes-pratiques-appliquées)
+7. [Guide de contribution](#-guide-de-contribution)
+8. [Évolutions futures](#-évolutions-futures)
 
 ---
 
 ## 🎯 **Vue d'ensemble**
 
-**Prompt Challenge** est une solution complète d'évaluation et de notation pour hackathons utilisant l'intelligence artificielle. La plateforme permet aux jurys d'évaluer les conversations entre étudiants et différents modèles d'IA (OpenAI, Mistral, Claude, etc.) de manière structurée et transparente.
+**Prompt Challenge** est une solution complète d'évaluation et de notation pour hackathons utilisant l'intelligence artificielle. La plateforme permet aux jurys d'évaluer les conversations entre étudiants et différents modèles d'IA (OpenAI, Mistral) de manière structurée et transparente.
 
-### **Fonctionnalités principales**
+### **Stack technique actuelle**
 
-- 🤖 **Multi-IA** : Intégration avec OpenAI, Mistral, et extensible à d'autres fournisseurs
-- 👥 **Gestion des rôles** : Étudiants, jurys, administrateurs
-- 📊 **Évaluation structurée** : Grille de notation standardisée avec commentaires
-- 🔐 **Sécurité avancée** : Authentification sécurisée, hachage bcrypt, validation Zod
-- 🌐 **Interface moderne** : UI responsive avec ShadCN/ui et Tailwind CSS
-
-### **Stack technique**
-
-- **Frontend** : Next.js 15, React 19, TypeScript, Tailwind CSS
-- **Backend** : Next.js API Routes, Mongoose, MongoDB Atlas
-- **UI** : ShadCN/ui, Radix UI, Lucide React
-- **Validation** : Zod, React Hook Form
-- **Auth** : JWT, bcryptjs, Magic Links
-- **IA** : OpenAI API, Mistral API (extensible)
+- **Frontend** : Next.js 15.3.1, React 19, TypeScript 5, Tailwind CSS 4
+- **Backend** : Next.js API Routes, Mongoose 8.14.1, MongoDB Atlas
+- **UI/UX** : ShadCN/ui (style New York), Radix UI, Lucide React 0.507.0
+- **IA** : OpenAI 4.97.0, Mistral AI 1.6.0
+- **Auth** : JWT, bcrypt, Magic Links via SendGrid 8.1.5
+- **Validation** : Zod 3.25.55, React Hook Form 7.56.3
+- **Tooling** : ESLint 9, Turbopack, file-loader
 
 ---
 
 ## 🏗️ **Architecture du projet**
 
-### **Structure des dossiers**
+### **Structure des dossiers actuelle**
 
 ```
 prompt-challenge/
 ├── 📁 src/
-│   ├── 📁 app/                    # Pages & API Routes (Next.js 14+)
+│   ├── 📁 app/                    # Pages & API Routes (Next.js 15+)
 │   │   ├── 📁 api/               # Routes API backend
-│   │   │   ├── auth/             # Authentification
-│   │   │   ├── users/            # Gestion utilisateurs
-│   │   │   ├── conversations/    # Gestion conversations
-│   │   │   ├── evaluations/      # Système d'évaluation
-│   │   │   └── hackathons/       # Gestion hackathons
+│   │   │   ├── auth/             # Authentification (login, magic-link)
+│   │   │   ├── users/            # CRUD utilisateurs + import CSV
+│   │   │   ├── conversations/    # Gestion conversations IA
+│   │   │   ├── evaluations/      # Système d'évaluation jurys
+│   │   │   ├── hackathons/       # Gestion hackathons
+│   │   │   └── health/           # Health check API
 │   │   ├── 📁 admin/             # Interface administration
-│   │   ├── 📁 dashboard/         # Tableaux de bord
-│   │   └── 📁 login/             # Pages authentification
+│   │   │   └── users/            # Gestion utilisateurs (CRUD, import)
+│   │   ├── 📁 dashboard/         # Tableaux de bord par rôle
+│   │   │   ├── admin/            # Dashboard administrateur
+│   │   │   ├── examiner/         # Dashboard examinateur/jury
+│   │   │   └── student/          # Dashboard étudiant
+│   │   ├── 📁 login/             # Pages authentification
+│   │   ├── 📁 magic-link/        # Vérification magic links
+│   │   └── 📁 version-finale/    # Soumission finale étudiants
 │   ├── 📁 components/            # Composants React organisés par domaine
-│   │   ├── 📁 ui/               # Composants ShadCN/ui réutilisables
-│   │   ├── 📁 auth/             # Composants authentification
+│   │   ├── 📁 ui/               # 15 composants ShadCN/ui
+│   │   ├── 📁 auth/             # 8 composants authentification
 │   │   ├── 📁 admin/            # Composants administration
-│   │   ├── 📁 chat/             # Interface conversation IA
+│   │   ├── 📁 chat/             # Interface conversation IA (11 composants)
 │   │   ├── 📁 student/          # Interface étudiants
 │   │   └── 📁 examiner/         # Interface jurys
 │   ├── 📁 lib/                   # Logique backend et services
-│   │   ├── 📁 models/           # Modèles Mongoose
-│   │   ├── 📁 services/         # Logique métier centralisée
-│   │   ├── 📁 controllers/      # Contrôleurs HTTP
-│   │   ├── 📁 utils/            # Utilitaires partagés
-│   │   └── mongoose.ts          # Configuration base de données
+│   │   ├── 📁 models/           # 4 modèles Mongoose (User, Conversation, etc.)
+│   │   ├── 📁 services/         # 4 services métier
+│   │   ├── 📁 controllers/      # 4 contrôleurs HTTP
+│   │   ├── 📁 utils/            # Utilitaires (email, roles, messages)
+│   │   ├── 📁 client/           # Services client-side
+│   │   ├── ai-service.ts        # Service IA unifié OpenAI/Mistral
+│   │   ├── config.ts            # Configuration globale
+│   │   └── mongoose.ts          # Connexion MongoDB optimisée
+│   ├── 📁 services/             # Services frontend (hackathonService)
 │   ├── 📁 types/                # Types TypeScript partagés
-│   └── 📁 context/              # Contextes React globaux
-├── 📁 scripts/                   # Scripts de maintenance et audit
-├── 📁 public/                    # Assets statiques
-└── 📄 Configuration files        # Next.js, TypeScript, ESLint, etc.
-```
-
-### **Séparation des responsabilités**
-
-#### **Frontend (`/src/app/` + `/src/components/`)**
-
-- **Pages** : Routage et layout dans `/src/app/`
-- **Composants UI** : Interface utilisateur pure dans `/src/components/ui/`
-- **Composants métier** : Logique business dans `/src/components/{domain}/`
-
-#### **Backend (`/src/lib/`)**
-
-- **Models** : Schémas Mongoose et validation données
-- **Services** : Logique métier centralisée et réutilisable
-- **Controllers** : Gestion des requêtes HTTP et réponses
-- **Utils** : Fonctions utilitaires transversales
-
-#### **Types (`/src/types/`)**
-
-- Types TypeScript partagés entre frontend et backend
-- Interfaces de validation et de données métier
-
----
-
-## ✨ **Bonnes pratiques appliquées**
-
-### **1. Domain-Driven Design (DDD)**
-
-Chaque domaine métier a sa propre organisation :
-
-```typescript
-// Exemple : Domaine "Users"
-/src/components/admin/users/     # UI spécifique aux utilisateurs
-/src/lib/services/userService.ts # Logique métier utilisateurs
-/src/lib/models/user.ts          # Modèle de données utilisateur
-/src/types/userValidation.ts     # Types et validations
-```
-
-### **2. Séparation stricte des préoccupations**
-
-```typescript
-// ✅ Route API minimaliste
-export async function POST(request: Request) {
-  await connectDB();
-  const data = await request.json();
-
-  try {
-    const user = await createUser(data); // ← Logique dans le service
-    return NextResponse.json({ user }, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-}
-
-// ✅ Service avec logique métier
-export async function createUser(data: CreateUserData) {
-  // Validation, hachage, création en base...
-  const passwordHash = await bcrypt.hash(data.password, 10);
-  return await User.create({ ...data, passwordHash });
-}
-```
-
-### **3. Type Safety & Validation**
-
-- **Zod** pour la validation des données d'entrée
-- **TypeScript strict** pour la cohérence du code
-- **Interfaces partagées** entre frontend et backend
-
-```typescript
-// Types centralisés
-export interface CreateUserData {
-  prenom: string;
-  nom: string;
-  email: string;
-  password: string;
-  role?: UserRole;
-}
-```
-
-### **4. Gestion des erreurs robuste**
-
-```typescript
-// Gestion d'erreurs structurée avec codes HTTP appropriés
-if (error.code === 11000) {
-  return NextResponse.json(
-    { error: "Une évaluation existe déjà pour cette combinaison" },
-    { status: 409 }
-  );
-}
-```
-
-### **5. ShadCN/ui : Extensibilité Future-Proof**
-
-Les composants ShadCN/ui non utilisés sont **intentionnellement conservés** :
-
-- **Extensibilité** : Ajout rapide de nouvelles fonctionnalités
-- **Cohérence** : Design system uniforme
-- **Maintenance** : Pas de réinstallation/reconfiguration
-
-### **6. Scripts de maintenance intégrés**
-
-- `scripts/find-unused-components.js` : Audit des composants orphelins
-- `scripts/analyze-api-architecture.js` : Évaluation de la qualité de l'architecture API
-
----
-
-## 🛠️ **Guide de contribution**
-
-### **Standards de code**
-
-- **Naming** : camelCase pour les variables, PascalCase pour les composants
-- **Exports** : Named exports préférés aux default exports
-- **Imports** : Utilisez les alias `@/` pour les imports absolus
-- **Types** : Toujours typer les paramètres et retours de fonction
-
-```typescript
-// ✅ Bon exemple
-export async function createEvaluation(
-  data: CreateEvaluationData
-): Promise<IEvaluation> {
-  // Implementation...
-}
-
-// ❌ À éviter
-export default function createEvaluation(data: any): any {
-  // Implementation...
-}
+│   └── 📁 context/              # Contexte React (AuthContext)
+├── 📁 public/                   # Assets statiques + templates CSV
+├── 📁 middleware.ts             # Middleware Next.js
+└── 📄 Configuration files       # Next.js, TypeScript, ESLint, etc.
 ```
 
 ---
 
-## 🚀 **Évolutions futures**
+## ✅ **Fonctionnalités implémentées**
 
-### **1. Intégration de nouveaux modèles d'IA**
+### **🔐 Système d'authentification**
 
-#### **Guide step-by-step**
+- **Multi-rôle** : étudiants, examinateurs, administrateurs
+- **Magic Links** : authentification sans mot de passe pour étudiants
+- **Authentification classique** : email/mot de passe pour jurys et admins
+- **JWT sécurisé** : tokens avec expiration (10 minutes pour magic links)
+- **Auto-création** : utilisateurs de test prédéfinis
 
-1. **Créer le service IA** :
+### **👥 Gestion des utilisateurs**
 
-   ```typescript
-   // /src/lib/services/anthropicService.ts
-   export class AnthropicService implements IAIService {
-     async generateResponse(prompt: string): Promise<string> {
-       // Implémentation Claude API
-     }
-   }
-   ```
+- **CRUD complet** : création, lecture, modification, suppression
+- **Import CSV** : import en masse via templates
+- **Validation Zod** : validation robuste des données
+- **Hachage bcrypt** : sécurisation des mots de passe
+- **Profils détaillés** : étudiants et jurys avec métadonnées
 
-2. **Ajouter la configuration** :
+### **🤖 Services IA**
 
-   ```typescript
-   // /src/lib/config.ts
-   export const AI_PROVIDERS = {
-     openai: { name: "OpenAI GPT-4", apiKey: process.env.OPENAI_API_KEY },
-     mistral: { name: "Mistral 7B", apiKey: process.env.MISTRAL_API_KEY },
-     claude: { name: "Claude 3", apiKey: process.env.ANTHROPIC_API_KEY }, // ← Nouveau
-   };
-   ```
+- **OpenAI GPT-3.5** : intégration complète avec gestion tokens
+- **Mistral AI** : support Mistral Medium
+- **Service unifié** : interface commune pour tous les modèles
+- **Gestion d'historique** : conversations multi-tours
+- **Paramètres configurables** : température, max tokens, etc.
 
-3. **Étendre le sélecteur frontend** :
+### **💬 Interface de conversation**
 
-   ```tsx
-   // Modifier le composant ModelSelect
-   const availableModels = [
-     { id: "openai", name: "OpenAI GPT-4" },
-     { id: "mistral", name: "Mistral 7B" },
-     { id: "claude", name: "Claude 3" }, // ← Nouveau
-   ];
-   ```
+- **Chat temps réel** : interface moderne et responsive
+- **Sélection de modèle** : choix OpenAI/Mistral
+- **Contrôles avancés** : température, tokens, types de prompts
+- **Historique** : sauvegarde et restauration des conversations
+- **Statistiques** : compteurs de tokens et métriques
 
-4. **Variables d'environnement** :
-   ```bash
-   # .env.local
-   ANTHROPIC_API_KEY=your_claude_api_key_here
-   ```
+### **📊 Système d'évaluation**
 
-#### **Sécurité des clés API**
+- **Grilles d'évaluation** : critères standardisés
+- **Interface jury** : évaluation des conversations étudiants
+- **Commentaires** : feedback détaillé
+- **Gestion des hackathons** : organisation par événements
 
-- **Développement** : `.env.local` (gitignore)
-- **Client** : Jamais exposer les clés côté frontend
+### **⚙️ Administration**
 
-### **2. Gestion dynamique des groupes**
-
-#### **Refonte du système de groupes**
-
-**Discuter avec le maître d'œuvre** :
-
-- Définir la structure des groupes
-- Règles d'affectation automatique vs manuelle
-- Permissions par groupe
-
-### **3. Roadmap technique**
-
-#### **Court terme**
-
-- [ ] Intégration Claude et Deepseek
-- [ ] Tests unitaires complets (Jest + React Testing Library)
-- [ ] Monitoring et logs avancés
-- [ ] Cache Redis pour les performances
+- **Dashboard admin** : vue d'ensemble complète
+- **Gestion centralisée** : utilisateurs, hackathons, évaluations
+- **Import/Export** : outils de gestion en masse
+- **Monitoring** : health checks et métriques
 
 ---
 
@@ -287,65 +144,193 @@ export default function createEvaluation(data: any): any {
 
 - Node.js 18+
 - MongoDB Atlas (ou instance locale)
-- Clés API IA (OpenAI, Mistral)
+- Clés API : OpenAI + Mistral + SendGrid
 
 ### **Installation**
 
 ```bash
-# 1. Cloner le repository
-git clone https://github.com/your-org/prompt-challenge.git
+# 1. Cloner et installer
+git clone <repository-url>
 cd prompt-challenge
-
-# 2. Installer les dépendances
 npm install
 
-# 3. Configuration environnement
+# 2. Configuration environnement
 cp .env.example .env.local
-# Éditer .env.local avec vos clés API
+# Éditer .env.local avec vos configurations
 
-# 4. Lancer en développement
+# 3. Lancer en développement
 npm run dev
 ```
 
-### **Variables d'environnement**
+### **Accès**
 
-```bash
-# .env.local
-MONGODB_URI=mongodb+srv://...
-NEXTAUTH_SECRET=your-secret-key
-OPENAI_API_KEY=sk-...
-MISTRAL_API_KEY=your-mistral-key
-JWT_SECRET=your-jwt-secret
-```
-
-### **Premier démarrage**
-
-1. 🌐 Ouvrir http://localhost:3000
-2. 👤 Créer un compte administrateur
-3. 🗂️ Configurer un hackathon
-4. 👥 Importer des utilisateurs (CSV)
-5. 🚀 Tester une conversation IA
+- **Application** : http://localhost:3000
+- **Comptes de test** :
+  - Étudiant : `matheoalves030@gmail.com` (magic link)
+  - Examinateur : `pierre.durand@example.fr` / `examiner123`
+  - Admin : `admin@example.com` / `admin123`
 
 ---
 
-## 🔧 **Scripts utilitaires**
+## ⚙️ **Configuration**
 
-# Build et vérification
-
-npm run build
-npm run lint
-
-````
-
-### **Scripts personnalisés**
+### **Variables d'environnement (.env.local)**
 
 ```bash
-# Développement avec hot reload
+# Base de données
+MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/database
+
+# Authentification
+JWT_SECRET=your-super-secret-jwt-key-here
+NEXTAUTH_URL=http://localhost:3000
+
+# Services IA
+OPENAI_API_KEY=sk-your-openai-api-key
+MISTRAL_API_KEY=your-mistral-api-key
+
+# Email (SendGrid)
+SENDGRID_API_KEY=your-sendgrid-api-key
+SENDGRID_FROM_EMAIL=noreply@votredomaine.com
+```
+
+### **Scripts disponibles**
+
+```bash
+# Développement avec Turbopack
 npm run dev
 
 # Build de production
-npm run build && npm start
+npm run build
+npm start
 
-# Linting et formatage
+# Linting
 npm run lint
-````
+```
+
+---
+
+## ✨ **Bonnes pratiques appliquées**
+
+### **1. Domain-Driven Design (DDD)**
+
+Organisation par domaines métier avec séparation claire des responsabilités :
+
+```typescript
+// Exemple : Domaine "Users"
+/src/components/admin/users/     # UI spécifique
+/src/lib/services/userService.ts # Logique métier
+/src/lib/models/user.ts          # Modèle de données
+/src/types/userValidation.ts     # Validation
+```
+
+### **2. Type Safety avec TypeScript**
+
+- **Interfaces partagées** entre frontend et backend
+- **Validation Zod** stricte des données
+- **Types centralisés** dans `/src/types/`
+
+### **3. Architecture API moderne**
+
+- **RESTful** avec Next.js API Routes
+- **Gestion d'erreurs** structurée avec codes HTTP
+- **Middleware** pour l'authentification
+- **Services** découplés des contrôleurs
+
+### **4. Sécurité robuste**
+
+- **Hachage bcrypt** (salt rounds: 10)
+- **JWT avec expiration** contrôlée
+- **Validation Zod** côté serveur
+- **Variables d'environnement** sécurisées
+
+### **5. UI/UX moderne**
+
+- **ShadCN/ui** : composants accessibles et customisables
+- **Responsive design** : mobile-first
+- **Dark mode ready** : variables CSS préparées
+- **Feedback utilisateur** : toasts et loading states
+
+---
+
+## 🛠️ **Guide de contribution**
+
+### **Standards de code**
+
+- **ESLint** : configuration Next.js stricte
+- **TypeScript strict** : mode strict activé
+- **Imports absolus** : utiliser `@/` pour les imports
+- **Named exports** : préférés aux default exports
+
+### **Structure des commits**
+
+```bash
+feat: ajouter service Claude AI
+fix: corriger validation email
+docs: mettre à jour README
+refactor: optimiser connexion MongoDB
+```
+
+### **Développement de nouvelles fonctionnalités**
+
+1. **Types** : définir dans `/src/types/`
+2. **Services** : logique métier dans `/src/lib/services/`
+3. **API** : routes dans `/src/app/api/`
+4. **UI** : composants dans `/src/components/{domain}/`
+
+---
+
+## 🚀 **Évolutions futures**
+
+### **🎯 Court terme**
+
+- [ ] **Tests** : Jest + React Testing Library
+- [ ] **Nouvelles IA** : Claude, Gemini, Llama
+- [ ] **Monitoring** : Winston + métriques API
+- [ ] **Cache** : Redis pour les performances
+- [ ] **Docker** : containerisation complète
+
+### **🔮 Moyen terme**
+
+- [ ] **WebSockets** : conversations temps réel
+- [ ] **Analytics** : dashboard métriques avancées
+- [ ] **Mobile** : Progressive Web App
+- [ ] **Multi-tenant** : support multiple organisations
+- [ ] **API publique** : endpoints REST documentés
+
+### **📈 Long terme**
+
+- [ ] **Microservices** : découpage par domaines
+- [ ] **Kubernetes** : orchestration cloud
+- [ ] **Machine Learning** : évaluation automatique
+- [ ] **Blockchain** : certification des évaluations
+
+---
+
+## 📚 **Ressources**
+
+### **Documentation technique**
+
+- [Next.js 15 Documentation](https://nextjs.org/docs)
+- [ShadCN/ui Components](https://ui.shadcn.com/)
+- [Tailwind CSS 4](https://tailwindcss.com/)
+- [Mongoose ODM](https://mongoosejs.com/)
+
+### **APIs intégrées**
+
+- [OpenAI API](https://platform.openai.com/docs)
+- [Mistral AI API](https://docs.mistral.ai/)
+- [SendGrid API](https://docs.sendgrid.com/)
+
+### **Outils de développement**
+
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
+- [Zod Validation](https://zod.dev/)
+- [React Hook Form](https://react-hook-form.com/)
+
+---
+
+**💡 Questions ou contributions ?** Contactez l'équipe via les issues GitHub ou par email.
+
+---
+
+_Dernière mise à jour : Décembre 2024 | Version : 0.1.0_
