@@ -289,23 +289,6 @@ refactor: optimiser connexion MongoDB
 - [ ] **Cache** : Redis pour les performances
 - [ ] **Docker** : containerisation complète
 
-### **🔮 Moyen terme**
-
-- [ ] **WebSockets** : conversations temps réel
-- [ ] **Analytics** : dashboard métriques avancées
-- [ ] **Mobile** : Progressive Web App
-- [ ] **Multi-tenant** : support multiple organisations
-- [ ] **API publique** : endpoints REST documentés
-
-### **📈 Long terme**
-
-- [ ] **Microservices** : découpage par domaines
-- [ ] **Kubernetes** : orchestration cloud
-- [ ] **Machine Learning** : évaluation automatique
-- [ ] **Blockchain** : certification des évaluations
-
----
-
 ## 📚 **Ressources**
 
 ### **Documentation technique**
@@ -326,11 +309,3 @@ refactor: optimiser connexion MongoDB
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/)
 - [Zod Validation](https://zod.dev/)
 - [React Hook Form](https://react-hook-form.com/)
-
----
-
-**💡 Questions ou contributions ?** Contactez l'équipe via les issues GitHub ou par email.
-
----
-
-_Dernière mise à jour : Décembre 2024 | Version : 0.1.0_
