@@ -1,4 +1,4 @@
-import { Document, Schema, model } from "mongoose";
+import { Document, Schema, model, models } from "mongoose";
 
 export interface IHackathon extends Document {
   nom: string;
@@ -41,4 +41,5 @@ const hackathonSchema = new Schema<IHackathon>(
   { timestamps: true }
 );
 
-export const Hackathon = model<IHackathon>("Hackathon", hackathonSchema);
+export const Hackathon =
+  models.Hackathon || model<IHackathon>("Hackathon", hackathonSchema);

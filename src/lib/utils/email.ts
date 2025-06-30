@@ -1,21 +1,33 @@
 import sgMail from "@sendgrid/mail";
 
 // Configuration SendGrid
-const sendgridFromEmail =
-  process.env.SENDGRID_FROM_EMAIL || "matheoalves030@gmail.com";
+const sendgridFromEmail = process.env.SENDGRID_FROM_EMAIL;
+const sendgridApiKey = process.env.SENDGRID_API_KEY;
 
-if (!process.env.SENDGRID_API_KEY) {
-  console.warn(
-    "SENDGRID_API_KEY non définie - l'envoi d'email ne fonctionnera pas"
-  );
+// Vérifications de configuration
+if (!sendgridApiKey) {
+  console.error("🛑 SENDGRID_API_KEY non définie dans .env.local");
 } else {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log("✅ SENDGRID_API_KEY trouvée");
+  sgMail.setApiKey(sendgridApiKey);
 }
 
-console.log("SendGrid configuré avec l'email expéditeur:", sendgridFromEmail);
+if (!sendgridFromEmail) {
+  console.error("🛑 SENDGRID_FROM_EMAIL non définie dans .env.local");
+} else {
+  console.log("✅ SENDGRID_FROM_EMAIL configurée:", sendgridFromEmail);
+}
 
 export const sendMagicLink = async (email: string, link: string) => {
   try {
+    // Vérifications préalables
+    if (!sendgridApiKey) {
+      throw new Error("SENDGRID_API_KEY manquante");
+    }
+    if (!sendgridFromEmail) {
+      throw new Error("SENDGRID_FROM_EMAIL manquante");
+    }
+
     // Validation de l'email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -28,18 +40,21 @@ export const sendMagicLink = async (email: string, link: string) => {
     }
 
     console.log("🚀 Début de l'envoi de l'email");
-    console.log("Email:", email);
-    console.log("Lien:", link);
-    console.log("Email de l'expéditeur:", sendgridFromEmail);
+    console.log("📧 Email destinataire:", email);
+    console.log("🔗 Lien:", link);
+    console.log("📤 Email expéditeur:", sendgridFromEmail);
 
     const msg = {
       to: email,
-      from: sendgridFromEmail,
-      subject: "Votre lien magique",
+      from: {
+        email: sendgridFromEmail,
+        name: "Prompt Challenge",
+      },
+      subject: "Votre lien magique - Prompt Challenge",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2 style="color: #333;">Bonjour !</h2>
-          <p style="color: #666;">Voici votre lien de connexion unique :</p>
+          <p style="color: #666;">Voici votre lien de connexion unique pour Prompt Challenge :</p>
           <a href="${link}" 
              style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; 
                     text-decoration: none; border-radius: 6px; margin: 20px 0;">
@@ -51,16 +66,41 @@ export const sendMagicLink = async (email: string, link: string) => {
           </p>
         </div>
       `,
+      // Ajouter des options pour éviter les erreurs communes
+      trackingSettings: {
+        clickTracking: { enable: false },
+        openTracking: { enable: false },
+      },
     };
 
     console.log("⚡ Message configuré, envoi en cours...");
 
-    await sgMail.send(msg);
+    const response = await sgMail.send(msg);
 
     console.log("✅ Email envoyé avec succès");
+    console.log("📊 Response status:", response[0].statusCode);
     return true;
   } catch (error) {
     console.error("❌ Erreur lors de l'envoi de l'email:", error);
+
+    // Log détaillé de l'erreur SendGrid
+    if (error && typeof error === "object" && "response" in error) {
+      const sgError = error as {
+        code?: number;
+        message?: string;
+        response?: { body?: unknown };
+      };
+      console.error("🔍 Détails erreur SendGrid:");
+      console.error("   - Status:", sgError.code);
+      console.error("   - Message:", sgError.message);
+      if (sgError.response && sgError.response.body) {
+        console.error(
+          "   - Body:",
+          JSON.stringify(sgError.response.body, null, 2)
+        );
+      }
+    }
+
     throw error instanceof Error
       ? error
       : new Error("Erreur lors de l'envoi de l'email");

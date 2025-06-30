@@ -131,18 +131,35 @@ export function UserCreateForm({
               <p className="text-red-500 text-sm">{errors.email.message}</p>
             )}
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Mot de passe</label>
-            <Input
-              type="password"
-              {...register("password")}
-              className={errors.password ? "border-red-500" : ""}
-              placeholder="••••••••"
-            />
-            {errors.password && (
-              <p className="text-red-500 text-sm">{errors.password.message}</p>
-            )}
-          </div>
+          {selectedRole !== "student" && selectedRole !== "etudiant" && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Mot de passe</label>
+              <Input
+                type="password"
+                {...register("password")}
+                className={errors.password ? "border-red-500" : ""}
+                placeholder="••••••••"
+              />
+              {errors.password && (
+                <p className="text-red-500 text-sm">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+          )}
+          {(selectedRole === "student" || selectedRole === "etudiant") && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-500">
+                Mot de passe
+              </label>
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-sm text-blue-700">
+                  ℹ️ Les étudiants utilisent un lien magique pour se connecter.
+                  Aucun mot de passe requis.
+                </p>
+              </div>
+            </div>
+          )}
           <div className="space-y-2">
             <label className="text-sm font-medium">Rôle</label>
             <select

@@ -32,30 +32,44 @@ export const CredentialsInfo: React.FC = () => {
 
       {open && (
         <div className="mt-4 text-sm bg-gray-50 p-4 rounded-lg">
-          <p className="font-medium mb-2">Pour tester l'application :</p>
-          <ul className="space-y-2 text-gray-600">
+          <p className="font-medium mb-2">Pour tester l&apos;application :</p>
+          <ul className="space-y-3 text-gray-600">
             <li>
-              <span className="font-medium">Admin:</span> admin@example.com /{" "}
-              <span className="font-mono bg-gray-100 p-0.5 rounded">
+              <span className="font-medium text-purple-600">👨‍💼 Admin:</span>{" "}
+              <span className="font-mono bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-xs">
+                jean.admin@exemple.com
+              </span>{" "}
+              /{" "}
+              <span className="font-mono bg-gray-100 px-2 py-0.5 rounded text-xs">
                 admin123
               </span>
             </li>
             <li>
-              <span className="font-medium">Examinateur:</span>{" "}
-              pierre.durand@example.fr /{" "}
-              <span className="font-mono bg-gray-100 p-0.5 rounded">
+              <span className="font-medium text-orange-600">
+                👨‍🏫 Examinateur:
+              </span>{" "}
+              <span className="font-mono bg-orange-50 text-orange-700 px-2 py-0.5 rounded text-xs">
+                pierre.durand@example.fr
+              </span>{" "}
+              /{" "}
+              <span className="font-mono bg-gray-100 px-2 py-0.5 rounded text-xs">
                 examiner123
               </span>
             </li>
             <li>
-              <span className="font-medium">Étudiant:</span> student@example.com
-              (lien magique)
-              <div className="mt-2">
+              <span className="font-medium text-blue-600">🎓 Étudiant:</span>{" "}
+              <span className="font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
+                christophe.mostefaoui.dev@gmail.com
+              </span>{" "}
+              <span className="text-xs text-gray-500">
+                (magic link par email)
+              </span>
+              <div className="mt-2 flex gap-2">
                 <Link
                   href="/magic-link?token=test123"
-                  className="text-xs inline-block bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100"
+                  className="text-xs inline-block bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 border border-blue-200"
                 >
-                  → Simuler un lien magique
+                  🔗 Simuler un magic link
                 </Link>
               </div>
             </li>

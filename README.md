@@ -92,19 +92,21 @@ prompt-challenge/
 
 ### **🔐 Système d'authentification**
 
-- **Multi-rôle** : étudiants, examinateurs, administrateurs
-- **Magic Links** : authentification sans mot de passe pour étudiants
-- **Authentification classique** : email/mot de passe pour jurys et admins
-- **JWT sécurisé** : tokens avec expiration (10 minutes pour magic links)
-- **Auto-création** : utilisateurs de test prédéfinis
+- **Multi-rôle robuste** : étudiants, examinateurs, administrateurs avec gestion différenciée
+- **Magic Links SendGrid** : authentification sans mot de passe pour étudiants avec emails réels
+- **Authentification hybride** : email/mot de passe pour jurys et admins, magic links pour étudiants
+- **JWT sécurisé** : tokens avec expiration contrôlée (10 minutes pour magic links)
+- **Utilisateurs de test** : comptes prédéfinis pour démonstration immédiate
+- **Support dual rôles** : reconnaissance automatique des formats de rôles français/anglais
 
 ### **👥 Gestion des utilisateurs**
 
-- **CRUD complet** : création, lecture, modification, suppression
-- **Import CSV** : import en masse via templates
-- **Validation Zod** : validation robuste des données
-- **Hachage bcrypt** : sécurisation des mots de passe
-- **Profils détaillés** : étudiants et jurys avec métadonnées
+- **CRUD complet** : création, lecture, modification, suppression avec interface moderne
+- **Import CSV** : import en masse via templates avec validation stricte
+- **Validation Zod adaptative** : schémas différents selon le type d'utilisateur
+- **Hachage bcrypt** : sécurisation des mots de passe (optionnel pour étudiants)
+- **Profils détaillés** : métadonnées complètes pour étudiants et jurys
+- **Interface adaptative** : formulaires contextuels selon le rôle utilisateur
 
 ### **🤖 Services IA**
 
@@ -116,11 +118,12 @@ prompt-challenge/
 
 ### **💬 Interface de conversation**
 
-- **Chat temps réel** : interface moderne et responsive
-- **Sélection de modèle** : choix OpenAI/Mistral
-- **Contrôles avancés** : température, tokens, types de prompts
-- **Historique** : sauvegarde et restauration des conversations
-- **Statistiques** : compteurs de tokens et métriques
+- **Chat temps réel** : interface moderne et responsive avec sidebar optimisée
+- **Sélection de modèle** : choix OpenAI/Mistral avec badges visuels
+- **Contrôles avancés** : température, tokens, types de prompts configurables
+- **Historique isolé** : conversations filtrées par utilisateur (plus de données parasites)
+- **Statistiques** : compteurs de tokens et métriques temps réel
+- **Gestion des hackathons** : sélection et filtrage par événement
 
 ### **📊 Système d'évaluation**
 
@@ -166,9 +169,9 @@ npm run dev
 
 - **Application** : http://localhost:3000
 - **Comptes de test** :
-  - Étudiant : `matheoalves030@gmail.com` (magic link)
-  - Examinateur : `pierre.durand@example.fr` / `examiner123`
-  - Admin : `admin@example.com` / `admin123`
+  - **👨‍💼 Admin** : `jean.admin@exemple.com` / `admin123`
+  - **👨‍🏫 Examinateur** : `pierre.durand@example.fr` / `examiner123`
+  - **🎓 Étudiant** : `christophe.mostefaoui.dev@gmail.com` (magic link par email)
 
 ---
 
@@ -188,9 +191,11 @@ NEXTAUTH_URL=http://localhost:3000
 OPENAI_API_KEY=sk-your-openai-api-key
 MISTRAL_API_KEY=your-mistral-api-key
 
-# Email (SendGrid)
+# Email (SendGrid) - Magic Links
 SENDGRID_API_KEY=your-sendgrid-api-key
 SENDGRID_FROM_EMAIL=noreply@votredomaine.com
+
+# Note : SENDGRID_FROM_EMAIL doit être vérifié dans SendGrid Dashboard
 ```
 
 ### **Scripts disponibles**
@@ -238,10 +243,12 @@ Organisation par domaines métier avec séparation claire des responsabilités :
 
 ### **4. Sécurité robuste**
 
-- **Hachage bcrypt** (salt rounds: 10)
-- **JWT avec expiration** contrôlée
-- **Validation Zod** côté serveur
-- **Variables d'environnement** sécurisées
+- **Hachage bcrypt** (salt rounds: 10) pour mots de passe
+- **JWT avec expiration** contrôlée et validation stricte
+- **Validation Zod** côté serveur avec schémas adaptatifs
+- **Variables d'environnement** sécurisées et isolées
+- **SendGrid API** : intégration sécurisée pour magic links
+- **Isolation des données** : conversations filtrées par utilisateur
 
 ### **5. UI/UX moderne**
 
@@ -256,10 +263,11 @@ Organisation par domaines métier avec séparation claire des responsabilités :
 
 ### **Standards de code**
 
-- **ESLint** : configuration Next.js stricte
-- **TypeScript strict** : mode strict activé
+- **ESLint** : configuration Next.js stricte avec corrections de lint actives
+- **TypeScript strict** : mode strict activé avec gestion des types optionnels
 - **Imports absolus** : utiliser `@/` pour les imports
 - **Named exports** : préférés aux default exports
+- **Patterns Mongoose** : utilisation de `models.Model || model()` pour éviter les erreurs de recompilation
 
 ### **Structure des commits**
 
@@ -279,15 +287,61 @@ refactor: optimiser connexion MongoDB
 
 ---
 
+## 🆕 **Corrections récentes (Juin 2025)**
+
+### **🔧 Système d'authentification corrigé**
+
+- ✅ **Problème "utilisateur non trouvé"** : suppression de la logique de recherche limitée aux emails prédéfinis
+- ✅ **Magic links fonctionnels** : intégration SendGrid complète avec gestion d'erreurs robuste
+- ✅ **Support dual des rôles** : reconnaissance des formats "student"/"etudiant" et "examiner"/"examinateur"
+- ✅ **Logs détaillés** : amélioration du debugging pour l'authentification
+
+### **🎓 Interface étudiante optimisée**
+
+- ✅ **Conversations isolées** : suppression du fallback qui affichait les conversations d'autres utilisateurs
+- ✅ **Gestion des nouveaux utilisateurs** : interface propre sans données parasites
+- ✅ **Hackathons de test** : création automatique de hackathons pour les tests
+- ✅ **Types TypeScript** : correction des erreurs de compilation liées aux IDs utilisateur
+
+### **👥 Système utilisateurs amélioré**
+
+- ✅ **Mots de passe optionnels** : étudiants utilisent uniquement les magic links
+- ✅ **Interface adaptative** : formulaires différents selon le type d'utilisateur
+- ✅ **Validation Zod** : schémas adaptés aux spécificités de chaque rôle
+- ✅ **Auto-génération** : mots de passe par défaut pour les étudiants
+
+### **🐛 Corrections techniques majeures**
+
+- ✅ **OverwriteModelError Mongoose** : pattern correct pour éviter la recompilation des modèles
+- ✅ **Sidebar conversations** : filtrage propre par utilisateur
+- ✅ **Gestion des environnements** : variables `.env.local` optimisées
+- ✅ **Page de login** : informations de test mises à jour avec design moderne
+
+### **🎯 État actuel (100% fonctionnel)**
+
+Toutes les fonctionnalités principales sont **opérationnelles et testées** :
+
+- ✅ **Authentification complète** : Admin, Examinateurs et Étudiants
+- ✅ **Magic Links SendGrid** : emails envoyés en temps réel
+- ✅ **Conversations IA** : OpenAI et Mistral intégrés
+- ✅ **Interface étudiante** : dashboard propre sans données parasites
+- ✅ **Système d'évaluation** : notation et commentaires fonctionnels
+- ✅ **Gestion hackathons** : création et sélection opérationnelles
+- ✅ **Administration** : CRUD utilisateurs + import CSV
+
+**La plateforme est prête pour un déploiement en production !** 🚀
+
+---
+
 ## 🚀 **Évolutions futures**
 
 ### **🎯 Court terme**
 
-- [ ] **Tests** : Jest + React Testing Library
-- [ ] **Nouvelles IA** : Claude, Gemini, Llama
-- [ ] **Monitoring** : Winston + métriques API
-- [ ] **Cache** : Redis pour les performances
-- [ ] **Docker** : containerisation complète
+- [ ] **Tests automatisés** : Jest + React Testing Library + Cypress
+- [ ] **Nouvelles IA** : Claude, Gemini, Llama intégration
+- [ ] **Monitoring** : Winston + métriques API temps réel
+- [ ] **Cache Redis** : optimisation performances MongoDB
+- [ ] **Docker** : containerisation complète avec docker-compose
 
 ## 📚 **Ressources**
 

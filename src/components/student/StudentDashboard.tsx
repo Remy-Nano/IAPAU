@@ -23,8 +23,8 @@ import { toast } from "react-hot-toast";
 export default function StudentDashboard() {
   const { user } = useAuth(); // récupération de l'utilisateur connecté
 
-  // ID étudiant standard pour l'étudiant test
-  const studentId = user?._id || "6553f1ed4c3ef31ea8c03bc1"; // Rétablir l'ID original de l'étudiant test
+  // Maintenant on sait que user._id existe OU on utilise null pour indiquer pas connecté
+  const studentId = user?._id || null;
   // IDs par défaut pour tâche et groupe
   const defaultTacheId = "6553f1ed4c3ef31ea8c03bc3";
   const defaultGroupId = "6553f1ed4c3ef31ea8c03bc2";
@@ -107,7 +107,7 @@ export default function StudentDashboard() {
   const loadConversation = async (conversationId: string) => {
     if (isLoading || !studentId) {
       if (!studentId) {
-        toast.error("Utilisateur non connecté ou ID étudiant manquant");
+        toast.error("Utilisateur non connecté. Veuillez vous reconnecter.");
       }
       return;
     }
@@ -148,7 +148,7 @@ export default function StudentDashboard() {
     // Créer immédiatement une nouvelle conversation vide
     try {
       const conversationResponse = await axios.post("/api/conversations", {
-        studentId,
+        studentId: studentId!,
         tacheId: defaultTacheId, // Ajouter l'ID de tâche par défaut
         groupId: defaultGroupId, // Ajouter l'ID de groupe par défaut
         hackathonId: selectedHackathon, // Ajouter l'ID du hackathon sélectionné
@@ -260,17 +260,26 @@ export default function StudentDashboard() {
         {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
-      <ConversationSidebar
-        studentId={studentId}
-        selectedConversationId={selectedConversationId}
-        onSelectConversation={handleSelectConversation}
-        onNewConversation={handleNewConversation}
-        onConversationDeleted={handleConversationDeleted}
-        isMobileOpen={sidebarOpen}
-        className="shadow-lg"
-        key={`sidebar-${refreshConversations}`} // Forcer le remontage du composant quand refreshConversations change
-        hackathonId={selectedHackathon} // Passer l'ID du hackathon sélectionné
-      />
+      {studentId ? (
+        <ConversationSidebar
+          studentId={studentId}
+          selectedConversationId={selectedConversationId}
+          onSelectConversation={handleSelectConversation}
+          onNewConversation={handleNewConversation}
+          onConversationDeleted={handleConversationDeleted}
+          isMobileOpen={sidebarOpen}
+          className="shadow-lg"
+          key={`sidebar-${refreshConversations}`} // Forcer le remontage du composant quand refreshConversations change
+          hackathonId={selectedHackathon} // Passer l'ID du hackathon sélectionné
+        />
+      ) : (
+        <div className="w-80 bg-gray-800 text-white p-4 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-300">Connexion requise</p>
+            <LogoutButton />
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         <header className="bg-white/80 backdrop-blur-sm shadow-sm p-4 pl-14 md:pl-4 flex justify-between items-center">

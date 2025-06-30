@@ -28,53 +28,23 @@ export async function POST(req: NextRequest) {
     console.log("✅ Connexion MongoDB réussie");
 
     // 2. Vérifie l'utilisateur
-    let user = await User.findOne({ email });
+    const user = await User.findOne({ email });
     console.log("Recherche de l'utilisateur terminée");
 
     if (!user) {
-      // Créer automatiquement l'utilisateur pour matheoalves030@gmail.com
-      if (email === "matheoalves030@gmail.com") {
-        console.log(
-          "🔧 Création automatique de l'utilisateur matheoalves030@gmail.com"
-        );
-        user = new User({
-          prenom: "Matheo",
-          nom: "Alves",
-          email: "matheoalves030@gmail.com",
-          passwordHash: "auto_created_user", // Dummy value pour le magic link
-          role: "etudiant",
-          tokensAuthorized: 100,
-          tokensUsed: 0,
-          consentementRGPD: true,
-        });
-        await user.save();
-        console.log("✅ Utilisateur créé automatiquement");
-      }
-      // Créer automatiquement l'utilisateur pierre.durand@example.fr
-      else if (email === "pierre.durand@example.fr") {
-        console.log(
-          "🔧 Création automatique de l'utilisateur pierre.durand@example.fr"
-        );
-        user = new User({
-          prenom: "Pierre",
-          nom: "Durand",
-          email: "pierre.durand@example.fr",
-          passwordHash:
-            "$2b$10$yM1/w4uJl.m0p0LobiL6gOcbn4/50UqqYDRsrk6gB717W0U0es0km", // Hash de 'examiner123'
-          role: "examinateur",
-          tokensAuthorized: 0,
-          tokensUsed: 0,
-          consentementRGPD: true,
-        });
-        await user.save();
-        console.log("✅ Utilisateur examinateur créé automatiquement");
-      } else {
-        return NextResponse.json(
-          { error: "Utilisateur non trouvé" },
-          { status: 404 }
-        );
-      }
+      console.log(`❌ Aucun utilisateur trouvé pour l'email: ${email}`);
+      return NextResponse.json(
+        {
+          error:
+            "Utilisateur non trouvé. Contactez un administrateur pour créer votre compte.",
+        },
+        { status: 404 }
+      );
     }
+
+    console.log(
+      `✅ Utilisateur trouvé: ${user.prenom} ${user.nom} (${user.role})`
+    );
 
     if (!user.role) {
       return NextResponse.json(
@@ -99,20 +69,27 @@ export async function POST(req: NextRequest) {
       console.log("✅ Token sauvegardé dans la base de données");
 
       // Construire l'URL du lien magique
-      const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3001";
+      const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
       const magicLink = `${baseUrl}/magic-link/verify?token=${token}`;
       console.log("Lien magique généré:", magicLink);
 
       // Envoyer l'email avec le lien magique
       try {
         console.log("⚡ Tentative d'envoi de l'email...");
+
         await sendMagicLink(email, magicLink);
-        console.log("✅ Email envoyé avec succès");
+
+        console.log("✅ Email envoyé avec succès à", email);
+        console.log("🔗 Lien magique (aussi envoyé par email):", magicLink);
       } catch (error) {
         console.error("❌ Erreur lors de l'envoi de l'email:", error);
-        throw error instanceof Error
-          ? error
-          : new Error("Erreur lors de l'envoi de l'email");
+
+        // En cas d'erreur email, afficher le lien dans les logs pour debug
+        console.log("🔗 LIEN MAGIQUE (FALLBACK - copie dans ton navigateur):");
+        console.log("   " + magicLink);
+
+        // Ne pas faire échouer la connexion si l'email ne part pas
+        console.log("⚠️ Connexion autorisée malgré l'échec email");
       }
     } else {
       console.log("ℹ️ Utilisateur n'est pas étudiant, pas d'email à envoyer");

@@ -101,15 +101,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const data = await response.json();
       console.log("Réponse API login:", data);
 
-      // Conversion du rôle retourné par l'API
-      if (data.role === "etudiant") {
+      // Conversion du rôle retourné par l'API (support des deux nomenclatures)
+      if (data.role === "etudiant" || data.role === "student") {
         return "student";
-      } else if (data.role === "examinateur") {
+      } else if (data.role === "examinateur" || data.role === "examiner") {
         return "examiner";
       } else if (data.role === "admin") {
         return "admin";
       }
 
+      console.log("⚠️ Rôle non reconnu:", data.role);
       return null;
     } catch (error) {
       console.error("Erreur de vérification d'email:", error);

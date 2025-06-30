@@ -6,7 +6,7 @@ export interface CreateUserData {
   prenom: string;
   nom: string;
   email: string;
-  password: string;
+  password?: string; // Optionnel pour les étudiants
   dateNaissance?: string;
   role?: string;
   numeroEtudiant?: string;
@@ -24,8 +24,22 @@ export async function createUser(data: CreateUserData) {
   } = data;
 
   // Validation des champs obligatoires
-  if (!prenom || !nom || !email || !password) {
-    throw new Error("Prénom, nom, email et mot de passe sont requis");
+  if (!prenom || !nom || !email) {
+    throw new Error("Prénom, nom et email sont requis");
+  }
+
+  const roleKey = normalizeRole(role ?? "") || "student";
+
+  // Validation du mot de passe selon le rôle
+  if (
+    (roleKey === "examiner" ||
+      roleKey === "examinateur" ||
+      roleKey === "admin") &&
+    !password
+  ) {
+    throw new Error(
+      "Un mot de passe est requis pour les examinateurs et administrateurs"
+    );
   }
 
   // Vérification si l'email existe déjà
@@ -43,9 +57,11 @@ export async function createUser(data: CreateUserData) {
     }
   }
 
+  // Générer un mot de passe par défaut pour les étudiants si non fourni
+  const finalPassword = password || "magic_link_user_no_password_needed";
+
   // Hash du mot de passe
-  const passwordHash = await bcrypt.hash(password, 10);
-  const roleKey = normalizeRole(role ?? "");
+  const passwordHash = await bcrypt.hash(finalPassword, 10);
 
   // Création de l'utilisateur
   const newUser = await User.create({
@@ -54,7 +70,7 @@ export async function createUser(data: CreateUserData) {
     email,
     dateNaissance,
     passwordHash,
-    role: roleKey || "student", // Valeur par défaut
+    role: roleKey, // Déjà défini plus haut avec valeur par défaut
     numeroEtudiant: numeroEtudiant || "",
     tokensAuthorized: 0,
     tokensUsed: 0,

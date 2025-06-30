@@ -173,15 +173,12 @@ export async function getConversationsByStudent(
       console.log("Résultat recherche par ID nettoyé:", conversations.length);
     }
 
-    // 4. Dernier recours: retourner toutes les conversations
+    // 4. Si aucune conversation trouvée, retourner un tableau vide (ne PAS montrer les conversations des autres)
     if (!conversations || conversations.length === 0) {
       console.log(
-        "Aucune conversation trouvée, retour de toutes les conversations disponibles"
+        "Aucune conversation trouvée pour cet utilisateur - retour tableau vide"
       );
-      conversations = allConversations.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+      conversations = [];
     }
 
     console.log(
