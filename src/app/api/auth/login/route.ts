@@ -10,7 +10,6 @@ const loginSchema = z.object({
   email: z.string().email("Format email invalide").min(1, "Email requis"),
 });
 
-// Vérifier que JWT_SECRET est défini
 if (!process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET is not defined in .env.local");
 }
@@ -23,11 +22,11 @@ export async function POST(req: NextRequest) {
     const { email } = loginSchema.parse(body);
     console.log("Email reçu:", email);
 
-    // 1. Connecte-toi à MongoDB
+    // 1) Connexion MongoDB
     await connectDB();
     console.log("✅ Connexion MongoDB réussie");
 
-    // 2. Vérifie l'utilisateur
+    // 2) Vérifie l'utilisateur
     const user = await User.findOne({ email });
     console.log("Recherche de l'utilisateur terminée");
 
@@ -53,62 +52,53 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Pour les étudiants, génère un token JWT et envoie le lien magique
-    if (user.role === "etudiant" || user.role === "student") {
+    const isStudent = user.role === "etudiant" || user.role === "student";
+    const isE2E = process.env.E2E_TESTING === "true";
+
+    if (isStudent) {
       console.log("✅ Utilisateur est étudiant, génération du token...");
+
       const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET!, {
         expiresIn: "10m",
         algorithm: "HS256",
       });
-      console.log("Token JWT généré:", token);
 
       await User.findByIdAndUpdate(user._id, {
         "magicLink.token": token,
-        "magicLink.expiresAt": new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        "magicLink.expiresAt": new Date(Date.now() + 10 * 60 * 1000),
       });
-      console.log("✅ Token sauvegardé dans la base de données");
 
-      // Construire l'URL du lien magique
       const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
       const magicLink = `${baseUrl}/magic-link/verify?token=${token}`;
-      console.log("Lien magique généré:", magicLink);
 
-      // Envoyer l'email avec le lien magique
-      try {
-        console.log("⚡ Tentative d'envoi de l'email...");
-
-        await sendMagicLink(email, magicLink);
-
-        console.log("✅ Email envoyé avec succès à", email);
-        console.log("🔗 Lien magique (aussi envoyé par email):", magicLink);
-      } catch (error) {
-        console.error("❌ Erreur lors de l'envoi de l'email:", error);
-
-        // En cas d'erreur email, afficher le lien dans les logs pour debug
-        console.log("🔗 LIEN MAGIQUE (FALLBACK - copie dans ton navigateur):");
-        console.log("   " + magicLink);
-
-        // Ne pas faire échouer la connexion si l'email ne part pas
-        console.log("⚠️ Connexion autorisée malgré l'échec email");
+      // ✅ MODE TEST : renvoie magicLink au lieu d’envoyer un email
+      if (isE2E) {
+        return NextResponse.json(
+          { role: user.role, token, magicLink },
+          { status: 200 }
+        );
       }
-    } else {
-      console.log("ℹ️ Utilisateur n'est pas étudiant, pas d'email à envoyer");
+
+      // Mode normal: email
+      try {
+        await sendMagicLink(email, magicLink);
+      } catch (error) {
+        console.error("❌ Erreur email:", error);
+        console.log("🔗 LIEN MAGIQUE (FALLBACK):", magicLink);
+      }
+
+      return NextResponse.json({ role: user.role }, { status: 200 });
     }
 
-    // 4. Retourne le rôle
-    return NextResponse.json({ role: user.role });
+    return NextResponse.json({ role: user.role }, { status: 200 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error("❌ Erreur de validation:", error);
       return NextResponse.json(
-        {
-          error: error.errors[0]?.message || "Données invalides",
-        },
+        { error: error.errors[0]?.message || "Données invalides" },
         { status: 400 }
       );
     }
 
-    console.error("❌ Erreur lors de la connexion:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Erreur serveur";
     return NextResponse.json({ error: errorMessage }, { status: 500 });
