@@ -23,6 +23,13 @@ export async function generateAIResponse(
   maxTokens: number = 512
 ): Promise<{ content: string; tokenCount?: number }> {
   try {
+    if (process.env.E2E_TESTING === "true") {
+      return {
+        content: "Bonjour (mock E2E).",
+        tokenCount: 0,
+      };
+    }
+
     // Générer une réponse avec OpenAI
     if (modelName.toLowerCase().includes("openai") || modelName === "gpt") {
       // Convertir les messages pour le format OpenAI
