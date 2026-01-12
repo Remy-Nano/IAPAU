@@ -43,3 +43,14 @@ next-env.d.ts
 # cursor mdc files
 index.mdc
 
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/regarde 
+# Playwright root folder
+/playwright/
+
+# npm pack / local artifacts
+prompt-challenge@0.1.0
+*.tgz
