@@ -12,14 +12,21 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password } = schema.parse(body);
+    let { email, password } = schema.parse(body);
+
+    // ✅ NORMALISATION
+    email = email.trim().toLowerCase();
 
     await connectDB();
 
     const result = await login({ email, password });
 
-    // ✅ On autorise uniquement admin/examiner ici
-    if (result.user.role !== "admin" && result.user.role !== "examiner" && result.user.role !== "examinateur") {
+    // ✅ On autorise uniquement admin/examiner/examinateur ici
+    if (
+      result.user.role !== "admin" &&
+      result.user.role !== "examiner" &&
+      result.user.role !== "examinateur"
+    ) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 

@@ -36,7 +36,16 @@ const userSchema = new Schema<IUser>(
     prenom: { type: String, required: true },
     nom: { type: String, required: true },
     dateNaissance: { type: Date },
-    email: { type: String, required: true, unique: true },
+
+    // ✅ IMPORTANT: normalisation email (évite les bugs "Utilisateur non trouvé")
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+
     numeroEtudiant: { type: String, default: "" },
     passwordHash: { type: String, required: true },
     role: {
