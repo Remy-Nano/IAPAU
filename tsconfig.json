@@ -14,20 +14,11 @@
     "jsx": "preserve",
     "incremental": true,
     "plugins": [
-      {
-        "name": "next"
-      }
+      { "name": "next" }
     ],
-<<<<<<< HEAD
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
-=======
-
-    // 🔹 AJOUT ICI
-    "baseUrl": ".",           
-    "paths": {
-      "@/*": ["src/*"]        // ⬅️ plus besoin du "./"
->>>>>>> 51b2420 (feat: examiner evaluation flow + student results page)
+      "@/*": ["src/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
