@@ -1,11 +1,11 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
-import { Loader2 } from "lucide-react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
-export default function MagicLinkPage() {
+function MagicLinkContent() {
   const { loginWithMagicLink } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -37,7 +37,6 @@ export default function MagicLinkPage() {
       } catch (err) {
         console.error("Erreur de lien magique :", err);
         setError("Erreur d'authentification. Veuillez réessayer.");
-        // Rediriger vers login au lieu de auth (qui n'existe pas)
         router.push("/login");
       }
     };
@@ -60,5 +59,22 @@ export default function MagicLinkPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function MagicLinkPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center bg-white p-6 rounded shadow">
+          <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-indigo-600" />
+          <p className="text-gray-700">
+            Chargement du lien magique...
+          </p>
+        </div>
+      </div>
+    }>
+      <MagicLinkContent />
+    </Suspense>
   );
 }

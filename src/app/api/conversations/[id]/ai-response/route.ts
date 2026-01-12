@@ -47,19 +47,23 @@ export async function POST(request: Request, { params }: Params) {
     }));
 
     // Générer une réponse IA en utilisant l'API appropriée (OpenAI ou Mistral)
-    const { content: aiResponse, tokenCount } = await generateAIResponse(
+    const {
+      content: aiResponse,
+      tokenCount,
+      modelUsed,          // ✅ on récupère le modèle réellement utilisé
+    } = await generateAIResponse(
       prompt,
       modelName,
       messageHistory,
       maxTokens
     );
 
-    // Ajouter la réponse IA à la conversation avec le comptage de tokens si disponible
+    // Ajouter la réponse IA à la conversation avec le vrai modèle utilisé
     const updatedConversation = await addMessage(conversationId, {
       role: "assistant",
       content: aiResponse,
       tokenCount,
-      modelUsed: modelName,
+      modelUsed: modelUsed || modelName, // ✅ fallback au cas où
     });
 
     return NextResponse.json({

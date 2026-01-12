@@ -49,17 +49,17 @@ export const CredentialsInfo: React.FC = () => {
                 👨‍🏫 Examinateur:
               </span>{" "}
               <span className="font-mono bg-orange-50 text-orange-700 px-2 py-0.5 rounded text-xs">
-                pierre.durand@example.fr
+                examinateur@exemple.com
               </span>{" "}
               /{" "}
               <span className="font-mono bg-gray-100 px-2 py-0.5 rounded text-xs">
-                examiner123
+                examinateur123
               </span>
             </li>
             <li>
               <span className="font-medium text-blue-600">🎓 Étudiant:</span>{" "}
               <span className="font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
-                christophe.mostefaoui.dev@gmail.com
+                matheoalves030@gmail.com
               </span>{" "}
               <span className="text-xs text-gray-500">
                 (magic link par email)

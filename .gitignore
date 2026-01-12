@@ -43,9 +43,3 @@ next-env.d.ts
 # cursor mdc files
 index.mdc
 
-
-# Playwright
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/

@@ -1,10 +1,10 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
-export default function MagicLinkVerifyPage() {
+function MagicLinkVerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { loginWithMagicLink } = useAuth();
@@ -15,7 +15,7 @@ export default function MagicLinkVerifyPage() {
     const verifyToken = async () => {
       const token = searchParams.get("token");
       console.log(
-        "MagicLinkPage - Token:",
+        "MagicLinkVerifyPage - Token:",
         token,
         "IsProcessing:",
         isProcessing
@@ -74,4 +74,23 @@ export default function MagicLinkVerifyPage() {
   }
 
   return null;
+}
+
+export default function MagicLinkVerifyPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">
+              Chargement de la vérification du lien magique...
+            </p>
+          </div>
+        </div>
+      }
+    >
+      <MagicLinkVerifyContent />
+    </Suspense>
+  );
 }
