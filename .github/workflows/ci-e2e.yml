@@ -66,5 +66,8 @@ jobs:
           echo "❌ Server did not become ready"
           exit 1
 
+      - name: Seed E2E database
+        run: node scripts/seed-e2e.js
+
       - name: Run E2E tests
         run: npm run test:e2e
