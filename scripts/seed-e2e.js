@@ -36,6 +36,7 @@ const users = [
 async function seed() {
   await mongoose.connect(uri);
   const db = mongoose.connection.db;
+  console.log(`✅ Connected to MongoDB (db=${db.databaseName})`);
 
   const usersCol = db.collection("users");
   const conversationsCol = db.collection("conversations");
@@ -128,6 +129,10 @@ async function seed() {
     createdAt: now,
     updatedAt: now,
   });
+
+  const userCount = await usersCol.countDocuments();
+  const convCount = await conversationsCol.countDocuments();
+  console.log(`✅ Seed counts: users=${userCount}, conversations=${convCount}`);
 
   await mongoose.disconnect();
   console.log("✅ E2E seed completed");
