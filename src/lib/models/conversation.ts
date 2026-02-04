@@ -9,8 +9,6 @@ export interface IMessage {
   modelUsed?: string;
 }
 
-<<<<<<< HEAD
-=======
 export interface IEvaluationEtudiant {
   note: number;
   comment: string;
@@ -18,15 +16,11 @@ export interface IEvaluationEtudiant {
   date: Date;
 }
 
->>>>>>> 51b2420 (feat: examiner evaluation flow + student results page)
 export interface IVersionFinale {
   promptFinal: string;
   reponseIAFinale: string;
   soumisLe: Date;
-<<<<<<< HEAD
-=======
-  evaluationEtudiant?: IEvaluationEtudiant; // 👈 nouvelle partie
->>>>>>> 51b2420 (feat: examiner evaluation flow + student results page)
+  evaluationEtudiant?: IEvaluationEtudiant | null;
 }
 
 export interface IStatistiquesIA {
@@ -67,8 +61,6 @@ const MessageSchema = new Schema<IMessage>(
   { _id: false }
 );
 
-<<<<<<< HEAD
-=======
 const EvaluationEtudiantSchema = new Schema<IEvaluationEtudiant>(
   {
     note: { type: Number, required: true },
@@ -79,20 +71,16 @@ const EvaluationEtudiantSchema = new Schema<IEvaluationEtudiant>(
   { _id: false }
 );
 
->>>>>>> 51b2420 (feat: examiner evaluation flow + student results page)
 const VersionSchema = new Schema<IVersionFinale>(
   {
     promptFinal: { type: String, default: "" },
     reponseIAFinale: { type: String, default: "" },
     soumisLe: { type: Date, default: () => new Date() },
-<<<<<<< HEAD
-=======
     evaluationEtudiant: {
       type: EvaluationEtudiantSchema,
       required: false,
       default: null,
     },
->>>>>>> 51b2420 (feat: examiner evaluation flow + student results page)
   },
   { _id: false }
 );
