@@ -21,9 +21,11 @@ export async function GET(req: NextRequest) {
     const acceptsHtml = req.headers.get("accept")?.includes("text/html");
     const isDocumentRequest =
       req.headers.get("sec-fetch-dest") === "document" ||
-      req.headers.get("sec-fetch-mode") === "navigate";
-    const userAgent = req.headers.get("user-agent") || "";
-    const isBrowserUA = /Mozilla|Chrome|Safari|Playwright/i.test(userAgent);
+      req.headers.get("sec-fetch-mode") === "navigate" ||
+      req.headers.get("upgrade-insecure-requests") === "1";
+    const isFetchRequest =
+      req.headers.get("sec-fetch-mode") === "cors" ||
+      req.headers.get("sec-fetch-dest") === "empty";
 
     if (!token) {
       if (process.env.E2E_TESTING === "true" && acceptsHtml) {
@@ -35,7 +37,8 @@ export async function GET(req: NextRequest) {
     // ✅ E2E: si navigation navigateur, redirige vers la page front sans consommer le token
     if (
       process.env.E2E_TESTING === "true" &&
-      (acceptsHtml || isDocumentRequest || isBrowserUA)
+      (acceptsHtml || isDocumentRequest) &&
+      !isFetchRequest
     ) {
       return NextResponse.redirect(
         new URL(`/magic-link/verify?token=${token}`, req.url)
