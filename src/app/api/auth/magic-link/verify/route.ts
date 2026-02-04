@@ -22,6 +22,8 @@ export async function GET(req: NextRequest) {
     const isDocumentRequest =
       req.headers.get("sec-fetch-dest") === "document" ||
       req.headers.get("sec-fetch-mode") === "navigate";
+    const userAgent = req.headers.get("user-agent") || "";
+    const isBrowserUA = /Mozilla|Chrome|Safari|Playwright/i.test(userAgent);
 
     if (!token) {
       if (process.env.E2E_TESTING === "true" && acceptsHtml) {
@@ -31,7 +33,10 @@ export async function GET(req: NextRequest) {
     }
 
     // ✅ E2E: si navigation navigateur, redirige vers la page front sans consommer le token
-    if (process.env.E2E_TESTING === "true" && (acceptsHtml || isDocumentRequest)) {
+    if (
+      process.env.E2E_TESTING === "true" &&
+      (acceptsHtml || isDocumentRequest || isBrowserUA)
+    ) {
       return NextResponse.redirect(
         new URL(`/magic-link/verify?token=${token}`, req.url)
       );
