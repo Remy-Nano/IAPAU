@@ -7,15 +7,16 @@ import connectDB from "@/lib/mongoose";
 import { NextRequest, NextResponse } from "next/server";
 
 type Props = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export async function GET(request: NextRequest, { params }: Props) {
   await connectDB();
   try {
-    const hackathon = await getHackathonById(params.id);
+    const { id } = await params;
+    const hackathon = await getHackathonById(id);
 
     // Vérifier si on demande uniquement les tâches
     const url = new URL(request.url);
@@ -24,9 +25,9 @@ export async function GET(request: NextRequest, { params }: Props) {
     if (tasksOnly) {
       // Retourner seulement les tâches formatées
       const formattedTasks = hackathon.taches.map((tache, index) => ({
-        id: `${params.id}-task-${index}`, // ID unique pour chaque tâche
+        id: `${id}-task-${index}`, // ID unique pour chaque tâche
         nom: tache,
-        hackathonId: params.id,
+        hackathonId: id,
       }));
 
       return NextResponse.json({ success: true, taches: formattedTasks });
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest, { params }: Props) {
 export async function PATCH(request: NextRequest, { params }: Props) {
   await connectDB();
   try {
-    const id = params.id;
+    const { id } = await params;
     console.log(`PATCH /api/hackathons/${id}`);
     const data = await request.json();
 
@@ -57,7 +58,8 @@ export async function PATCH(request: NextRequest, { params }: Props) {
     const updated = await updateHackathon(id, data);
     return NextResponse.json(updated, { status: 200 });
   } catch (err: unknown) {
-    console.error(`Erreur PATCH /api/hackathons/${params.id}:`, err);
+    const { id } = await params;
+    console.error(`Erreur PATCH /api/hackathons/${id}:`, err);
     const msg = err instanceof Error ? err.message : "Erreur inconnue";
     const status = msg === "Hackathon non trouvé" ? 404 : 500;
     return NextResponse.json({ error: msg }, { status });
@@ -67,12 +69,13 @@ export async function PATCH(request: NextRequest, { params }: Props) {
 export async function DELETE(_request: NextRequest, { params }: Props) {
   await connectDB();
   try {
-    const id = params.id;
+    const { id } = await params;
     console.log(`DELETE /api/hackathons/${id}`);
     await deleteHackathon(id);
     return new NextResponse(null, { status: 204 });
   } catch (err: unknown) {
-    console.error(`Erreur DELETE /api/hackathons/${params.id}:`, err);
+    const { id } = await params;
+    console.error(`Erreur DELETE /api/hackathons/${id}:`, err);
     const msg = err instanceof Error ? err.message : "Erreur inconnue";
     const status = msg === "Hackathon non trouvé" ? 404 : 500;
     return NextResponse.json({ error: msg }, { status });

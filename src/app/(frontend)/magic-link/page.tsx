@@ -4,6 +4,10 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import {
+  MAGIC_LINK_SUCCESS_REDIRECT,
+  verifyMagicLinkAndRedirect,
+} from "@/lib/client/magic-link";
 
 function MagicLinkContent() {
   const { loginWithMagicLink } = useAuth();
@@ -29,14 +33,21 @@ function MagicLinkContent() {
       setIsProcessing(true);
       try {
         console.log("Tentative d'authentification avec token:", token);
-        await loginWithMagicLink(token);
+        await verifyMagicLinkAndRedirect({
+          token,
+          loginWithMagicLink,
+          router,
+        });
         console.log(
-          "Authentification réussie, redirection vers /dashboard/student"
+          `Authentification réussie, redirection vers ${MAGIC_LINK_SUCCESS_REDIRECT}`
         );
-        router.push("/dashboard/student");
       } catch (err) {
         console.error("Erreur de lien magique :", err);
-        setError("Erreur d'authentification. Veuillez réessayer.");
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Erreur d'authentification. Veuillez réessayer.";
+        setError(message);
         router.push("/login");
       }
     };

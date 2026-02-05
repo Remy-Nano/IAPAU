@@ -32,59 +32,40 @@ export function SubmitFinalButton({
   }, [isButtonDisabled, disabled, isSubmitting, selectedPair]);
 
   return (
-    <div className="space-y-3">
-      {selectedPair !== null && (
-        <div className="bg-green-50 border border-green-200 rounded-md p-3 text-sm text-green-800">
-          <p className="flex items-center">
-            <Check className="h-4 w-4 mr-2" />
-            Vous avez sélectionné une réponse comme version finale.
-          </p>
-          <p className="text-xs mt-1 pl-6">
-            Cliquez sur le bouton ci-dessous pour confirmer et enregistrer votre
-            choix.
-          </p>
-        </div>
-      )}
+    <div className="flex items-center justify-between gap-3">
+      <div className="text-xs text-slate-500">
+        {selectedPair !== null ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-700 border border-amber-500/30 px-2 py-1">
+            <Check className="h-3.5 w-3.5" />
+            Réponse sélectionnée
+          </span>
+        ) : (
+          <span>Sélectionnez une réponse pour valider.</span>
+        )}
+      </div>
 
       <Button
         type="submit"
         variant="default"
         id="submit-final-button"
-        className={`w-full flex items-center justify-center gap-2 h-12 text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg ${
-          selectedPair !== null
-            ? "bg-green-600 hover:bg-green-700 animate-pulse"
-            : ""
-        }`}
+        className="flex items-center gap-2 h-10 px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-[0_8px_20px_-14px_rgba(2,6,23,0.6)] disabled:bg-slate-400"
         disabled={isButtonDisabled}
         onClick={() => {
-          // Ajouter un log au clic du bouton
           console.log("Bouton de soumission cliqué", { selectedPair });
-          // Ne pas arrêter la propagation pour permettre au formulaire de gérer l'événement
         }}
       >
         {isSubmitting ? (
           <>
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
-            <span>Soumission en cours...</span>
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+            <span>Soumission...</span>
           </>
         ) : (
           <>
-            <Check className="h-5 w-5" />
-            <span>
-              {selectedPair !== null
-                ? "Valider définitivement cette réponse"
-                : "Soumettre la version finale"}
-            </span>
+            <Check className="h-4 w-4" />
+            <span>Valider la finale</span>
           </>
         )}
       </Button>
-
-      {selectedPair === null && !disabled && (
-        <p className="text-xs text-center text-gray-500 mt-1">
-          Sélectionnez d'abord une réponse en cochant la case "Sélectionner
-          comme version finale"
-        </p>
-      )}
     </div>
   );
 }

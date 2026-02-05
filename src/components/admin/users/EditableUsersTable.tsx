@@ -51,9 +51,9 @@ export function EditableUsersTable() {
 
   const filtered = users.filter((user) => {
     const matchesSearch =
-      user.nom.toLowerCase().includes(search.toLowerCase()) ||
-      user.prenom.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase());
+      (user.nom ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (user.prenom ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (user.email ?? "").toLowerCase().includes(search.toLowerCase());
 
     if (activeTab === "autres") {
       return (
@@ -125,7 +125,7 @@ export function EditableUsersTable() {
             placeholder="Rechercher..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full md:w-64"
+            className="w-full md:w-72 rounded-xl border border-slate-200/80 bg-slate-50/80 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/25"
           />
         </div>
 
@@ -133,94 +133,121 @@ export function EditableUsersTable() {
           <Button
             variant="outline"
             onClick={handleImport}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-slate-200 text-slate-700 hover:border-cyan-400/40 hover:text-slate-900"
           >
             <Upload className="w-4 h-4" />
             <span>Importer CSV</span>
           </Button>
 
-          <Button onClick={handleCreate} className="flex items-center gap-2">
+          <Button
+            onClick={handleCreate}
+            className="flex items-center gap-2 bg-[#0F172A] text-white hover:bg-[#1E293B]"
+          >
             <PlusCircle className="w-4 h-4" />
             <span>Créer un utilisateur</span>
           </Button>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 mt-2">
+      <div className="flex flex-wrap gap-2 mt-2 rounded-2xl border border-slate-200/80 bg-white/80 p-2">
         <Button
-          variant={
-            activeTab === "student" || activeTab === "etudiant"
-              ? "default"
-              : "outline"
-          }
+          variant="ghost"
           onClick={() => setActiveTab("student")}
           size="sm"
+          className={`rounded-xl px-4 ${
+            activeTab === "student" || activeTab === "etudiant"
+              ? "bg-cyan-500/15 text-cyan-700"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
         >
           Étudiants
         </Button>
         <Button
-          variant={
-            activeTab === "examiner" || activeTab === "examinateur"
-              ? "default"
-              : "outline"
-          }
+          variant="ghost"
           onClick={() => setActiveTab("examiner")}
           size="sm"
+          className={`rounded-xl px-4 ${
+            activeTab === "examiner" || activeTab === "examinateur"
+              ? "bg-cyan-500/15 text-cyan-700"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
         >
           Examinateurs
         </Button>
         <Button
-          variant={activeTab === "admin" ? "default" : "outline"}
+          variant="ghost"
           onClick={() => setActiveTab("admin")}
           size="sm"
+          className={`rounded-xl px-4 ${
+            activeTab === "admin"
+              ? "bg-cyan-500/15 text-cyan-700"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
         >
           Administrateurs
         </Button>
         <Button
-          variant={activeTab === "autres" ? "default" : "outline"}
+          variant="ghost"
           onClick={() => setActiveTab("autres")}
           size="sm"
+          className={`rounded-xl px-4 ${
+            activeTab === "autres"
+              ? "bg-cyan-500/15 text-cyan-700"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
         >
           Autres
         </Button>
       </div>
 
-      <div className="border rounded-md overflow-auto">
+      <div className="border border-slate-200/80 rounded-2xl overflow-auto bg-white/90">
         <table className="w-full">
           <thead>
-            <tr className="bg-muted/50 border-b">
-              <th className="py-3 px-4 text-left font-medium">Nom</th>
-              <th className="py-3 px-4 text-left font-medium">Prénom</th>
-              <th className="py-3 px-4 text-left font-medium">Email</th>
-              <th className="py-3 px-4 text-left font-medium">Rôle</th>
-              <th className="py-3 px-4 text-left font-medium">Actions</th>
+            <tr className="bg-slate-50/80 border-b border-slate-200/80">
+              <th className="py-3 px-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                Nom
+              </th>
+              <th className="py-3 px-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                Prénom
+              </th>
+              <th className="py-3 px-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                Email
+              </th>
+              <th className="py-3 px-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                Rôle
+              </th>
+              <th className="py-3 px-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((user) => (
               <tr
                 key={user._id}
-                className="border-b hover:bg-muted/50 transition-colors"
+                className="border-b border-slate-100 hover:bg-slate-50/60 transition-colors"
               >
-                <td className="py-3 px-4">{user.nom}</td>
-                <td className="py-3 px-4">{user.prenom}</td>
-                <td className="py-3 px-4">{user.email}</td>
-                <td className="py-3 px-4">
+                <td className="py-3 px-4 text-sm text-slate-800">{user.nom}</td>
+                <td className="py-3 px-4 text-sm text-slate-800">{user.prenom}</td>
+                <td className="py-3 px-4 text-sm text-slate-700">{user.email}</td>
+                <td className="py-3 px-4 text-sm text-slate-700">
                   {ROLE_LABELS[user.role] || user.role}
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex space-x-2">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       onClick={() => handleEdit(user._id)}
+                      className="h-9 w-9 p-0 rounded-full border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-cyan-400/40"
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(user._id)}
+                      className="h-9 w-9 p-0 rounded-full border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-200"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

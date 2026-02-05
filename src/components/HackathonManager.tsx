@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ import {
   saveHackathon,
 } from "@/services/hackathonService";
 import { Hackathon } from "@/types/Hackathon";
-import { Plus, Trash2 } from "lucide-react";
+import { ChevronRight, Plus, Trash2 } from "lucide-react";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -21,6 +21,7 @@ export function HackathonManager() {
   const [list, setList] = useState<Hackathon[]>([]);
   const [hack, setHack] = useState<Hackathon | null>(null);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
 
   // Template pour un nouveau hackathon avec des dates ISO
   const emptyHack: Hackathon = {
@@ -65,8 +66,7 @@ export function HackathonManager() {
   }, []);
 
   // Lire un hackathon
-  const onSelect = async (e: ChangeEvent<HTMLSelectElement>) => {
-    const id = e.target.value;
+  const selectHackathon = async (id: string) => {
     if (!id) {
       setHack(null);
       return;
@@ -82,6 +82,10 @@ export function HackathonManager() {
       setLoading(false);
     }
   };
+
+  const filteredList = list.filter((h) =>
+    (h.nom || "").toLowerCase().includes(search.toLowerCase())
+  );
 
   // Create / Update fields
   const onChange =
@@ -241,62 +245,133 @@ export function HackathonManager() {
   };
 
   return (
-    <div className="container py-8">
-      <Card className="hackathon-card">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center text-primary">
-            Gestion des Hackathons
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Sélecteur + Nouvel hackathon + Supprimer */}
-          <div className="flex gap-2 mb-6">
-            <div className="flex-1">
-              <select
-                className="w-full p-2 border rounded-md"
-                onChange={onSelect}
-                value={hack?._id || ""}
-                disabled={loading}
-              >
-                <option value="">— Choisir un hackathon —</option>
-                {list.map((h) => (
-                  <option key={h._id} value={h._id}>
-                    {h.nom || "(Sans nom)"}
-                  </option>
-                ))}
-              </select>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-[#0F172A]">
+            Gestion des hackathons
+          </h2>
+          <p className="text-sm text-slate-500">
+            Créer, sélectionner et modifier les hackathons
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setHack(emptyHack)}
+            disabled={loading}
+            className="bg-[#0F172A] text-white hover:bg-[#1E293B]"
+          >
+            <Plus size={16} className="mr-2" />
+            Nouveau hackathon
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[1.1fr_1.4fr]">
+        <Card className="hackathon-card rounded-2xl border border-slate-200/80 bg-white/90 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.35)]">
+          <div className="p-5 border-b border-slate-200/70">
+            <h3 className="text-sm font-semibold text-[#0F172A]">
+              Hackathons
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Sélectionnez un hackathon
+            </p>
+            <div className="mt-4">
+              <Input
+                type="text"
+                placeholder="Rechercher un hackathon…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="rounded-xl border border-slate-200/80 bg-slate-50/80 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/25"
+              />
             </div>
-            <Button
-              onClick={() => setHack(emptyHack)}
-              disabled={loading}
-              variant="outline"
-              className="gap-1"
-            >
-              <Plus size={16} />
-              Nouveau
-            </Button>
+          </div>
+          <div className="p-4 max-h-[520px] overflow-y-auto space-y-2">
+            {filteredList.length === 0 && (
+              <div className="rounded-xl border border-slate-200/80 bg-white/80 p-4 text-xs text-slate-500">
+                Aucun hackathon trouvé.
+              </div>
+            )}
+            {filteredList.map((h) => {
+              const isActive = h._id === hack?._id;
+              const statusLabel = h.statut || "";
+              return (
+                <button
+                  key={h._id}
+                  onClick={() => selectHackathon(h._id)}
+                  className={`group w-full text-left rounded-2xl border px-4 py-3 transition-all ${
+                    isActive
+                      ? "border-cyan-400/50 bg-cyan-500/5 shadow-[0_10px_24px_-20px_rgba(56,189,248,0.3)]"
+                      : "border-[#D7E3F2]/80 bg-white/90 hover:border-cyan-400/30"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-[#0F172A]">
+                        {h.nom || "(Sans nom)"}
+                      </p>
+                      {statusLabel && (
+                        <span className="mt-1 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium text-[#0F172A]/70 border-slate-200 bg-slate-50">
+                          {statusLabel}
+                        </span>
+                      )}
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-slate-400 opacity-0 transition group-hover:opacity-100" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+
+        <Card className="rounded-2xl border border-slate-200/80 bg-white/90 shadow-[0_24px_70px_-45px_rgba(15,23,42,0.35)]">
+          <div className="p-5 border-b border-slate-200/70 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-[#0F172A]">
+                Détails du hackathon
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                {hack ? "Informations et actions" : "Sélectionnez un hackathon à gauche"}
+              </p>
+            </div>
             {hack?._id && (
-              <Button
-                onClick={onDelete}
-                disabled={loading}
-                variant="destructive"
-                className="gap-1"
-              >
-                <Trash2 size={16} />
-                Supprimer
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setHack(hack)}
+                  className="border-slate-200 text-slate-700"
+                >
+                  Modifier
+                </Button>
+                <Button
+                  onClick={onDelete}
+                  disabled={loading}
+                  variant="outline"
+                  className="border-slate-200 text-slate-600 hover:text-red-600 hover:border-red-200"
+                >
+                  <Trash2 size={16} className="mr-1" />
+                  Supprimer
+                </Button>
+              </div>
             )}
           </div>
 
-          {/* Formulaire Create/Update */}
-          {hack && (
-            <form onSubmit={onSubmit} className="space-y-6">
+          <div className="p-6">
+            {!hack && (
+              <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-8 text-center text-sm text-slate-500">
+                Sélectionne un hackathon à gauche.
+              </div>
+            )}
+
+            {hack && (
+              <form onSubmit={onSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="nom">Nom</Label>
                   <Input
                     id="nom"
-                    value={hack.nom}
+                    value={hack.nom ?? ""}
                     onChange={onChange("nom")}
                     disabled={loading}
                   />
@@ -305,7 +380,7 @@ export function HackathonManager() {
                   <Label htmlFor="statut">Statut</Label>
                   <Input
                     id="statut"
-                    value={hack.statut}
+                    value={hack.statut ?? ""}
                     onChange={onChange("statut")}
                     disabled={loading}
                   />
@@ -323,7 +398,7 @@ export function HackathonManager() {
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  value={hack.description}
+                  value={hack.description ?? ""}
                   onChange={onChange("description")}
                   disabled={loading}
                   rows={3}
@@ -334,7 +409,7 @@ export function HackathonManager() {
                 <Label htmlFor="objectifs">Objectifs</Label>
                 <Textarea
                   id="objectifs"
-                  value={hack.objectifs}
+                  value={hack.objectifs ?? ""}
                   onChange={onChange("objectifs")}
                   disabled={loading}
                   rows={3}
@@ -347,7 +422,7 @@ export function HackathonManager() {
                   <Input
                     id="debut"
                     type="date"
-                    value={formatDateForInput(hack.dates.debut)}
+                    value={formatDateForInput(hack.dates.debut) ?? ""}
                     onChange={onDateChange("debut")}
                     disabled={loading}
                   />
@@ -357,7 +432,7 @@ export function HackathonManager() {
                   <Input
                     id="fin"
                     type="date"
-                    value={formatDateForInput(hack.dates.fin)}
+                    value={formatDateForInput(hack.dates.fin) ?? ""}
                     onChange={onDateChange("fin")}
                     disabled={loading}
                   />
@@ -381,7 +456,7 @@ export function HackathonManager() {
                   <Input
                     id="promptsParEtudiant"
                     type="number"
-                    value={hack.quotas.promptsParEtudiant}
+                    value={hack.quotas.promptsParEtudiant ?? 0}
                     onChange={onQuotaChange("promptsParEtudiant")}
                     disabled={loading}
                   />
@@ -391,7 +466,7 @@ export function HackathonManager() {
                   <Input
                     id="tokensParEtudiant"
                     type="number"
-                    value={hack.quotas.tokensParEtudiant}
+                    value={hack.quotas.tokensParEtudiant ?? 0}
                     onChange={onQuotaChange("tokensParEtudiant")}
                     disabled={loading}
                   />
@@ -416,7 +491,7 @@ export function HackathonManager() {
                 {hack.taches.map((t, i) => (
                   <div key={i} className="flex gap-2">
                     <Input
-                      value={t}
+                      value={t ?? ""}
                       onChange={(e) => updateTask(i, e.target.value)}
                       disabled={loading}
                       placeholder={`Tâche ${i + 1}`}
@@ -435,14 +510,19 @@ export function HackathonManager() {
               </div>
 
               <div className="pt-4">
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button
+                  type="submit"
+                  className="w-full bg-[#0F172A] text-white hover:bg-[#1E293B]"
+                  disabled={loading}
+                >
                   {loading ? "Sauvegarde en cours..." : "Enregistrer"}
                 </Button>
               </div>
             </form>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }

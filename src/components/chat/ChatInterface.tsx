@@ -1,6 +1,5 @@
 "use client";
 
-import { config } from "@/lib/config";
 import { adaptMessagesRoles } from "@/lib/utils/messageUtils";
 import axios from "axios";
 import { Check, MessageSquare } from "lucide-react";
@@ -20,15 +19,12 @@ import {
 } from "../ui/alert-dialog";
 
 import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { ConversationStats } from "./ConversationStats";
 import { MaxTokensSlider } from "./MaxTokensSlider";
 import { ModelSelect } from "./ModelSelect";
 import { PromptTypeSelect } from "./PromptTypeSelect";
 import { ResponseList } from "./ResponseList";
 import { SubmitFinalButton } from "./SubmitFinalButton";
 import { TemperatureSlider } from "./TemperatureSlider";
-import { TokenCounter } from "./TokenCounter";
 
 interface ChatData {
   titreConversation: string;
@@ -42,6 +38,10 @@ interface ChatData {
 
 interface ChatInterfaceProps {
   existingConversation?: Conversation | null;
+  onConfigValidatedChange?: (ready: boolean) => void;
+  onTokensChange?: (tokensUsed: number) => void;
+  streamingIndex?: number | null;
+  streamedResponse?: string;
 }
 
 /**
@@ -50,6 +50,10 @@ interface ChatInterfaceProps {
  */
 export function ChatInterface({
   existingConversation = null,
+  onConfigValidatedChange,
+  onTokensChange,
+  streamingIndex = null,
+  streamedResponse = "",
 }: ChatInterfaceProps) {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -72,7 +76,7 @@ export function ChatInterface({
     defaultValues: {
       titreConversation: "",
       promptType: "one shot",
-      modelName: "openai",
+      modelName: "mistral",
       prompt: "",
       selectedPair: null,
       maxTokens: 512,
@@ -81,10 +85,9 @@ export function ChatInterface({
   });
 
   const currentModelName = methods.watch("modelName");
+  const selectedPair = methods.watch("selectedPair");
 
-  // Tokens
-  const [tokensUsed, setTokensUsed] = useState<number>(0);
-  const tokensAuthorized = config.tokens.defaultLimit;
+
 
   // Conversation finalisée ?
   const hasVersionFinale = Boolean(
@@ -92,6 +95,7 @@ export function ChatInterface({
       conversationData.versionFinale.promptFinal &&
       conversationData.versionFinale.reponseIAFinale
   );
+  const isChatReady = hasVersionFinale || isConfigValidated;
 
   // Initialisation quand on reçoit une conversation depuis le dashboard
   useEffect(() => {
@@ -100,7 +104,7 @@ export function ChatInterface({
 
       const updatedMessages = adaptMessagesRoles(
         existingConversation.messages,
-        existingConversation.modelName || "openai"
+        existingConversation.modelName || "mistral"
       );
 
       setMessages(updatedMessages);
@@ -110,8 +114,9 @@ export function ChatInterface({
       });
 
       if (existingConversation.statistiquesIA?.tokensTotal) {
-        setTokensUsed(existingConversation.statistiquesIA.tokensTotal);
+        onTokensChange?.(existingConversation.statistiquesIA.tokensTotal);
       }
+
 
       methods.reset({
         titreConversation: existingConversation.titreConversation,
@@ -129,6 +134,7 @@ export function ChatInterface({
     } else if (conversationId === "") {
       // Nouvelle conversation créée -> config non validée
       setIsConfigValidated(false);
+      onTokensChange?.(0);
     } else {
       // Aucun contexte (vue "Bienvenue")
       setConversationId(null);
@@ -139,14 +145,18 @@ export function ChatInterface({
       methods.reset({
         titreConversation: "",
         promptType: "one shot",
-        modelName: "openai",
+        modelName: "mistral",
         prompt: "",
         selectedPair: null,
         maxTokens: 512,
         temperature: 0.7,
       });
     }
-  }, [existingConversation, methods, conversationId]);
+  }, [existingConversation, methods, conversationId, onTokensChange]);
+
+  useEffect(() => {
+    onConfigValidatedChange?.(isChatReady);
+  }, [isChatReady, onConfigValidatedChange]);
 
   /**
    * Soumission de la version finale
@@ -170,23 +180,27 @@ export function ChatInterface({
     try {
       setIsSubmitting(true);
 
-      // Construire la liste des paires prompt / réponse
-      const promptResponsePairs: { prompt: string; response: string }[] =
-        [];
+      // Construire la liste des paires prompt / réponse (robuste)
+      const promptResponsePairs: { prompt: string; response: string }[] = [];
+      let pendingPrompt: { content: string } | null = null;
 
-      for (let i = 0; i < messages.length; i += 2) {
-        if (i + 1 < messages.length) {
-          const prompt = messages[i];
-          const response = messages[i + 1];
+      messages.forEach((message) => {
+        const isUserMessage = message.role === "user" || message.role === "student";
+        const isAiMessage = message.role === "ai" || message.role === "assistant";
 
-          if (prompt.role === "user" && response.role === "ai") {
-            promptResponsePairs.push({
-              prompt: prompt.content,
-              response: response.content,
-            });
-          }
+        if (isUserMessage) {
+          pendingPrompt = { content: message.content };
+          return;
         }
-      }
+
+        if (isAiMessage && pendingPrompt) {
+          promptResponsePairs.push({
+            prompt: pendingPrompt.content,
+            response: message.content,
+          });
+          pendingPrompt = null;
+        }
+      });
 
       const selectedPromptResponse = promptResponsePairs[pairValue];
       if (!selectedPromptResponse) {
@@ -235,20 +249,8 @@ export function ChatInterface({
       {/* Interface de chat normale */}
       {((conversationId !== null && conversationId !== undefined) ||
         existingConversation !== null) && (
-        <div className="w-full pb-56">
-          <Card className="bg-white shadow-2xl border-2 border-indigo-200/60 hover:border-indigo-300/80 hover:shadow-indigo-100/50 transition-all duration-300 rounded-xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-indigo-600 via-indigo-600 to-purple-600 text-white rounded-t-xl border-b border-indigo-400/30">
-              <CardTitle className="text-xl font-bold flex items-center">
-                <div className="w-2 h-2 bg-white rounded-full mr-3 animate-pulse"></div>
-                Interface de Chat IA
-              </CardTitle>
-            </CardHeader>
-
-            <CardContent className="space-y-6 p-6 border-l-4 border-indigo-500/20">
-              {/* Stats conversation */}
-              {conversationData && (
-                <ConversationStats conversation={conversationData} />
-              )}
+        <div className="w-full">
+          <div className="space-y-6">
 
               {/* Bandeau version finale */}
               {hasVersionFinale && (
@@ -267,7 +269,7 @@ export function ChatInterface({
                   </div>
                   <Button
                     variant="outline"
-                    className="border-emerald-500 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-600"
+                    className="bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 rounded-full px-4"
                     onClick={() =>
                       router.push(`/version-finale/${conversationId}`)
                     }
@@ -279,74 +281,57 @@ export function ChatInterface({
 
               {/* 🟣 Étape 1 : Paramètres avant de commencer */}
               {!hasVersionFinale && !isConfigValidated && (
-                <div className="bg-indigo-50/80 border border-indigo-200/60 rounded-xl p-5 shadow-sm space-y-4">
-                  <h3 className="text-base font-semibold text-indigo-900">
-                    Préparer votre conversation
-                  </h3>
-                  <p className="text-sm text-indigo-800/80">
-                    Avant de commencer à discuter avec l&apos;IA, personnalisez
-                    les paramètres de votre session. Vous pourrez ensuite poser
-                    vos questions normalement.
-                  </p>
-
-                  <div className="grid grid-cols-1 gap-4">
-                    <ModelSelect />
-                    <MaxTokensSlider />
-                    <TemperatureSlider />
-                    <PromptTypeSelect />
+                <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-[0_16px_36px_-26px_rgba(2,6,23,0.35)]">
+                  <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-cyan-300/60 via-slate-500/40 to-cyan-300/60" />
+                  <div className="flex items-center justify-between pb-2">
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1">
+                        Configurez votre session avant de démarrer
+                      </p>
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        Paramètres de session
+                      </h3>
+                    </div>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 border border-cyan-500/30">
+                      Étape 1
+                    </span>
                   </div>
 
-                  <div className="flex justify-end pt-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <ModelSelect />
+                    <PromptTypeSelect />
+                    <TemperatureSlider />
+                    <MaxTokensSlider />
+                  </div>
+
+                  <div className="mt-3 flex justify-end border-t border-slate-200/70 pt-3">
                     <Button
                       type="button"
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                      size="sm"
+                      className="bg-slate-900 hover:bg-slate-800 text-white shadow-[0_10px_22px_-16px_rgba(15,23,42,0.35)]"
                       onClick={() => setIsConfigValidated(true)}
                     >
-                      Valider et commencer le chat
+                      Commencer
                     </Button>
                   </div>
                 </div>
               )}
 
-              {/* Bloc tokens (reste toujours visible) */}
-              <div className="bg-gradient-to-br from-slate-50 to-gray-100 border border-slate-200 rounded-xl p-4 shadow-sm md:w-80">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  Crédits de tokens
-                </h3>
-                <TokenCounter
-                  tokensUsed={tokensUsed}
-                  tokensAuthorized={tokensAuthorized}
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Tokens utilisés dans cette conversation
-                </p>
-              </div>
-
-              {/* Séparateur Messages */}
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gradient-to-r from-indigo-200 via-purple-200 to-indigo-200"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500 font-medium">
-                    Messages
-                  </span>
-                </div>
-              </div>
-
               {/* Liste des messages */}
-              <ResponseList
-                messages={messages}
-                isLoading={isLoading}
-                modelName={currentModelName}
-                isDisabled={hasVersionFinale}
-                versionFinale={conversationData?.versionFinale}
-                streamingIndex={null}
-                streamedResponse={""}
-              />
+              {isChatReady && (
+                <ResponseList
+                  messages={messages}
+                  isLoading={isLoading}
+                  modelName={currentModelName}
+                  isDisabled={hasVersionFinale}
+                  versionFinale={conversationData?.versionFinale}
+                  streamingIndex={streamingIndex}
+                  streamedResponse={streamedResponse}
+                />
+              )}
 
               {/* Bouton soumission finale */}
-              {!hasVersionFinale && (
+              {!hasVersionFinale && isChatReady && messages.length > 0 && selectedPair !== null && (
                 <form
                   ref={finalFormRef}
                   id="final-form"
@@ -373,8 +358,8 @@ export function ChatInterface({
                   />
                 </form>
               )}
-            </CardContent>
-          </Card>
+
+          </div>
         </div>
       )}
 

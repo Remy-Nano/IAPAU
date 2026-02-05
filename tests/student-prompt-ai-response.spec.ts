@@ -27,7 +27,7 @@ test("Étudiant : envoi prompt -> ai-response -> messages ajoutés", async ({ re
   const aiRes = await request.post(`/api/conversations/${conversationId}/ai-response`, {
     data: {
       prompt: "Dis bonjour en une phrase.",
-      modelName: "openai",
+      modelName: "mistral",
       maxTokens: 64,
     },
   });

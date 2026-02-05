@@ -95,12 +95,10 @@ export async function POST(request: Request) {
     console.error("Erreur lors de la création de l'évaluation:", error);
 
     // Gestion du conflit d'index unique (E11000)
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      (error as any).code === 11000
-    ) {
+    const mongoError =
+      error && typeof error === "object" ? (error as { code?: number; name?: string; errors?: Record<string, { message?: string }> }) : null;
+
+    if (mongoError?.code === 11000) {
       return NextResponse.json(
         {
           success: false,
@@ -112,28 +110,19 @@ export async function POST(request: Request) {
     }
 
     // ✅ Erreurs de validation Mongoose (safe)
-if (
-  error &&
-  typeof error === "object" &&
-  "name" in error &&
-  (error as any).name === "ValidationError"
-) {
-  const mongooseError = error as any;
+    if (mongoError?.name === "ValidationError") {
+      const messages = mongoError.errors
+        ? Object.values(mongoError.errors).map((err) => err.message || "Erreur de validation")
+        : ["Erreur de validation Mongoose"];
 
-  const messages = mongooseError.errors
-    ? Object.values(mongooseError.errors).map(
-        (err: any) => err.message
-      )
-    : ["Erreur de validation Mongoose"];
-
-  return NextResponse.json(
-    {
-      success: false,
-      error: `Erreur de validation: ${messages.join(", ")}`,
-    },
-    { status: 400 }
-  );
-}
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Erreur de validation: ${messages.join(", ")}`,
+        },
+        { status: 400 }
+      );
+    }
 
     if (error instanceof Error) {
       return NextResponse.json(

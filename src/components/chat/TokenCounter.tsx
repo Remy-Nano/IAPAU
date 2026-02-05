@@ -6,11 +6,13 @@ import { Progress } from "../ui/progress";
 interface TokenCounterProps {
   tokensUsed: number;
   tokensAuthorized: number;
+  variant?: "default" | "compact";
 }
 
 export function TokenCounter({
   tokensUsed,
   tokensAuthorized,
+  variant = "default",
 }: TokenCounterProps) {
   const [percentage, setPercentage] = useState(0);
 
@@ -41,14 +43,19 @@ export function TokenCounter({
       : "bg-red-500";
 
   return (
-    <div className="w-full space-y-2">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-medium text-gray-700">
+    <div className={cn("w-full", variant === "compact" ? "space-y-1.5" : "space-y-2")}>
+      <div
+        className={cn(
+          "flex items-center justify-between",
+          variant === "compact" ? "text-[11px] text-slate-500" : "text-sm"
+        )}
+      >
+        <span className={variant === "compact" ? "font-medium" : "font-medium text-gray-700"}>
           {tokensUsed} / {tokensAuthorized} tokens utilisés
         </span>
         <span
           className={cn(
-            "text-xs font-medium",
+            variant === "compact" ? "text-[11px]" : "text-xs font-medium",
             riskLevel === "low"
               ? "text-green-600"
               : riskLevel === "medium"
@@ -62,15 +69,14 @@ export function TokenCounter({
 
       <Progress
         value={percentage}
-        className="h-2 w-full"
-        // Override la couleur de l'indicateur avec celle définie selon le niveau de risque
+        className={cn("w-full", variant === "compact" ? "h-1.5" : "h-2")}
         indicatorClassName={cn(
           "transition-colors duration-500 ease-in-out",
           progressColor
         )}
       />
 
-      {riskLevel === "high" && (
+      {variant !== "compact" && riskLevel === "high" && (
         <div className="flex items-center gap-1.5 text-xs text-red-600 animate-pulse">
           <AlertTriangle className="h-3.5 w-3.5" />
           <span>Crédits presque épuisés</span>
