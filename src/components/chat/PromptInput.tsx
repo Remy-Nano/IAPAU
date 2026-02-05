@@ -1,4 +1,4 @@
-import { Send, Sparkles } from "lucide-react";
+import { Send } from "lucide-react";
 import { useId } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { Button } from "../ui/button";
@@ -26,7 +26,6 @@ export function PromptInput({
   } = useFormContext();
 
   const promptValue = watch("prompt") || "";
-  const charCount = promptValue.length;
   const maxChars = 2000;
 
   // Fonction pour gérer les raccourcis clavier
@@ -40,8 +39,8 @@ export function PromptInput({
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-end space-x-4">
+    <div className="space-y-1">
+      <div className="flex items-end gap-2">
         <div className="flex-1 relative">
           <Controller
             name="prompt"
@@ -63,21 +62,21 @@ export function PromptInput({
                         : placeholder
                     }
                     className={`
-                      min-h-[80px] max-h-[200px] resize-none 
-                      border-2 border-gray-200 rounded-xl 
-                      focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50
+                      min-h-[40px] max-h-[120px] resize-none
+                      border border-slate-200/80 rounded-2xl
+                      focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200/30
                       transition-all duration-200 ease-in-out
-                      placeholder:text-gray-400 
-                      text-base leading-relaxed
-                      pr-16 py-4 px-4
+                      placeholder:text-slate-400/90
+                      text-sm leading-tight
+                      pr-10 py-2 px-4
                       ${
                         isDisabled
-                          ? "bg-gray-50 text-gray-400 border-gray-100"
-                          : "bg-white hover:border-gray-300"
+                          ? "bg-slate-50 text-slate-400 border-slate-100"
+                          : "bg-white/90 hover:border-slate-300/80"
                       }
                       ${
                         fieldState.error
-                          ? "border-red-300 focus:border-red-400 focus:ring-red-50"
+                          ? "border-red-300 focus:border-red-400 focus:ring-red-200/40"
                           : ""
                       }
                     `}
@@ -99,16 +98,6 @@ export function PromptInput({
                   />
 
                   {/* Compteur de caractères */}
-                  <div className="absolute bottom-2 right-2 text-xs text-gray-400">
-                    <span
-                      className={
-                        charCount > maxChars * 0.9 ? "text-amber-500" : ""
-                      }
-                    >
-                      {charCount}
-                    </span>
-                    <span className="text-gray-300">/{maxChars}</span>
-                  </div>
                 </div>
 
                 {/* Message d'erreur */}
@@ -130,59 +119,34 @@ export function PromptInput({
 
         <Button
           type="submit"
-          disabled={isLoading || !isValid || isDisabled || charCount === 0}
+          disabled={isLoading || !isValid || isDisabled || promptValue.length === 0}
           className={`
-            h-[80px] px-6 rounded-xl
-            bg-gradient-to-r from-indigo-600 to-purple-600 
-            hover:from-indigo-700 hover:to-purple-700
-            disabled:from-gray-400 disabled:to-gray-500
+            h-[40px] px-3 rounded-2xl
+            bg-[#0F172A] hover:bg-[#1E293B]
+            disabled:bg-slate-400/80
             text-white font-semibold
-            shadow-lg hover:shadow-xl
+            shadow-[0_10px_24px_-18px_rgba(2,6,23,0.6)]
             transition-all duration-200 ease-in-out
-            transform hover:scale-105 active:scale-95
-            flex flex-col items-center justify-center space-y-1
-            min-w-[80px]
+            transform active:scale-95
+            flex items-center justify-center gap-2
+            min-w-[64px]
             ${isLoading ? "animate-pulse" : ""}
           `}
         >
           {isLoading ? (
             <>
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              <span className="text-xs">Envoi...</span>
+              <span className="text-xs">Envoi</span>
             </>
           ) : (
             <>
-              <div className="flex items-center space-x-1">
-                <Send className="h-5 w-5" />
-                <Sparkles className="h-3 w-3 opacity-70" />
-              </div>
+              <Send className="h-4 w-4" />
               <span className="text-xs">Envoyer</span>
             </>
           )}
         </Button>
       </div>
 
-      {/* Aide contextuelle */}
-      {!isDisabled && (
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <div className="flex items-center space-x-4">
-            <span className="flex items-center space-x-1">
-              <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">
-                Ctrl
-              </kbd>
-              <span>+</span>
-              <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">
-                Entrée
-              </kbd>
-              <span>pour envoyer</span>
-            </span>
-          </div>
-          <span className="flex items-center space-x-1">
-            <Sparkles className="h-3 w-3 text-indigo-400" />
-            <span>IA prête à vous aider</span>
-          </span>
-        </div>
-      )}
     </div>
   );
 }

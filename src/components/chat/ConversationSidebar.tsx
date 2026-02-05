@@ -16,6 +16,8 @@ import { format } from "date-fns";
 import {
   Brain,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   MessageCircle,
   Plus,
@@ -36,6 +38,9 @@ interface ConversationSidebarProps {
   className?: string;
   isMobileOpen?: boolean;
   hackathonId?: string;
+  isOpen?: boolean;
+  onToggle?: () => void;
+  tabLabel?: string;
 }
 
 const CONVERSATIONS_STYLES = {
@@ -53,6 +58,9 @@ export function ConversationSidebar({
   className = "",
   isMobileOpen = false,
   hackathonId,
+  isOpen = true,
+  onToggle,
+  tabLabel = "Conversations",
 }: ConversationSidebarProps) {
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [filteredConversations, setFilteredConversations] = useState<
@@ -104,11 +112,12 @@ export function ConversationSidebar({
       conversation.messages.length === 0 ||
       !conversation.messages[0].content
     ) {
-      return "Aucun contenu";
+      return "";
     }
 
     const content = conversation.messages[0].content;
     // Augmenter la longueur de l'aperçu maintenant que la sidebar est plus large
+    if (content.toLowerCase() === "aucun contenu") return "";
     return content.length > 100 ? content.substring(0, 100) + "..." : content;
   };
 
@@ -141,19 +150,6 @@ export function ConversationSidebar({
 
     // Par défaut, utiliser le modelName de la conversation
     return conversation.modelName || "IA";
-  };
-
-  // Fonction pour obtenir les styles CSS du badge du modèle
-  const getModelBadgeStyle = (modelName: string): string => {
-    const model = modelName.toLowerCase();
-
-    if (model.includes("openai") || model === "openai") {
-      return "bg-green-700 text-white";
-    } else if (model.includes("mistral") || model === "mistral") {
-      return "bg-blue-700 text-white";
-    }
-
-    return "bg-gray-700 text-gray-300";
   };
 
   // Fonction pour formater le titre de la conversation
@@ -302,6 +298,9 @@ export function ConversationSidebar({
 
   // Déterminer la classe CSS pour afficher/masquer la sidebar sur mobile
   const mobileClass = isMobileOpen ? "translate-x-0" : "-translate-x-full";
+  const desktopCollapsedClass = isOpen
+    ? "md:w-80 lg:w-96 md:opacity-100 md:pointer-events-auto"
+    : "md:w-0 md:opacity-0 md:pointer-events-none md:overflow-hidden md:border-r-0 md:shadow-none";
 
   // Supprimer une conversation
   const deleteConversation = async (conversationId: string) => {
@@ -369,14 +368,39 @@ export function ConversationSidebar({
         />
       )}
 
+      {/* Languette (desktop) */}
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`hidden md:flex fixed left-0 top-1/2 -translate-y-1/2 z-50 items-center gap-2 rounded-r-2xl border border-[#D7E3F2]/80 bg-white/80 px-2.5 py-3 shadow-[0_10px_26px_-18px_rgba(15,23,42,0.25)] text-[#0F172A]/80 backdrop-blur-md transition-all duration-300 ease-in-out ${
+          isOpen ? "opacity-40 hover:opacity-80" : "opacity-100 hover:opacity-100"
+        } hover:-translate-y-[52%] hover:shadow-[0_12px_30px_-18px_rgba(56,189,248,0.35)] ${
+          isOpen ? "md:left-80 lg:left-96" : "left-0"
+        }`}
+        aria-label={isOpen ? "Fermer les conversations" : "Ouvrir les conversations"}
+      >
+        <span className="[writing-mode:vertical-rl] rotate-180 text-[10px] uppercase tracking-[0.2em] text-[#0F172A]/60">
+          {tabLabel}
+        </span>
+        <span className="h-5 w-5 rounded-full border border-cyan-400/40 bg-cyan-400/15 flex items-center justify-center text-cyan-600">
+          {isOpen ? (
+            <ChevronLeft className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5" />
+          )}
+        </span>
+      </button>
+
       <aside
-        className={`md:flex flex-col w-full md:w-80 lg:w-96 bg-gradient-to-b from-gray-900 to-gray-800 text-white p-4 h-full conversation-sidebar-container ${className} fixed md:relative left-0 top-0 bottom-0 z-40 transition-all duration-300 ease-in-out ${mobileClass} md:translate-x-0 border-r border-indigo-500/20`}
+        className={`md:flex flex-col w-full p-5 bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.12),transparent_60%),linear-gradient(180deg,#F8FAFC_0%,#F1F6FB_100%)] text-[#0F172A] h-full conversation-sidebar-container ${className} fixed md:relative left-0 top-0 bottom-0 z-40 transition-all duration-300 ease-in-out ${mobileClass} md:translate-x-0 border-r border-[#D7E3F2]/80 rounded-r-2xl shadow-[0_12px_30px_-20px_rgba(15,23,42,0.12)] ${desktopCollapsedClass}`}
         aria-label="Historique des conversations"
       >
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-7">
           <div className="flex items-center space-x-2">
-            <Brain className="h-6 w-6 text-indigo-400" />
-            <h2 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+            <div className="h-9 w-9 rounded-full bg-white/90 border border-[#E2E8F0]/80 flex items-center justify-center shadow-[0_6px_16px_-12px_rgba(15,23,42,0.16)]">
+              <Brain className="h-5 w-5 text-cyan-500" />
+            </div>
+            <h2 className="text-lg font-semibold text-[#0F172A]">
               Conversations
             </h2>
           </div>
@@ -384,7 +408,7 @@ export function ConversationSidebar({
 
         <Button
           onClick={onNewConversation}
-          className="mb-5 w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 flex items-center justify-center transition-all shadow-lg shadow-indigo-700/20 hover:shadow-indigo-700/40 transform hover:scale-[1.02] duration-200"
+          className="mb-6 w-full bg-[#0F172A]/92 hover:bg-[#0F172A]/88 text-white flex items-center justify-center transition-all shadow-[0_8px_20px_-14px_rgba(15,23,42,0.3)] hover:shadow-[0_12px_26px_-16px_rgba(56,189,248,0.28)] border border-[#0F172A]/20 transform hover:-translate-y-0.5 duration-200 rounded-xl"
         >
           <Plus className="h-4 w-4 mr-2" />
           Nouvelle conversation
@@ -415,18 +439,18 @@ export function ConversationSidebar({
                   ))}
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div className="text-gray-400 text-center mt-6 p-8 rounded-xl bg-gray-800/30 backdrop-blur-sm border border-gray-700/50">
-                <MessageCircle className="h-10 w-10 mx-auto mb-3 opacity-50 text-indigo-400" />
+              <div className="text-[#0F172A]/70 text-center mt-6 p-8 rounded-2xl bg-white/90 backdrop-blur-sm border border-[#E2E8F0]/80 shadow-[0_8px_24px_-16px_rgba(15,23,42,0.12)]">
+                <MessageCircle className="h-10 w-10 mx-auto mb-3 opacity-70 text-cyan-500" />
                 <p className="font-medium">
                   {hackathonId
                     ? "Aucune conversation trouvée pour ce hackathon."
                     : "Aucune conversation trouvée."}
                 </p>
-                <p className="text-sm mt-2 text-gray-500">
+                <p className="text-sm mt-2 text-[#0F172A]/50">
                   <Button
                     onClick={onNewConversation}
                     variant="outline"
-                    className="mx-auto mt-2 border-gray-600 text-gray-300 hover:bg-gray-700"
+                    className="mx-auto mt-2 border-cyan-500/30 text-[#0F172A] hover:bg-cyan-500/10"
                   >
                     Nouvelle conversation
                   </Button>
@@ -441,52 +465,43 @@ export function ConversationSidebar({
                       new Date(b.createdAt).getTime() -
                       new Date(a.createdAt).getTime()
                   )
-                  .map((conversation) => (
-                    <div
-                      key={conversation._id}
-                      className={`p-4 rounded-xl cursor-pointer transition-all shadow-sm hover:shadow-md group relative overflow-hidden ${
-                        selectedConversationId === conversation._id
-                          ? "bg-gradient-to-r from-indigo-600 to-indigo-500 shadow-lg shadow-indigo-700/20"
-                          : hasValidVersionFinale(conversation)
-                          ? "bg-gradient-to-r from-green-600/20 to-green-500/10 border-l-4 border-green-500/70 dark:bg-green-900/20"
-                          : "bg-gray-800/80 hover:bg-gray-700/80 backdrop-blur-sm border border-gray-700/50 hover:border-indigo-500/30"
-                      } transform transition-transform duration-200 ${
-                        selectedConversationId === conversation._id
-                          ? "scale-[1.02]"
-                          : "hover:scale-[1.02]"
-                      }`}
-                      onClick={() => onSelectConversation(conversation._id)}
-                      role="button"
-                      tabIndex={0}
-                      aria-selected={
-                        selectedConversationId === conversation._id
-                      }
-                    >
+                  .map((conversation) => {
+                    const isFinal = hasValidVersionFinale(conversation);
+                    const isActive = selectedConversationId === conversation._id;
+                    const cardClass = isActive
+                      ? "border border-cyan-400/70 bg-cyan-500/5 ring-1 ring-cyan-400/40 shadow-[0_12px_26px_-18px_rgba(56,189,248,0.3)]"
+                      : isFinal
+                      ? "border border-amber-300/60 bg-amber-200/10 border-l-2 border-l-amber-400/70"
+                      : "border border-[#D6E4F5] hover:border-cyan-400/50";
+                    return (
+                      <div
+                        key={conversation._id}
+                        className={`p-3 rounded-2xl cursor-pointer transition-all shadow-[0_4px_16px_-14px_rgba(15,23,42,0.12)] hover:shadow-[0_8px_20px_-16px_rgba(15,23,42,0.18)] group relative overflow-hidden bg-white ${cardClass} transform transition-transform duration-200 ${
+                          isActive ? "scale-[1.02]" : "hover:scale-[1.02]"
+                        }`}
+                        onClick={() => onSelectConversation(conversation._id)}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={isActive}
+                      >
                       {/* Effet brillant sur hover */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/0 via-indigo-600/5 to-indigo-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 blur-md" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/10 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 blur-md" />
 
                       <div className="flex justify-between items-start mb-2 relative">
                         <div className="flex items-center max-w-[80%]">
                           {hasValidVersionFinale(conversation) ? (
                             <span
                               title="Version finale soumise"
-                              className="flex-shrink-0 mr-1.5 bg-green-500/20 p-1 rounded-full"
+                              className="flex-shrink-0 mr-1.5 bg-amber-200/50 p-1 rounded-full border border-amber-300/50"
                             >
-                              <Check className="h-3.5 w-3.5 text-green-300" />
+                              <Check className="h-3.5 w-3.5 text-[#0F172A]/70" />
                             </span>
                           ) : (
-                            <span className="flex-shrink-0 mr-1.5 bg-indigo-500/20 p-1 rounded-full">
-                              <MessageCircle className="h-3.5 w-3.5 text-indigo-300" />
+                            <span className="flex-shrink-0 mr-1.5 bg-cyan-500/15 p-1 rounded-full">
+                              <MessageCircle className="h-3.5 w-3.5 text-cyan-500" />
                             </span>
                           )}
-                          <h3
-                            className={`font-medium text-base truncate leading-tight ${
-                              hasValidVersionFinale(conversation) &&
-                              !(selectedConversationId === conversation._id)
-                                ? "text-green-200"
-                                : ""
-                            }`}
-                          >
+                          <h3 className="font-medium text-base leading-tight text-[#0F172A] line-clamp-2">
                             {formatConversationTitle(conversation)}
                           </h3>
                         </div>
@@ -495,7 +510,7 @@ export function ConversationSidebar({
                             onClick={(e) =>
                               handleDeleteClick(conversation._id, e)
                             }
-                            className="text-red-400 transition-colors p-1 rounded-full hover:bg-red-500/20 hover:text-red-300 flex-shrink-0"
+                          className="text-[#0F172A]/50 transition-colors p-1 rounded-full hover:bg-cyan-500/10 hover:text-[#0F172A] flex-shrink-0"
                             aria-label="Supprimer cette conversation"
                             title="Supprimer cette conversation"
                           >
@@ -504,35 +519,33 @@ export function ConversationSidebar({
                         </div>
                       </div>
                       <div className="flex items-center gap-2 mb-2">
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full shrink-0 flex items-center ${getModelBadgeStyle(
-                            getActualModel(conversation)
-                          )}`}
-                        >
+                        <span className="text-[11px] px-2 py-0.5 rounded-full shrink-0 flex items-center bg-cyan-500/10 text-cyan-700 border border-cyan-500/20">
                           <Sparkles className="h-3 w-3 mr-1 opacity-70" />
                           {getActualModel(conversation)}
                         </span>
-                        {hasValidVersionFinale(conversation) && (
-                          <span className="text-xs bg-gradient-to-r from-green-600 to-emerald-600 px-2 py-0.5 rounded-full text-white font-medium shrink-0 flex items-center">
+                        {isFinal && (
+                          <span className="text-[11px] bg-amber-200/30 border border-amber-300/40 px-2 py-0.5 rounded-full text-[#0F172A]/70 font-medium shrink-0 flex items-center">
                             <Check className="h-3 w-3 mr-1" />
                             Version finale
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-300 line-clamp-2 mb-2 leading-snug">
-                        {getPreview(conversation)}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-auto flex items-center">
+                      {getPreview(conversation) && (
+                        <p className="text-xs text-[#0F172A]/55 line-clamp-2 mb-2 leading-snug">
+                          {getPreview(conversation)}
+                        </p>
+                      )}
+                      <p className="text-xs text-[#0F172A]/45 mt-auto flex items-center">
                         <Clock className="h-3 w-3 mr-1 opacity-70" />
                         {formatDate(conversation.createdAt)}
                       </p>
                     </div>
-                  ))}
+                    );
+                  })}
               </div>
             )}
           </ScrollArea>
         </div>
-
         {/* Boîte de dialogue de confirmation de suppression */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogContent className="bg-gray-800 text-white border border-gray-700 rounded-xl backdrop-blur-md">

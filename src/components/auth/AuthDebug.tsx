@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import { MAGIC_LINK_VERIFY_ROUTE } from "@/lib/client/magic-link";
 import Link from "next/link";
 import React, { useState } from "react";
 
@@ -101,7 +102,7 @@ export const AuthDebug: React.FC = () => {
             </button>
 
             <Link
-              href="/magic-link?token=test123"
+              href={`${MAGIC_LINK_VERIFY_ROUTE}?token=test123`}
               className="block w-full bg-blue-500 text-white py-1 px-2 rounded text-sm hover:bg-blue-600 text-center"
             >
               Simuler lien magique

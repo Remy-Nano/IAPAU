@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:e2e": "playwright test"
+    "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=.playwright playwright test",
+    "test:e2e:local": "E2E_TESTING=true PLAYWRIGHT_BROWSERS_PATH=.playwright playwright test",
+    "e2e:cleanup": "node scripts/cleanup-e2e.js",
+    "pretest:e2e:local": "node scripts/cleanup-e2e.js && node scripts/seed-e2e.js",
+    "posttest:e2e:local": "node scripts/cleanup-e2e.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",

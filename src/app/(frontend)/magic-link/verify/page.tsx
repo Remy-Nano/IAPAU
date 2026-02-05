@@ -1,8 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import {
+  MAGIC_LINK_SUCCESS_REDIRECT,
+  verifyMagicLinkAndRedirect,
+} from "@/lib/client/magic-link";
 
 function MagicLinkVerifyContent() {
   const router = useRouter();
@@ -10,9 +14,23 @@ function MagicLinkVerifyContent() {
   const { loginWithMagicLink } = useAuth();
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState("");
+  const [showError, setShowError] = useState(false);
+  const hasVerifiedRef = useRef(false);
+
+  useEffect(() => {
+    if (!error) {
+      setShowError(false);
+      return;
+    }
+    const timeoutId = setTimeout(() => setShowError(true), 300);
+    return () => clearTimeout(timeoutId);
+  }, [error]);
 
   useEffect(() => {
     const verifyToken = async () => {
+      if (hasVerifiedRef.current) return;
+      hasVerifiedRef.current = true;
+
       const token = searchParams.get("token");
       console.log(
         "MagicLinkVerifyPage - Token:",
@@ -28,15 +46,21 @@ function MagicLinkVerifyContent() {
       }
 
       try {
+        setError("");
         console.log("Tentative d'authentification avec token:", token);
-        await loginWithMagicLink(token);
+        await verifyMagicLinkAndRedirect({
+          token,
+          loginWithMagicLink,
+          router,
+        });
         console.log(
-          "Authentification réussie, redirection vers /dashboard/student"
+          `Authentification réussie, redirection vers ${MAGIC_LINK_SUCCESS_REDIRECT}`
         );
-        router.push("/dashboard/student");
       } catch (err) {
         console.error("Erreur d'authentification:", err);
-        setError("Lien magique invalide ou expiré");
+        const message =
+          err instanceof Error ? err.message : "Lien magique invalide ou expiré";
+        setError(message);
         setIsProcessing(false);
       }
     };
@@ -59,9 +83,13 @@ function MagicLinkVerifyContent() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
+          {showError ? (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              {error}
+            </div>
+          ) : (
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          )}
           <button
             onClick={() => router.push("/login")}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

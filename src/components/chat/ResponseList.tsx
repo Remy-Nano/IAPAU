@@ -1,15 +1,12 @@
 import { formatRelativeTime } from "@/lib/date-utils";
 import { Message } from "@/types";
-import { BarChart2, Check, Clock } from "lucide-react";
+import { BarChart2, Clock, MessageSquareOff } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { cn } from "../../lib/utils";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Badge } from "../ui/badge";
 import { Card, CardContent } from "../ui/card";
-import { Checkbox } from "../ui/checkbox";
-import { Label } from "../ui/label";
-import { ScrollArea } from "../ui/scroll-area";
 import {
   Tooltip,
   TooltipContent,
@@ -57,9 +54,8 @@ export function ResponseList({
   streamingIndex = null,
   streamedResponse = "",
 }: ResponseListProps) {
-  const { control, watch, setValue } = useFormContext();
+  const { watch, setValue } = useFormContext();
   const selectedPair = watch("selectedPair");
-  const scrollRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);
 
   // Réinitialiser la sélection si les messages changent
@@ -83,13 +79,11 @@ export function ResponseList({
         behavior: "smooth",
         block: "end",
       });
-    } else if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, setValue]);
 
   // On récupère les paires de prompts utilisateur/réponses IA
-  // pour pouvoir sélectionner la version finale
+  // en mode robuste (ne pas dépendre d'un alternance stricte)
   const promptResponsePairs: {
     promptIndex: number;
     prompt: string;
@@ -103,51 +97,60 @@ export function ResponseList({
     isVersionFinale?: boolean;
   }[] = [];
 
-  for (let i = 0; i < messages.length; i += 2) {
-    if (i + 1 < messages.length) {
-      const prompt = messages[i];
-      const response = messages[i + 1];
-
-      if (prompt.role === "user" && response.role === "ai") {
-        // Utiliser le modèle stocké dans le message AI, sinon utiliser le modèle global
-        const responseModel = response.modelUsed || modelName;
-
-        // Log de débogage pour voir le modèle utilisé
-        console.log(
-          `Message AI ${i + 1} - Modèle: ${responseModel} (modelUsed: ${
-            response.modelUsed || "non défini"
-          })`
-        );
-
-        // Vérifier si cette paire correspond à la version finale
-        const isVersionFinale = Boolean(
-          versionFinale &&
-            prompt.content === versionFinale.promptFinal &&
-            response.content === versionFinale.reponseIAFinale
-        );
-
-        promptResponsePairs.push({
-          promptIndex: i,
-          prompt: prompt.content,
-          responseIndex: i + 1,
-          response: response.content,
-          promptTimestamp: prompt.timestamp,
-          responseTimestamp: response.timestamp,
-          promptTokens: prompt.tokenCount,
-          responseTokens: response.tokenCount,
-          model: responseModel,
-          isVersionFinale,
-        });
+  let pendingPrompt:
+    | {
+        index: number;
+        content: string;
+        timestamp?: Date;
+        tokenCount?: number;
       }
-    }
-  }
+    | null = null;
 
-  // S'il n'y a qu'une seule paire, la sélectionner automatiquement
-  useEffect(() => {
-    if (promptResponsePairs.length === 1 && selectedPair === null) {
-      setValue("selectedPair", 0);
+  messages.forEach((message, i) => {
+    const isUserMessage = message.role === "user" || message.role === "student";
+    const isAiMessage = message.role === "ai" || message.role === "assistant";
+
+    if (isUserMessage) {
+      pendingPrompt = {
+        index: i,
+        content: message.content,
+        timestamp: message.timestamp,
+        tokenCount: message.tokenCount,
+      };
+      return;
     }
-  }, [promptResponsePairs.length, selectedPair, setValue]);
+
+    if (isAiMessage && pendingPrompt) {
+      const responseModel = message.modelUsed || modelName;
+
+      console.log(
+        `Message AI ${i} - Modèle: ${responseModel} (modelUsed: ${
+          message.modelUsed || "non défini"
+        })`
+      );
+
+      const isVersionFinale = Boolean(
+        versionFinale &&
+          pendingPrompt.content === versionFinale.promptFinal &&
+          message.content === versionFinale.reponseIAFinale
+      );
+
+      promptResponsePairs.push({
+        promptIndex: pendingPrompt.index,
+        prompt: pendingPrompt.content,
+        responseIndex: i,
+        response: message.content,
+        promptTimestamp: pendingPrompt.timestamp,
+        responseTimestamp: message.timestamp,
+        promptTokens: pendingPrompt.tokenCount,
+        responseTokens: message.tokenCount,
+        model: responseModel,
+        isVersionFinale,
+      });
+
+      pendingPrompt = null;
+    }
+  });
 
   if (isLoading) {
     return (
@@ -159,229 +162,164 @@ export function ResponseList({
 
   if (messages.length === 0) {
     return (
-      <div className="flex justify-center items-center h-40 text-gray-500">
-        Aucun message pour le moment
+      <div className="flex justify-center items-center h-40 text-gray-500 gap-2">
+        <MessageSquareOff className="h-4 w-4 text-gray-400" />
+        <span>Aucun message pour le moment</span>
       </div>
     );
   }
 
   // Gestionnaire pour mettre à jour la sélection
   const handleSelectionChange = (index: number) => {
-    setValue("selectedPair", index);
+    setValue("selectedPair", selectedPair === index ? null : index);
+    if (selectedPair !== index) {
+      requestAnimationFrame(() => {
+        const finalForm = document.getElementById("final-form");
+        finalForm?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
   };
+
+  const responseIndexToPair = new Map<number, (typeof promptResponsePairs)[number] & { pairIndex: number }>();
+  promptResponsePairs.forEach((pair, idx) => {
+    responseIndexToPair.set(pair.responseIndex, { ...pair, pairIndex: idx });
+  });
 
   return (
     <div className="space-y-4">
-      <Label className="text-lg font-medium">Réponses disponibles</Label>
+      {messages.map((message, i) => {
+        const isUser = message.role === "user" || message.role === "student";
+        const pairInfo = responseIndexToPair.get(i);
+        const pairIndex = pairInfo?.pairIndex ?? null;
+        const isStreaming = pairIndex !== null && pairIndex === streamingIndex;
+        const isFinale = Boolean(pairInfo?.isVersionFinale);
 
-      <ScrollArea className="h-[550px] pr-4 overflow-y-auto" ref={scrollRef}>
-        <div className="space-y-6">
-          {[...promptResponsePairs].reverse().map((pair, index) => {
-            // Calculer l'index réel dans le tableau original pour préserver le comportement de sélection
-            const originalIndex = promptResponsePairs.length - 1 - index;
+        return (
+          <div
+            key={message._id || i}
+            className={cn("flex items-start gap-3", { "justify-end": isUser })}
+            ref={i === messages.length - 1 ? lastMessageRef : null}
+          >
+            {!isUser && (
+              <Avatar className="h-8 w-8 mt-1">
+                <AvatarFallback className="bg-indigo-100 text-indigo-800">
+                  🤖
+                </AvatarFallback>
+              </Avatar>
+            )}
 
-            return (
-              <div
-                key={originalIndex}
-                className={cn("space-y-4 transition-all duration-300", {
-                  "animate-in fade-in-50 zoom-in-95":
-                    originalIndex === promptResponsePairs.length - 1,
-                })}
-                ref={
-                  originalIndex === promptResponsePairs.length - 1
-                    ? lastMessageRef
-                    : null
-                }
+            <div className="flex-1 max-w-[720px]">
+              <Card
+                className={cn(
+                  "p-3 rounded-2xl border shadow-[0_6px_18px_-14px_rgba(2,6,23,0.25)] transition-all duration-200",
+                  isUser ? "bg-white border-slate-200/70" : "bg-white/90 border-slate-200/70",
+                  { "ring-1 ring-cyan-400/40 bg-cyan-500/5": pairIndex !== null && selectedPair === pairIndex },
+                  { "border border-amber-400/40 bg-amber-200/10": isFinale }
+                )}
               >
-                {/* User message */}
-                <div className="flex items-start gap-3">
-                  <Avatar className="h-8 w-8 mt-1">
-                    <AvatarFallback className="bg-blue-100 text-blue-800">
-                      🧑‍🎓
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <Card
-                      className={cn(
-                        "bg-blue-50 border-blue-100 shadow-sm p-4 transition-all duration-200",
-                        {
-                          "ring-2 ring-blue-300":
-                            selectedPair === originalIndex,
-                        },
-                        { "border-2 border-green-500": pair.isVersionFinale }
-                      )}
-                    >
-                      <CardContent className="p-0 space-y-2">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-blue-800">
-                            Étudiant
-                          </span>
-                          {pair.promptTimestamp && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <div className="flex items-center text-xs text-gray-500">
-                                    <Clock className="h-3 w-3 mr-1" />
-                                    <span>
-                                      {formatRelativeTime(pair.promptTimestamp)}
-                                    </span>
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  {new Date(
-                                    pair.promptTimestamp
-                                  ).toLocaleString("fr-FR")}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                        </div>
-                        <p className="text-gray-800 whitespace-pre-wrap">
-                          {pair.prompt}
-                        </p>
-                        {pair.promptTokens && (
-                          <div className="flex items-center text-xs text-gray-500 mt-2">
-                            <BarChart2 className="h-3 w-3 mr-1" />
-                            <span>{pair.promptTokens} tokens</span>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-
-                {/* AI Response - Handle temporary responses specially */}
-                <div className="flex items-start gap-3 pl-8">
-                  <Avatar className="h-8 w-8 mt-1">
-                    <AvatarFallback className="bg-indigo-100 text-indigo-800">
-                      🤖
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <Card
-                      className={cn(
-                        "bg-white border shadow-sm p-4 transition-all duration-200",
-                        {
-                          "ring-2 ring-indigo-300":
-                            selectedPair === originalIndex,
-                        },
-                        { "border-2 border-green-500": pair.isVersionFinale }
-                      )}
-                    >
-                      <CardContent className="p-0 space-y-2">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-indigo-800">
-                              IA
-                            </span>
-                            {pair.model && (
-                              <Badge
-                                variant="outline"
-                                className={getModelBadgeStyles(pair.model)}
-                              >
-                                {pair.model}
-                              </Badge>
-                            )}
-                          </div>
-                          {pair.responseTimestamp && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <div className="flex items-center text-xs text-gray-500">
-                                    <Clock className="h-3 w-3 mr-1" />
-                                    <span>
-                                      {formatRelativeTime(
-                                        pair.responseTimestamp
-                                      )}
-                                    </span>
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  {new Date(
-                                    pair.responseTimestamp
-                                  ).toLocaleString("fr-FR")}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                        </div>
-
-                        {/* Génération en cours ou réponse finale */}
-                        {pair.response.includes(
-                          "Génération de la réponse en cours"
-                        ) ? (
-                          <div className="flex items-center space-x-3">
-                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-700"></div>
-                            <p className="text-gray-500">
-                              Génération de la réponse...
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="text-gray-800 whitespace-pre-wrap">
-                            {/* Afficher la version en streaming ou la réponse complète */}
-                            {originalIndex === streamingIndex
-                              ? streamedResponse
-                              : pair.response}
-                            {/* Ajouter un curseur clignotant pendant le streaming */}
-                            {originalIndex === streamingIndex && (
-                              <span className="inline-block w-2 h-4 ml-0.5 bg-indigo-600 animate-pulse"></span>
-                            )}
-                          </p>
-                        )}
-
-                        {pair.responseTokens && (
-                          <div className="flex items-center text-xs text-gray-500 mt-2">
-                            <BarChart2 className="h-3 w-3 mr-1" />
-                            <span>{pair.responseTokens} tokens</span>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-
-                {/* Sélection de version finale */}
-                <div className="pl-12 mt-1">
-                  {!isDisabled ? (
-                    <div className="flex items-center space-x-2 pt-2">
-                      <Controller
-                        name="selectedPair"
-                        control={control}
-                        render={({ field }) => (
-                          <Checkbox
-                            id={`pair-${originalIndex}`}
-                            checked={field.value === originalIndex}
-                            onCheckedChange={() =>
-                              handleSelectionChange(originalIndex)
-                            }
-                          />
-                        )}
-                      />
-                      <Label
-                        htmlFor={`pair-${originalIndex}`}
-                        className="cursor-pointer text-indigo-700 font-medium"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectionChange(originalIndex);
-                        }}
-                      >
-                        Sélectionner comme version finale
-                      </Label>
-                    </div>
-                  ) : pair.isVersionFinale ? (
-                    <div className="flex items-center pt-2">
-                      <span className="text-green-600 font-medium flex items-center">
-                        <Check className="h-4 w-4 mr-1" />
-                        Version finale validée
+                <CardContent className="p-0 space-y-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-700">
+                        {isUser ? "Vous" : "IA"}
                       </span>
+                      {!isUser && pairInfo?.model && (
+                        <Badge
+                          variant="outline"
+                          className={cn(getModelBadgeStyles(pairInfo.model), "text-[11px] px-2 py-0.5")}
+                        >
+                          {pairInfo.model}
+                        </Badge>
+                      )}
                     </div>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </ScrollArea>
+                    {message.timestamp && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <div className="flex items-center text-xs text-gray-500">
+                              <Clock className="h-3 w-3 mr-1" />
+                              <span>{formatRelativeTime(message.timestamp)}</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {new Date(message.timestamp).toLocaleString("fr-FR")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
+
+                  {message.content.includes("Génération de la réponse en cours") ? (
+                    <div className="flex items-center space-x-3">
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-700"></div>
+                      <p className="text-slate-500">Génération de la réponse...</p>
+                    </div>
+                  ) : (
+                    <p className="text-slate-800 whitespace-pre-wrap leading-relaxed">
+                      {isStreaming ? streamedResponse : message.content}
+                      {isStreaming && (
+                        <span className="inline-block w-2 h-4 ml-0.5 bg-cyan-500 animate-pulse rounded-sm"></span>
+                      )}
+                    </p>
+                  )}
+
+                  {isStreaming && (
+                    <div className="flex items-center gap-1 text-[11px] text-slate-500">
+                      <span>IA écrit</span>
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-500 animate-bounce [animation-delay:0ms]" />
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-500 animate-bounce [animation-delay:120ms]" />
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-500 animate-bounce [animation-delay:240ms]" />
+                    </div>
+                  )}
+
+                  {message.tokenCount && (
+                    <div className="flex items-center text-[11px] text-slate-500 mt-2">
+                      <BarChart2 className="h-3 w-3 mr-1" />
+                      <span>{message.tokenCount} tokens</span>
+                    </div>
+                  )}
+
+                  {!isUser && pairIndex !== null && (
+                    <div className="pt-2 flex items-center justify-between gap-3">
+                      {isFinale ? (
+                        <span className="inline-flex items-center text-[11px] px-2.5 py-1 rounded-full bg-amber-200/30 text-amber-700 border border-amber-300/40">
+                          Réponse finale validée
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          className={cn(
+                            "text-xs px-3 py-1.5 rounded-full border transition",
+                            selectedPair === pairIndex
+                              ? "bg-cyan-500/15 text-cyan-700 border-cyan-500/40"
+                              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                          )}
+                          onClick={() => handleSelectionChange(pairIndex)}
+                          disabled={isDisabled}
+                        >
+                          {selectedPair === pairIndex
+                            ? "Réponse sélectionnée"
+                            : "Sélectionner cette réponse"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {isUser && (
+              <Avatar className="h-8 w-8 mt-1">
+                <AvatarFallback className="bg-slate-100 text-slate-700">
+                  🧑‍🎓
+                </AvatarFallback>
+              </Avatar>
+            )}
+
+            {null}
+          </div>
+        );
+      })}
     </div>
   );
 }

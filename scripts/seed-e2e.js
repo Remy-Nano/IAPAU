@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
+require("dotenv").config({ path: ".env.local" });
 
 const uri = process.env.MONGODB_URI;
 if (!uri) {

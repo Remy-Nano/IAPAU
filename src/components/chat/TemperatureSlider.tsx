@@ -16,16 +16,16 @@ export function TemperatureSlider() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow md:p-6">
+    <div className="p-3 bg-white/90 border border-slate-200/80 rounded-xl shadow-[0_12px_24px_-20px_rgba(2,6,23,0.25)]">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium">
+        <span className="text-sm font-medium text-slate-700">
           Température ({temperature.toFixed(2)})
         </span>
         <Tooltip open={open} onOpenChange={setOpen}>
           <TooltipTrigger asChild>
             <button
               type="button"
-              className="text-gray-400 hover:text-gray-600 focus:outline-none"
+              className="text-slate-400 hover:text-slate-600 focus:outline-none"
               onClick={() => setOpen(!open)}
               aria-label="Afficher les informations sur la température"
             >
