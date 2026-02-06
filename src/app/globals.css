@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -41,6 +42,11 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+}
+
+.studia-font {
+  font-family: "Inter", "Sora", "Space Grotesk", ui-sans-serif, system-ui,
+    sans-serif;
 }
 
 :root {

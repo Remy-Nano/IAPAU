@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { ConversationItem } from "@/types/conversation";
 import { format } from "date-fns";
 import {
-  Brain,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -24,6 +23,7 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { ScrollArea } from "../ui/scroll-area";
@@ -395,14 +395,19 @@ export function ConversationSidebar({
         className={`md:flex flex-col w-full p-5 bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.12),transparent_60%),linear-gradient(180deg,#F8FAFC_0%,#F1F6FB_100%)] text-[#0F172A] h-full conversation-sidebar-container ${className} fixed md:relative left-0 top-0 bottom-0 z-40 transition-all duration-300 ease-in-out ${mobileClass} md:translate-x-0 border-r border-[#D7E3F2]/80 rounded-r-2xl shadow-[0_12px_30px_-20px_rgba(15,23,42,0.12)] ${desktopCollapsedClass}`}
         aria-label="Historique des conversations"
       >
-        <div className="flex items-center justify-between mb-7">
-          <div className="flex items-center space-x-2">
-            <div className="h-9 w-9 rounded-full bg-white/90 border border-[#E2E8F0]/80 flex items-center justify-center shadow-[0_6px_16px_-12px_rgba(15,23,42,0.16)]">
-              <Brain className="h-5 w-5 text-cyan-500" />
-            </div>
-            <h2 className="text-lg font-semibold text-[#0F172A]">
-              Conversations
-            </h2>
+        <div className="flex items-center justify-between mb-4 -mt-6 -ml-2">
+          <div className="flex items-center space-x-0">
+            <Image
+              src="/ia-pau-logo.png?v=3"
+              alt="Studia"
+              width={90}
+              height={90}
+              className="h-[90px] w-[90px] object-contain"
+              priority
+            />
+            <span className="text-lg font-semibold text-[#0F172A] studia-font uppercase tracking-[0.08em] -ml-3">
+              Studia
+            </span>
           </div>
         </div>
 

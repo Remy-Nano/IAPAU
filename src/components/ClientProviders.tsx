@@ -17,9 +17,23 @@ export default function ClientProviders({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => setIsLoading(false), 4200);
+    if (typeof window !== "undefined") {
+      (window as { __iapauLoaderDone?: boolean }).__iapauLoaderDone = false;
+    }
+    const timeout = window.setTimeout(() => setIsLoading(false), 2500);
     return () => window.clearTimeout(timeout);
   }, []);
+
+  useEffect(() => {
+    if (isLoading) return;
+    const timeout = window.setTimeout(() => {
+      if (typeof window !== "undefined") {
+        (window as { __iapauLoaderDone?: boolean }).__iapauLoaderDone = true;
+      }
+      window.dispatchEvent(new Event("iapau-loading-finished"));
+    }, 300);
+    return () => window.clearTimeout(timeout);
+  }, [isLoading]);
 
   return (
     <AuthProvider>

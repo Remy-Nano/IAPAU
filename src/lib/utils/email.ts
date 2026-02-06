@@ -69,23 +69,33 @@ export const sendMagicLink = async (email: string, link: string) => {
   log("📤 From:", smtpFrom);
   log("🔗 Magic link:", link);
 
+  const origin = new URL(link).origin;
+  const logoUrl = `${origin}/ia-pau-logo.png?v=3`;
   const info = await transporter.sendMail({
     to: email,
     from: smtpFrom,
-    subject: "Votre lien magique - Prompt Challenge",
+    subject: "Votre lien magique - Studia",
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #333;">Bonjour !</h2>
-        <p style="color: #666;">Voici votre lien de connexion unique pour Prompt Challenge :</p>
-        <a href="${link}" 
-           style="display: inline-block; padding: 12px 24px; background-color: #4f46e5; color: white; 
-                  text-decoration: none; border-radius: 6px; margin: 20px 0;">
-          Se connecter
-        </a>
-        <p style="color: #666;">Ce lien expirera dans 10 minutes.</p>
-        <p style="color: #666; font-size: 12px; margin-top: 30px;">
-          Si vous n'avez pas demandé de connexion, vous pouvez ignorer cet email.
-        </p>
+      <div style="font-family: Inter, Arial, sans-serif; background: #F3F7FB; padding: 24px;">
+        <div style="max-width: 600px; margin: 0 auto; background: rgba(255,255,255,0.9); border: 1px solid #E2E8F0; border-radius: 16px; padding: 24px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <img src="${logoUrl}" alt="Studia" width="48" height="48" style="display:block; object-fit:contain;" />
+            <div style="font-size: 18px; font-weight: 600; color: #0F172A; letter-spacing: 0.08em;">STUDIA</div>
+          </div>
+          <h2 style="color: #0F172A; margin: 0 0 8px;">Bonjour !</h2>
+          <p style="color: #475569; margin: 0 0 16px;">
+            Voici votre lien de connexion unique pour Studia :
+          </p>
+          <a href="${link}" 
+             style="display: inline-block; padding: 12px 24px; background-color: #06b6d4; color: white; 
+                    text-decoration: none; border-radius: 10px; font-weight: 600; box-shadow: 0 10px 24px -16px rgba(6,182,212,0.6);">
+            Se connecter
+          </a>
+          <p style="color: #64748B; margin: 16px 0 0;">Ce lien expirera dans 10 minutes.</p>
+          <p style="color: #94A3B8; font-size: 12px; margin-top: 24px;">
+            Si vous n'avez pas demandé de connexion, vous pouvez ignorer cet email.
+          </p>
+        </div>
       </div>
     `,
   });

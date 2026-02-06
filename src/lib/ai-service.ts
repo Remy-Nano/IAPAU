@@ -1,7 +1,7 @@
 import { Mistral } from "@mistralai/mistralai";
 import { OpenAI } from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
-import { config } from "./config";
+import { appConfig } from "./config";
 import { convertRoleForAI } from "./utils/messageUtils";
 
 // Initialisation des clients
@@ -55,7 +55,7 @@ export async function generateAIResponse(
       messages.push({ role: "user", content: prompt });
 
       const response = await openai.chat.completions.create({
-        model: config.models.openai.defaultModel,
+        model: appConfig.models.openai.defaultModel,
         messages,
         temperature: 0.7,
         max_tokens: maxTokens,
@@ -88,7 +88,7 @@ export async function generateAIResponse(
 
         // Appel à l'API Mistral
         const response = await mistral.chat.complete({
-          model: config.models.mistral.defaultModel,
+          model: appConfig.models.mistral.defaultModel,
           messages: formattedMessages as unknown, // Forcer le type pour contourner les limitations
           // Passer directement l'objet avec les paramètres à l'API
           ...{ maxTokens }, // Utiliser la syntaxe d'extension pour ajouter maxTokens
@@ -152,12 +152,12 @@ export async function streamAIResponse(
     formattedMessages.push({ role: "user", content: prompt });
 
     const stream = await mistral.chat.stream({
-      model: config.models.mistral.defaultModel,
+      model: appConfig.models.mistral.defaultModel,
       messages: formattedMessages as unknown,
       maxTokens,
     });
 
-    return { stream, modelUsed: config.models.mistral.defaultModel };
+    return { stream, modelUsed: appConfig.models.mistral.defaultModel };
   }
 
   throw new Error(`Streaming non supporté pour le modèle: ${modelName}`);

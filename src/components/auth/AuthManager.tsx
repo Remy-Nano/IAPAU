@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation"; // ✅ Next.js router
+import { usePathname, useRouter } from "next/navigation"; // ✅ Next.js router
 import React, { useEffect, useRef, useState } from "react";
 import { AdminAuth } from "./AdminAuth";
 import { CredentialsInfo } from "./CredentialsInfo";
@@ -12,6 +12,7 @@ import { StudentAuth } from "./StudentAuth";
 export const AuthManager: React.FC = () => {
   const { loginWithEmail, loginWithCredentials } = useAuth();
   const router = useRouter(); // ✅ remplacement de useNavigate
+  const pathname = usePathname();
   const [currentStep, setCurrentStep] = useState<
     "initial" | "student" | "examiner" | "admin"
   >("initial");
@@ -22,11 +23,42 @@ export const AuthManager: React.FC = () => {
   const [isHoverOpen, setIsHoverOpen] = useState(false);
   const [isFocusOpen, setIsFocusOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [loaderFinished, setLoaderFinished] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return Boolean((window as { __iapauLoaderDone?: boolean }).__iapauLoaderDone);
+  });
+  const brandRef = useRef<HTMLSpanElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  const runBrandAnimation = () => {
+    const el = brandRef.current;
+    if (!el) return;
+    el.getAnimations().forEach((anim) => anim.cancel());
+    el.style.opacity = "0";
+    el.style.transform = "translateX(90px)";
+    el.style.animation = "none";
+    void el.offsetWidth; // force reflow to restart animation
+    el.style.animation =
+      "studia-slide-in 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards";
+  };
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setIsReady(true));
     return () => cancelAnimationFrame(id);
+  }, []);
+
+  useEffect(() => {
+    if (!loaderFinished) return;
+    runBrandAnimation();
+  }, [pathname, loaderFinished]);
+
+  useEffect(() => {
+    const handler = () => {
+      setLoaderFinished(true);
+      runBrandAnimation();
+    };
+    window.addEventListener("iapau-loading-finished", handler);
+    return () => window.removeEventListener("iapau-loading-finished", handler);
   }, []);
 
   useEffect(() => {
@@ -89,7 +121,7 @@ export const AuthManager: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] relative overflow-hidden">
+    <div className="min-h-screen bg-[#F3F7FB] relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,_rgba(56,189,248,0.18),_transparent_50%),radial-gradient(circle_at_70%_15%,_rgba(56,189,248,0.12),_transparent_55%),radial-gradient(circle_at_65%_90%,_rgba(56,189,248,0.14),_transparent_60%)]" />
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-28 left-12 h-72 w-72 rounded-full bg-cyan-400/18 blur-3xl" />
@@ -99,9 +131,16 @@ export const AuthManager: React.FC = () => {
       </div>
       {/* Texte décoratif avec révélation (scan light) */}
       <div className="pointer-events-none select-none absolute right-16 top-1/2 -translate-y-1/2 hidden lg:block">
-        <span className="iapau-reveal-wrap text-[120px] font-semibold uppercase tracking-[0.28em]">
-          <span className="iapau-reveal-base">IA PAU</span>
-          <span className="iapau-reveal-scan">IA PAU</span>
+        <span
+          ref={brandRef}
+          className="iapau-reveal-wrap studia-hidden text-[120px] font-semibold uppercase tracking-[0.28em]"
+        >
+          <span className="iapau-reveal-base">
+            STUD<span className="studia-ia">IA</span>
+          </span>
+          <span className="iapau-reveal-scan">
+            STUD<span className="studia-ia">IA</span>
+          </span>
         </span>
       </div>
       {error && (
@@ -147,7 +186,7 @@ export const AuthManager: React.FC = () => {
               isReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
             } ${
               isOpen
-                ? "translate-y-0 bg-[#F8FAFC] backdrop-blur-xl border border-[#E2E8F0]/90 shadow-[0_34px_90px_-45px_rgba(15,23,42,0.6)] z-30"
+                ? "translate-y-0 bg-white/35 backdrop-blur-xl border border-[#E2E8F0]/60 shadow-[0_34px_90px_-45px_rgba(15,23,42,0.6)] z-30"
                 : "bg-transparent border border-transparent shadow-none"
             } motion-reduce:transition-none`}
             style={{
@@ -227,16 +266,39 @@ export const AuthManager: React.FC = () => {
           position: relative;
           display: inline-block;
           color: rgba(56, 189, 248, 0.04);
-          font-family: "Space Grotesk", "Sora", "Rajdhani", ui-sans-serif,
+          font-family: "Inter", "Sora", "Space Grotesk", ui-sans-serif,
             system-ui, sans-serif;
+          font-weight: 600;
           text-rendering: geometricPrecision;
+        }
+
+        @keyframes studia-slide-in {
+          0% {
+            opacity: 0;
+            transform: translateX(90px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        .studia-ia {
+          color: rgba(56, 189, 248, 0.9);
+          text-shadow: 0 0 6px rgba(56, 189, 248, 0.2);
+        }
+
+        .studia-hidden {
+          opacity: 0;
+          transform: translateX(90px);
         }
 
         .iapau-reveal-base {
           position: relative;
           color: rgba(56, 189, 248, 0.04);
-          font-family: "Space Grotesk", "Sora", "Rajdhani", ui-sans-serif,
+          font-family: "Inter", "Sora", "Space Grotesk", ui-sans-serif,
             system-ui, sans-serif;
+          font-weight: 600;
           text-rendering: geometricPrecision;
           animation: iapau-breathe 10s linear infinite;
         }
@@ -245,8 +307,9 @@ export const AuthManager: React.FC = () => {
           position: absolute;
           inset: 0;
           color: rgba(56, 189, 248, 0.16);
-          font-family: "Space Grotesk", "Sora", "Rajdhani", ui-sans-serif,
+          font-family: "Inter", "Sora", "Space Grotesk", ui-sans-serif,
             system-ui, sans-serif;
+          font-weight: 600;
           text-rendering: geometricPrecision;
           background-image: linear-gradient(
               25deg,
@@ -285,6 +348,11 @@ export const AuthManager: React.FC = () => {
         }
 
         @media (prefers-reduced-motion: reduce) {
+          .iapau-slide-in {
+            animation: none;
+            opacity: 1;
+            transform: none;
+          }
           .iapau-reveal-scan {
             animation: none;
           }

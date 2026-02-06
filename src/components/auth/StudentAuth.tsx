@@ -28,7 +28,7 @@ export const StudentAuth: React.FC<StudentAuthProps> = ({ email }) => {
 
   return (
     <div className="w-full">
-      <h2 className="text-2xl sm:text-3xl font-semibold text-[#0F172A] tracking-tight">
+      <h2 className="text-2xl sm:text-3xl font-semibold text-[#0F172A] tracking-tight studia-font">
         Lien envoyé
       </h2>
       <p className="text-sm text-[#0F172A]/65 mt-2">
@@ -55,7 +55,7 @@ export const StudentAuth: React.FC<StudentAuthProps> = ({ email }) => {
       <div className="mt-6 space-y-3">
         <button
           onClick={() => (window.location.href = "/login")}
-          className="w-full py-3 sm:py-3.5 px-4 bg-gradient-to-r from-[#0F172A] via-[#0F172A]/90 to-[#0F172A]/80 text-white text-sm sm:text-base font-semibold rounded-xl shadow-md shadow-[#0F172A]/20 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#38BDF8]/40 focus:ring-offset-2 transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.99]"
+          className="w-full py-3 sm:py-3.5 px-4 bg-cyan-500 text-white text-sm sm:text-base font-semibold rounded-xl shadow-md shadow-cyan-500/20 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-400/40 focus:ring-offset-2 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-cyan-600 active:scale-[0.99]"
         >
           Retour
         </button>

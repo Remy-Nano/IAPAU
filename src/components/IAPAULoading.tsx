@@ -48,8 +48,8 @@ export default function IAPAULoading({ isLoading }: IAPAULoadingProps) {
         <div className={styles.logoSolo}>
           <Image
             className={styles.logoImage}
-            src="/ia-pau-logo.png?v=2"
-            alt="IAPAU"
+            src="/ia-pau-logo.png?v=3"
+            alt="Studia"
             width={170}
             height={170}
             onError={() => setLogoError(true)}

@@ -2,7 +2,7 @@
 
 import { FormProvider, useForm } from "react-hook-form";
 import { PromptInput } from "./PromptInput";
-import { config } from "@/lib/config";
+import { appConfig } from "@/lib/config";
 import { TokenCounter } from "./TokenCounter";
 
 interface ChatData {
@@ -71,7 +71,7 @@ export function FixedPromptInput({
         <div className="mt-2">
           <TokenCounter
             tokensUsed={tokensUsed}
-            tokensAuthorized={config.tokens.defaultLimit}
+            tokensAuthorized={appConfig.tokens.defaultLimit}
             variant="compact"
           />
         </div>

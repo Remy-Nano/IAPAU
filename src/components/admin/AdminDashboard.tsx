@@ -3,15 +3,8 @@
 import { EditableUsersTable } from "@/components/admin/users/EditableUsersTable";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { HackathonManager } from "@/components/HackathonManager";
-import {
-  Brain,
-  ChevronLeft,
-  ChevronRight,
-  Code,
-  Menu,
-  Users,
-  X,
-} from "lucide-react";
+import Image from "next/image";
+import { ChevronLeft, ChevronRight, Code, Menu, Users, X } from "lucide-react";
 import { useState } from "react";
 
 export default function AdminDashboard() {
@@ -39,8 +32,10 @@ export default function AdminDashboard() {
       <button
         type="button"
         onClick={() => setIsSidebarCollapsed((prev) => !prev)}
-        className={`hidden md:flex fixed top-1/2 -translate-y-1/2 z-50 items-center gap-2 rounded-r-2xl border border-[#D7E3F2]/80 bg-white/80 px-2.5 py-3 shadow-[0_10px_26px_-18px_rgba(15,23,42,0.25)] text-[#0F172A]/80 backdrop-blur-md transition-all duration-300 ease-in-out hover:-translate-y-[52%] hover:shadow-[0_12px_30px_-18px_rgba(56,189,248,0.35)] ${
-          isSidebarCollapsed ? "left-0" : "md:left-72 lg:left-80"
+        className={`hidden md:flex fixed top-1/2 -translate-y-1/2 z-50 items-center gap-2 rounded-r-2xl border border-[#D7E3F2]/50 bg-white/40 px-2.5 py-3 shadow-[0_10px_26px_-18px_rgba(15,23,42,0.25)] text-[#0F172A]/80 backdrop-blur-md transition-all duration-500 ease-in-out hover:-translate-y-[52%] hover:shadow-[0_12px_30px_-18px_rgba(56,189,248,0.35)] ${
+          isSidebarCollapsed
+            ? "left-0 translate-x-0"
+            : "md:left-72 lg:left-80 md:-translate-x-full"
         }`}
         aria-label={isSidebarCollapsed ? "Ouvrir la sidebar" : "Fermer la sidebar"}
       >
@@ -62,19 +57,23 @@ export default function AdminDashboard() {
           sidebarOpen ? "flex" : "hidden"
         } md:flex w-full ${
           isSidebarCollapsed ? "md:w-0 md:opacity-0 md:pointer-events-none" : "md:w-72 lg:w-80"
-        } bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.12),transparent_60%),linear-gradient(180deg,#F8FAFC_0%,#F1F6FB_100%)] text-[#0F172A] p-4 flex-col absolute md:relative inset-0 z-40 border-r border-[#D7E3F2]/80 rounded-r-2xl shadow-[0_12px_30px_-20px_rgba(15,23,42,0.12)] transition-all duration-300 ease-in-out`}
+        } bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.12),transparent_60%),linear-gradient(180deg,#F8FAFC_0%,#F1F6FB_100%)] text-[#0F172A] p-4 flex-col absolute md:relative inset-0 z-40 border-r border-[#D7E3F2]/80 rounded-r-2xl shadow-[0_12px_30px_-20px_rgba(15,23,42,0.12)] transition-all duration-500 ease-in-out`}
       >
-        <div className="flex items-center space-x-3 mb-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/90 border border-[#E2E8F0]/80 shadow-[0_6px_16px_-12px_rgba(15,23,42,0.16)]">
-            <Brain className="h-5 w-5 text-cyan-500" />
+        <div className="flex items-center space-x-0 -mt-6 mb-4 -ml-2">
+          <div className="flex h-[80px] w-[80px] items-center justify-center overflow-visible">
+            <Image
+              src="/ia-pau-logo.png?v=3"
+              alt="Studia"
+              width={90}
+              height={90}
+              className="h-[90px] w-[90px] object-contain"
+              priority
+            />
           </div>
           {!isSidebarCollapsed && (
-            <div>
-              <h1 className="text-lg font-semibold tracking-wide text-[#0F172A]">
-                IAPAU Admin
-              </h1>
-              <p className="text-xs text-[#0F172A]/55">Console de gestion</p>
-            </div>
+            <h1 className="text-lg font-semibold text-[#0F172A] studia-font uppercase tracking-[0.08em] -ml-3">
+              Studia
+            </h1>
           )}
         </div>
 
