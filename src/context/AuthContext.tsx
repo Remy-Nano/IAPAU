@@ -125,50 +125,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     role: "examiner" | "admin"
   ) => {
     try {
-      // Vérification des identifiants
-      const validCredentials =
-        (role === "admin" &&
-          email === PREDEFINED_CREDENTIALS.admin.email &&
-          password === PREDEFINED_CREDENTIALS.admin.password) ||
-        (role === "examiner" &&
-          email === PREDEFINED_CREDENTIALS.examiner.email &&
-          password === PREDEFINED_CREDENTIALS.examiner.password);
+      const response = await fetch("/api/auth/credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (!validCredentials) {
-        throw new Error("Identifiants invalides");
+      if (!response.ok) {
+        const errorPayload = await response
+          .json()
+          .catch(() => ({ error: "Identifiants invalides" }));
+        const message =
+          typeof errorPayload?.error === "string"
+            ? errorPayload.error
+            : "Identifiants invalides";
+        throw new Error(message);
       }
 
-      let userData: Examiner | Admin;
+      const data = await response.json();
+      const user = data.user;
+      const normalizedRole =
+        user.role === "examinateur" ? "examiner" : user.role;
 
-      if (role === "examiner") {
-        userData = {
-          id: "1",
-          email,
-          role: "examiner",
-          firstName: "Examinateur",
-          lastName: "Test",
-          nom: "Test",
-          prenom: "Examinateur",
-          _id: "1",
-          groupes: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-      } else {
-        userData = {
-          id: "2",
-          email,
-          role: "admin",
-          firstName: "Admin",
-          lastName: "Système",
-          nom: "Système",
-          prenom: "Admin",
-          _id: "2",
-          groupes: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
+      if (normalizedRole !== role) {
+        throw new Error("Accès refusé");
       }
+
+      const userData: Examiner | Admin = {
+        _id: user._id,
+        email: user.email,
+        role: normalizedRole,
+        nom: user.nom,
+        prenom: user.prenom,
+        firstName: user.prenom,
+        lastName: user.nom,
+        groupes: user.groupes || [],
+        createdAt: user.createdAt ? new Date(user.createdAt) : new Date(),
+        updatedAt: user.updatedAt ? new Date(user.updatedAt) : new Date(),
+      };
 
       setUser(userData);
       setUserRole(role);
