@@ -11,18 +11,26 @@ const smtpPass = process.env.SMTP_PASS;
 // Valeur simple et robuste
 const smtpFrom = process.env.SMTP_FROM || smtpUser || "";
 
-// 🔎 Logs utiles
+const shouldLog = process.env.NODE_ENV !== "production";
+const log = (...args: unknown[]) => {
+  if (shouldLog) console.log(...args);
+};
+const logError = (...args: unknown[]) => {
+  if (shouldLog) console.error(...args);
+};
+
+// 🔎 Logs utiles (dev uniquement)
 if (!smtpHost || !smtpPort) {
-  console.error("🛑 SMTP_HOST ou SMTP_PORT non défini dans .env.local");
+  logError("🛑 SMTP_HOST ou SMTP_PORT non défini dans .env.local");
 } else {
-  console.log("✅ SMTP configuré:", `${smtpHost}:${smtpPort}`);
+  log("✅ SMTP configuré:", `${smtpHost}:${smtpPort}`);
 }
 
 if (!smtpUser || !smtpPass) {
-  console.error("🛑 SMTP_USER ou SMTP_PASS non défini dans .env.local");
+  logError("🛑 SMTP_USER ou SMTP_PASS non défini dans .env.local");
 } else {
-  console.log("✅ SMTP_USER configuré:", smtpUser);
-  console.log("✅ SMTP_FROM utilisé:", smtpFrom);
+  log("✅ SMTP_USER configuré:", smtpUser);
+  log("✅ SMTP_FROM utilisé:", smtpFrom);
 }
 
 // 🚚 Transport Nodemailer
@@ -56,10 +64,10 @@ export const sendMagicLink = async (email: string, link: string) => {
     throw new Error("URL invalide");
   }
 
-  console.log("🚀 Envoi email (Nodemailer)");
-  console.log("📧 Destinataire:", email);
-  console.log("📤 From:", smtpFrom);
-  console.log("🔗 Magic link:", link);
+  log("🚀 Envoi email (Nodemailer)");
+  log("📧 Destinataire:", email);
+  log("📤 From:", smtpFrom);
+  log("🔗 Magic link:", link);
 
   const info = await transporter.sendMail({
     to: email,
@@ -82,6 +90,6 @@ export const sendMagicLink = async (email: string, link: string) => {
     `,
   });
 
-  console.log("✅ Email envoyé:", info.messageId);
+  log("✅ Email envoyé:", info.messageId);
   return true;
 };

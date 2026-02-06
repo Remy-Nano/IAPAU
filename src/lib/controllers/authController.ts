@@ -1,5 +1,5 @@
 // src/lib/controllers/authController.ts
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { IUser, User } from "../models/user";
 
