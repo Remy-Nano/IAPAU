@@ -23,6 +23,7 @@ jobs:
     env:
       NODE_ENV: test
       E2E_TESTING: "true"
+      PLAYWRIGHT_BROWSERS_PATH: ".playwright"
       JWT_SECRET: "ci_jwt_secret_change_me"
       MONGODB_URI: "mongodb://127.0.0.1:27017/iapau_test"
       OPENAI_API_KEY: "dummy"
