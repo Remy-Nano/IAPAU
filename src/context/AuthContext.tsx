@@ -39,11 +39,11 @@ type AuthContextType = {
 // Identifiants prédéfinis pour la connexion
 const PREDEFINED_CREDENTIALS = {
   admin: {
-    email: "admin@example.com",
+    email: "admin@exemple.com",
     password: "admin123",
   },
   examiner: {
-    email: "pierre.durand@example.fr", // Email réel de la base
+    email: "examinateur@exemple.com", // Email réel de la base
     password: "examiner123",
   },
   student: {
@@ -194,7 +194,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       );
 
       if (!response.ok) {
-        throw new Error("Token invalide ou expiré");
+        const errorPayload = await response
+          .json()
+          .catch(() => ({ error: "Token invalide ou expiré" }));
+        const message =
+          typeof errorPayload?.error === "string"
+            ? errorPayload.error
+            : "Token invalide ou expiré";
+        throw new Error(message);
       }
 
       // Si la vérification réussit, créer l'utilisateur étudiant

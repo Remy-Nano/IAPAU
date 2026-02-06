@@ -7,7 +7,17 @@ import {
   EvaluationForm,
   ExaminerConversation,
 } from "@/types/conversation";
-import { Brain, Home, Menu, Star, X } from "lucide-react";
+import {
+  Brain,
+  ChevronLeft,
+  ChevronRight,
+  Home,
+  Menu,
+  Sparkles,
+  Star,
+  X,
+} from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
@@ -19,20 +29,20 @@ const sliderStyles = `
     height: 20px;
     width: 20px;
     border-radius: 50%;
-    background: #4f46e5;
+    background: #38bdf8;
     cursor: pointer;
-    border: 2px solid #ffffff;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.25);
   }
   
   .slider::-moz-range-thumb {
     height: 20px;
     width: 20px;
     border-radius: 50%;
-    background: #4f46e5;
+    background: #38bdf8;
     cursor: pointer;
-    border: 2px solid #ffffff;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.25);
   }
 `;
 
@@ -63,6 +73,10 @@ export default function ExaminerDashboard() {
   const [selectedHackathon, setSelectedHackathon] = useState<string>("all");
   const [selectedTache, setSelectedTache] = useState<string>("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [activeSidebarTab, setActiveSidebarTab] = useState<"todo" | "done">(
+    "todo"
+  );
   const [conversations, setConversations] = useState<ExaminerConversation[]>(
     []
   );
@@ -90,6 +104,27 @@ export default function ExaminerDashboard() {
         (conv) => conv._id === currentEvaluation.conversationId
       )
     : null;
+
+  const pendingConversations = conversations.filter(
+    (conv) =>
+      conv.studentId &&
+      !evaluations.some((evaluation) => evaluation.conversationId === conv._id)
+  );
+  const completedEvaluations = evaluations;
+  const nextConversation = pendingConversations[0] || null;
+  const recentEvaluations = completedEvaluations.slice(0, 4);
+  const totalConversationsCount = conversations.filter(
+    (conv) => conv.studentId
+  ).length;
+  const remainingConversationsCount = pendingConversations.length;
+  const completedEvaluationsCount = completedEvaluations.length;
+  const getNoteLabel = (note: number) => {
+    if (note >= 9) return "Excellent";
+    if (note >= 8) return "Très bon";
+    if (note >= 6) return "Moyen";
+    if (note >= 4) return "Faible";
+    return "Très faible";
+  };
 
   // Mode actuel : 'evaluation' pour évaluer, 'review' pour réviser
   const currentMode = selectedEvaluation ? "review" : "evaluation";
@@ -232,7 +267,7 @@ export default function ExaminerDashboard() {
       }
     });
     setEvaluationForms(forms);
-  }, [conversations.length, evaluations.length]); // Dépendances optimisées
+  }, [conversations, evaluations]);
 
   // S'assurer qu'un formulaire existe pour la conversation courante
   const ensureFormExists = (conversationId: string) => {
@@ -247,22 +282,24 @@ export default function ExaminerDashboard() {
   // Vérification d'accès - uniquement pour les examinateurs
   if (user === null) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-lg">Chargement...</div>
+      <div className="flex items-center justify-center h-screen bg-gradient-to-b from-slate-50 to-slate-100">
+        <div className="text-lg text-slate-600">Chargement...</div>
       </div>
     );
   }
 
   if (user.role !== "examiner") {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
-        <div className="text-center p-8 bg-white rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Accès refusé</h1>
-          <p className="text-gray-700 mb-4">
+      <div className="flex items-center justify-center h-screen bg-gradient-to-b from-slate-50 to-stone-100">
+        <div className="text-center p-8 bg-white/90 rounded-2xl shadow-[0_24px_70px_-45px_rgba(15,23,42,0.35)] border border-slate-200">
+          <h1 className="text-2xl font-bold text-slate-800 mb-4">
+            Accès refusé
+          </h1>
+          <p className="text-slate-600 mb-4">
             Vous n&apos;avez pas les autorisations nécessaires pour accéder à
             cette page.
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-slate-500">
             Cette page est réservée aux examinateurs.
           </p>
         </div>
@@ -375,304 +412,333 @@ export default function ExaminerDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-lg">Chargement...</div>
+      <div className="flex items-center justify-center h-screen bg-gradient-to-b from-slate-50 to-slate-100">
+        <div className="text-lg text-slate-600">Chargement...</div>
       </div>
     );
   }
 
+  const isInEvaluationView = Boolean(currentConversation || selectedEvaluation);
+  const isSidebarMinimized = isInEvaluationView && !isSidebarCollapsed;
+  const sidebarWidthClass = isSidebarCollapsed
+    ? "md:w-0 lg:w-0 md:opacity-0 md:pointer-events-none md:overflow-hidden md:border-r-0 md:shadow-none"
+    : isSidebarMinimized
+    ? "md:w-16 lg:w-16"
+    : "md:w-80 lg:w-96";
+
   return (
     <div
-      className="flex flex-col md:flex-row h-screen bg-gray-100"
+      className="relative flex flex-col md:flex-row h-screen bg-[linear-gradient(180deg,#F8FAFC_0%,#F3F6FA_100%)] overflow-hidden"
       suppressHydrationWarning
     >
       <style dangerouslySetInnerHTML={{ __html: sliderStyles }} />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(56,189,248,0.12),transparent_55%),radial-gradient(circle_at_70%_10%,rgba(56,189,248,0.08),transparent_60%)]" />
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-24 left-10 h-64 w-64 rounded-full bg-cyan-400/12 blur-3xl" />
+        <div className="absolute bottom-[-10rem] right-[-6rem] h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
+      </div>
 
       <button
-        className="md:hidden absolute top-4 left-4 z-50 p-2 rounded-md bg-gray-800 text-white"
+        className="md:hidden absolute top-4 left-4 z-50 p-2.5 rounded-lg bg-[#0F172A] text-white shadow-[0_10px_30px_-12px_rgba(2,6,23,0.6)] border border-slate-800/60"
         onClick={() => setSidebarOpen(!sidebarOpen)}
       >
         {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
+      {/* Languette sidebar (desktop) */}
+      <button
+        type="button"
+        onClick={() => setIsSidebarCollapsed((prev) => !prev)}
+        className={`hidden md:flex fixed top-1/2 -translate-y-1/2 z-50 items-center gap-2 rounded-r-2xl border border-[#D7E3F2]/80 bg-white/80 px-2.5 py-3 shadow-[0_10px_26px_-18px_rgba(15,23,42,0.25)] text-[#0F172A]/80 backdrop-blur-md transition-all duration-300 ease-in-out hover:-translate-y-[52%] hover:shadow-[0_12px_30px_-18px_rgba(56,189,248,0.35)] ${
+          isSidebarCollapsed
+            ? "left-0"
+            : isSidebarMinimized
+            ? "md:left-16 lg:left-16"
+            : "md:left-80 lg:left-96"
+        }`}
+        aria-label={isSidebarCollapsed ? "Ouvrir les conversations" : "Fermer les conversations"}
+      >
+        <span className="[writing-mode:vertical-rl] rotate-180 text-[10px] uppercase tracking-[0.2em] text-[#0F172A]/60">
+          Conversations
+        </span>
+        <span className="h-5 w-5 rounded-full border border-cyan-400/40 bg-cyan-400/15 flex items-center justify-center text-cyan-600">
+          {isSidebarCollapsed ? (
+            <ChevronRight className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronLeft className="h-3.5 w-3.5" />
+          )}
+        </span>
+      </button>
+
       <div
         className={`${
           sidebarOpen ? "flex" : "hidden"
-        } md:flex w-full md:w-64 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white p-4 flex-col absolute md:relative inset-0 z-40 shadow-2xl`}
+        } md:flex w-full ${sidebarWidthClass} bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.12),transparent_60%),linear-gradient(180deg,#F8FAFC_0%,#F1F6FB_100%)] text-[#0F172A] p-4 flex-col absolute md:relative inset-0 z-40 border-r border-[#D7E3F2]/80 rounded-r-2xl shadow-[0_12px_30px_-20px_rgba(15,23,42,0.12)] transition-all duration-300 ease-in-out`}
       >
-        <div className="flex items-center space-x-2 mb-8">
-          <Brain className="h-8 w-8 text-indigo-400" />
+        <div
+          className={`flex items-center gap-0 -mt-6 mb-4 -ml-2 ${
+            isSidebarCollapsed || isSidebarMinimized ? "justify-center" : ""
+          }`}
+        >
           <Link
             href="/"
-            className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent hover:from-indigo-300 hover:to-purple-300 transition-all cursor-pointer"
+            className="flex h-[80px] w-[80px] items-center justify-center overflow-visible"
             onClick={() => setSidebarOpen(false)}
           >
-            Prompt Challenge
+            <Image
+              src="/ia-pau-logo.png?v=3"
+              alt="Studia"
+              width={90}
+              height={90}
+              className="h-[90px] w-[90px] object-contain"
+              priority
+            />
           </Link>
+          {!isSidebarCollapsed && !isSidebarMinimized && (
+            <span className="text-lg font-semibold text-[#0F172A] studia-font uppercase tracking-[0.08em] -ml-3">
+              Studia
+            </span>
+          )}
         </div>
 
-        {/* Section: Conversations à évaluer */}
-        <div className="mb-6">
-          <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg p-3 mb-4 shadow-lg">
-            <h2 className="text-lg font-semibold text-white flex items-center">
-              <Star className="h-5 w-5 mr-2" />À évaluer
-            </h2>
-            <div className="text-sm text-amber-100 mt-1">
-              {
-                conversations.filter(
-                  (conv) =>
-                    conv.studentId &&
-                    !evaluations.some(
-                      (evaluation) => evaluation.conversationId === conv._id
-                    )
-                ).length
-              }{" "}
-              conversation(s)
-            </div>
+        {/* Tabs sidebar */}
+        <div
+          className={`mb-3 rounded-2xl border border-[#D7E3F2]/80 bg-white/90 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.2)] ${
+            isSidebarCollapsed ? "p-2" : "p-2.5"
+          }`}
+        >
+          <div className={`flex items-center ${isSidebarMinimized ? "flex-col gap-2" : "gap-2"}`}>
+                <button
+                  type="button"
+                  onClick={() => setActiveSidebarTab("todo")}
+                  className={`flex-1 rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                    activeSidebarTab === "todo"
+                      ? "bg-cyan-500/20 text-cyan-700 border border-cyan-500/40"
+                      : "text-[#0F172A]/60 hover:text-[#0F172A]"
+                  } ${isSidebarCollapsed || isSidebarMinimized ? "px-2" : ""}`}
+                >
+              <span className="inline-flex items-center gap-2 justify-center">
+                <Star className="h-4 w-4" />
+                {!isSidebarCollapsed && !isSidebarMinimized && "À évaluer"}
+              </span>
+            </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSidebarTab("done")}
+                  className={`flex-1 rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                    activeSidebarTab === "done"
+                      ? "bg-emerald-500/20 text-emerald-700 border border-emerald-500/40"
+                      : "text-[#0F172A]/60 hover:text-[#0F172A]"
+                  } ${isSidebarCollapsed || isSidebarMinimized ? "px-2" : ""}`}
+                >
+              <span className="inline-flex items-center gap-2 justify-center">
+                <Sparkles className="h-4 w-4" />
+                {!isSidebarCollapsed && !isSidebarMinimized && "Terminées"}
+              </span>
+            </button>
           </div>
+        </div>
 
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {conversations
-              .filter(
-                (conv) =>
-                  conv.studentId && // Seulement les conversations avec studentId
-                  !evaluations.some(
-                    (evaluation) => evaluation.conversationId === conv._id
-                  )
-              )
-              .map((conv, index) => (
-                <div
-                  key={conv._id}
-                  className={`p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
-                    selectedConversation === conv._id
-                      ? "bg-gradient-to-r from-amber-500 to-orange-500 border-amber-400 shadow-lg transform scale-105"
-                      : "bg-slate-700/50 hover:bg-slate-600/70 border-slate-600 hover:border-amber-400"
-                  }`}
+        {!isSidebarCollapsed && !isSidebarMinimized && (
+          <div className="space-y-2 flex-1 overflow-y-auto max-h-[62vh]">
+            {activeSidebarTab === "todo" && (
+              <>
+                {pendingConversations.map((conv, index) => {
+                  const isFinal = Boolean(conv.versionFinale?.reponseIAFinale);
+                  const isActive = selectedConversation === conv._id;
+                  return (
+                    <div
+                      key={conv._id}
+                      className={`p-2.5 rounded-2xl cursor-pointer transition-all duration-200 border bg-white shadow-[0_6px_16px_-12px_rgba(15,23,42,0.12)] ${
+                        isActive
+                          ? "border-cyan-400/60 bg-cyan-500/5 ring-1 ring-cyan-400/30"
+                          : "border-[#D6E4F5] hover:border-cyan-400/40"
+                      }`}
+                      onClick={() => {
+                        setSelectedConversation(conv._id);
+                        setSelectedEvaluation(null);
+                        setSidebarOpen(false);
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-[13px] text-[#0F172A]">
+                          Conversation #{index + 1}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-[#0F172A]/45 mt-1">
+                        {new Date(conv.createdAt).toLocaleDateString("fr-FR")}
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-700 border border-cyan-500/40">
+                          À évaluer
+                        </span>
+                        {isFinal && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-200/35 text-[#0F172A]/65 border border-violet-300/40">
+                            Version finale
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {pendingConversations.length === 0 && (
+                  <div className="p-4 text-center text-[#0F172A]/50 text-xs bg-white/80 rounded-xl border border-[#E2E8F0]/80">
+                    Aucune conversation à évaluer.
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeSidebarTab === "done" && (
+              <>
+                {completedEvaluations.map((evaluation, index) => (
+                  <div
+                    key={evaluation._id}
+                    className={`p-2.5 rounded-2xl cursor-pointer transition-all duration-200 border bg-white shadow-[0_6px_16px_-12px_rgba(15,23,42,0.12)] ${
+                      selectedEvaluation === evaluation._id
+                        ? "border-emerald-400/50 bg-emerald-500/5 ring-1 ring-emerald-400/30"
+                        : "border-[#D6E4F5] hover:border-emerald-400/30"
+                    }`}
+                    onClick={() => {
+                      setSelectedEvaluation(evaluation._id);
+                      setSelectedConversation(null);
+                      setSidebarOpen(false);
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-[#0F172A]/70 font-medium">
+                        Éval #{completedEvaluations.length - index}
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 border border-emerald-500/35">
+                        Terminé
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-[#0F172A]/45 mt-1">
+                      {new Date(evaluation.gradedAt).toLocaleDateString(
+                        "fr-FR",
+                        {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}
+                    </div>
+                    <div className="mt-2 text-[10px] text-[#0F172A]/55 line-clamp-2 italic">
+                      &ldquo;{evaluation.comment}&rdquo;
+                    </div>
+                  </div>
+                ))}
+                {completedEvaluations.length === 0 && (
+                  <div className="p-4 text-center text-[#0F172A]/50 text-xs bg-white/80 rounded-xl border border-[#E2E8F0]/80">
+                    Aucune évaluation effectuée
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {!isSidebarCollapsed && isSidebarMinimized && (
+          <div className="flex flex-col items-center gap-2 overflow-y-auto max-h-[62vh] pb-4">
+            {(activeSidebarTab === "todo" ? pendingConversations : completedEvaluations).map(
+              (item, index) => (
+                <button
+                  key={item._id}
                   onClick={() => {
-                    setSelectedConversation(conv._id);
-                    setSelectedEvaluation(null);
+                    if (activeSidebarTab === "todo") {
+                      setSelectedConversation(item._id);
+                      setSelectedEvaluation(null);
+                    } else {
+                      setSelectedEvaluation(item._id);
+                      setSelectedConversation(null);
+                    }
                     setSidebarOpen(false);
                   }}
+                  className={`h-8 w-8 rounded-full text-[11px] font-semibold border shadow-sm transition ${
+                    activeSidebarTab === "todo"
+                      ? "bg-cyan-500/15 text-cyan-700 border-cyan-500/30"
+                      : "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
+                  }`}
+                  aria-label="Conversation"
                 >
-                  <span className="font-medium text-white">
-                    Conversation #{index + 1}
-                  </span>
-                  <div className="text-xs text-gray-300 mt-1 flex items-center">
-                    <span className="w-2 h-2 bg-amber-400 rounded-full mr-2"></span>
-                    {new Date(conv.createdAt).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
-
-            {/* Message si aucune conversation disponible */}
-            {conversations.filter(
-              (conv) =>
-                conv.studentId &&
-                !evaluations.some(
-                  (evaluation) => evaluation.conversationId === conv._id
-                )
-            ).length === 0 && (
-              <div className="p-4 text-center text-gray-400 text-sm bg-slate-700/30 rounded-lg border border-slate-600">
-                {conversations.length === 0 ? (
-                  <>
-                    <Star className="h-8 w-8 text-gray-500 mx-auto mb-2" />
-                    Aucune conversation disponible
-                    {(selectedHackathon !== "all" ||
-                      selectedTache !== "all") && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        pour les filtres sélectionnés
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <Star className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                    Toutes les conversations ont été évaluées !
-                    {(selectedHackathon !== "all" ||
-                      selectedTache !== "all") && (
-                      <div className="text-xs text-green-400 mt-1">
-                        pour les filtres sélectionnés
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+                  {index + 1}
+                </button>
+              )
             )}
           </div>
-        </div>
-
-        {/* Section: Mes évaluations */}
-        <div className="flex-1">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg p-3 mb-4 shadow-lg">
-            <h2 className="text-lg font-semibold text-white flex items-center">
-              <Star className="h-5 w-5 mr-2" />
-              Mes évaluations
-            </h2>
-            <div className="text-sm text-emerald-100 mt-1">
-              {evaluations.length} évaluation(s) terminée(s) • Cliquez pour
-              réviser
-            </div>
-          </div>
-
-          <div className="space-y-2 flex-1 overflow-y-auto max-h-80">
-            {evaluations.map((evaluation, index) => (
-              <div
-                key={evaluation._id}
-                className={`p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
-                  selectedEvaluation === evaluation._id
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 border-emerald-400 shadow-lg transform scale-105"
-                    : "bg-gradient-to-r from-emerald-600/20 to-teal-600/20 border-emerald-500/30 hover:from-emerald-600/30 hover:to-teal-600/30"
-                }`}
-                onClick={() => {
-                  setSelectedEvaluation(evaluation._id);
-                  setSelectedConversation(null); // Désélectionner les conversations à évaluer
-                  setSidebarOpen(false);
-                }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <div
-                      className={`px-2 py-1 rounded-full text-xs font-bold ${
-                        evaluation.note >= 8
-                          ? "bg-green-500 text-white"
-                          : evaluation.note >= 6
-                          ? "bg-yellow-500 text-white"
-                          : "bg-red-500 text-white"
-                      }`}
-                    >
-                      {evaluation.note}/10
-                    </div>
-                    <span className="text-emerald-300 font-medium">
-                      Éval #{evaluations.length - index}
-                    </span>
-                  </div>
-                  <Star className="h-4 w-4 text-yellow-400" />
-                </div>
-                <div className="text-xs text-gray-300 mb-2">
-                  {new Date(evaluation.gradedAt).toLocaleDateString("fr-FR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </div>
-                <div className="text-xs text-gray-400 line-clamp-2 italic">
-                  &ldquo;{evaluation.comment}&rdquo;
-                </div>
-              </div>
-            ))}
-
-            {evaluations.length === 0 && (
-              <div className="p-4 text-center text-gray-400 text-sm bg-slate-700/30 rounded-lg border border-slate-600">
-                <Star className="h-8 w-8 text-gray-500 mx-auto mb-2" />
-                Aucune évaluation effectuée
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="flex-1 flex flex-col">
-        <header className="bg-white shadow-sm p-4">
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+        <header className="relative bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.25)]">
+          <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-cyan-400/80 via-slate-600/60 to-slate-900/60" />
+          <div className="grid gap-3 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
             {/* Section titre et navigation */}
-            <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-semibold text-gray-800">
-                Tableau de bord examinateur
-              </h1>
+            <div className="flex items-center gap-3">
               <Link
                 href="/"
-                className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                className="group flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600 border border-transparent hover:border-slate-300 hover:bg-white hover:text-slate-800 shadow-[0_6px_16px_-12px_rgba(15,23,42,0.2)] transition"
+                aria-label="Retour à l’accueil"
+                title="Retour à l’accueil"
               >
-                <Home className="h-4 w-4 mr-2" />
-                Accueil
+                <Home className="h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5" />
               </Link>
+              <div>
+                <h1 className="text-sm font-semibold text-[#0F172A]/90 uppercase tracking-[0.12em]">
+                  Tableau de bord
+                </h1>
+                <p className="text-[11px] text-slate-500">
+                  Outil d’évaluation
+                </p>
+              </div>
             </div>
 
-            {/* Section filtrage hackathon et tâches */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* Sélecteur Hackathon */}
-              <div className="flex items-center space-x-3 px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
-                <Brain className="h-4 w-4 text-indigo-600" />
-                <label className="text-sm font-medium text-indigo-700">
-                  Hackathon :
-                </label>
-                <select
-                  value={selectedHackathon}
-                  onChange={(e) => {
-                    setSelectedHackathon(e.target.value);
-                    // Réinitialiser les sélections lors du changement de hackathon
-                    setSelectedConversation(null);
-                    setSelectedEvaluation(null);
-                  }}
-                  className="bg-white border border-indigo-300 rounded-md px-3 py-1 text-sm font-medium text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all hover:border-indigo-400"
-                >
-                  <option value="all">🌟 Tous les hackathons</option>
-                  {hackathons.map((hackathon) => (
-                    <option key={hackathon._id} value={hackathon._id}>
-                      {hackathon.nom}
-                      {hackathon.statut && ` (${hackathon.statut})`}
-                    </option>
-                  ))}
-                </select>
-                {selectedHackathon !== "all" && (
-                  <button
-                    onClick={() => {
-                      setSelectedHackathon("all");
-                      setSelectedConversation(null);
-                      setSelectedEvaluation(null);
-                    }}
-                    className="text-indigo-500 hover:text-indigo-700 text-xs font-medium underline transition-colors"
-                  >
-                    Effacer
-                  </button>
-                )}
-              </div>
-
-              {/* Sélecteur Tâches */}
-              {selectedHackathon !== "all" && taches.length > 0 && (
-                <div className="flex items-center space-x-3 px-4 py-2 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
-                  <Star className="h-4 w-4 text-emerald-600" />
-                  <label className="text-sm font-medium text-emerald-700">
-                    Tâche :
-                  </label>
+            {/* Section filtrage hackathon */}
+            <div className="flex justify-start lg:justify-center">
+              <div className="relative">
+                <label className="group relative flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-2.5 shadow-[0_12px_24px_-18px_rgba(15,23,42,0.22)] backdrop-blur transition-all hover:border-cyan-400/40 hover:shadow-[0_16px_32px_-20px_rgba(56,189,248,0.28)]">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500/90 shadow-[0_0_6px_rgba(16,185,129,0.35)] hackathon-pulse" />
+                  <div className="text-left leading-tight">
+                    <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                      Hackathon actif
+                    </div>
+                    <div className="text-sm font-semibold text-[#0F172A]">
+                      {selectedHackathon === "all"
+                        ? "Tous les hackathons"
+                        : hackathons.find((h) => h._id === selectedHackathon)
+                            ?.nom || "Hackathon"}
+                    </div>
+                  </div>
+                  <span className="ml-1 text-slate-400 group-hover:text-slate-600 transition">
+                    ▾
+                  </span>
                   <select
-                    value={selectedTache}
+                    value={selectedHackathon}
                     onChange={(e) => {
-                      setSelectedTache(e.target.value);
-                      // Réinitialiser les sélections lors du changement de tâche
+                      setSelectedHackathon(e.target.value);
                       setSelectedConversation(null);
                       setSelectedEvaluation(null);
                     }}
-                    className="bg-white border border-emerald-300 rounded-md px-3 py-1 text-sm font-medium text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all hover:border-emerald-400"
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    aria-label="Sélectionner un hackathon actif"
                   >
-                    <option value="all">📋 Toutes les tâches</option>
-                    {taches.map((tache) => (
-                      <option key={tache.id} value={tache.id}>
-                        {tache.nom}
+                    <option value="all">Tous les hackathons</option>
+                    {hackathons.map((hackathon) => (
+                      <option key={hackathon._id} value={hackathon._id}>
+                        {hackathon.nom}
+                        {hackathon.statut && ` (${hackathon.statut})`}
                       </option>
                     ))}
                   </select>
-                  {selectedTache !== "all" && (
-                    <button
-                      onClick={() => {
-                        setSelectedTache("all");
-                        setSelectedConversation(null);
-                        setSelectedEvaluation(null);
-                      }}
-                      className="text-emerald-500 hover:text-emerald-700 text-xs font-medium underline transition-colors"
-                    >
-                      Effacer
-                    </button>
-                  )}
-                </div>
-              )}
+                </label>
+              </div>
             </div>
 
             {/* Section utilisateur */}
-            <div className="flex items-center space-x-4">
-              <div className="px-4 py-2 bg-green-200 text-green-800 rounded-lg">
+            <div className="flex items-center justify-start lg:justify-end gap-3">
+              <div className="px-3 py-1.5 bg-white/90 text-slate-700 rounded-full border border-slate-200 shadow-[0_8px_18px_-14px_rgba(15,23,42,0.2)] text-xs font-medium">
                 Examinateur
               </div>
               <LogoutButton />
@@ -680,27 +746,29 @@ export default function ExaminerDashboard() {
           </div>
         </header>
 
-        <div className="flex-1 p-4 overflow-auto">
+        <div className="relative flex-1 p-4 md:p-6 overflow-auto">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_15%,rgba(56,189,248,0.035),transparent_70%)]" />
+          <div className="relative mx-auto w-full max-w-[1200px] space-y-6">
           {/* Indicateur du hackathon sélectionné */}
           {(selectedHackathon !== "all" || selectedTache !== "all") && (
-            <div className="mb-4 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
+            <div className="mb-4 p-3 bg-white/80 rounded-xl border border-slate-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <Brain className="h-4 w-4 text-indigo-600" />
-                  <span className="text-sm font-medium text-indigo-700">
+                  <Brain className="h-4 w-4 text-cyan-600" />
+                  <span className="text-sm font-medium text-slate-700">
                     Filtrage actif :
                   </span>
                   {selectedHackathon !== "all" && (
-                    <span className="text-sm font-bold text-indigo-800">
+                    <span className="text-sm font-bold text-slate-800">
                       {hackathons.find((h) => h._id === selectedHackathon)
                         ?.nom || selectedHackathon}
                     </span>
                   )}
                   {selectedTache !== "all" && (
                     <>
-                      <span className="text-indigo-600">→</span>
-                      <Star className="h-3 w-3 text-emerald-600" />
-                      <span className="text-sm font-bold text-emerald-700">
+                      <span className="text-slate-500">→</span>
+                      <Star className="h-3 w-3 text-cyan-600" />
+                      <span className="text-sm font-bold text-slate-800">
                         {taches.find((t) => t.id === selectedTache)?.nom ||
                           selectedTache}
                       </span>
@@ -714,7 +782,7 @@ export default function ExaminerDashboard() {
                     setSelectedConversation(null);
                     setSelectedEvaluation(null);
                   }}
-                  className="text-indigo-500 hover:text-indigo-700 text-xs font-medium px-2 py-1 rounded border border-indigo-300 hover:border-indigo-400 transition-colors"
+                  className="text-slate-600 hover:text-slate-800 text-xs font-medium px-2 py-1 rounded border border-slate-300 hover:border-slate-400 transition-colors"
                 >
                   Effacer tout
                 </button>
@@ -723,131 +791,167 @@ export default function ExaminerDashboard() {
           )}
 
           {!selectedConversation && !selectedEvaluation ? (
-            <div className="space-y-8">
-              <div className="flex items-center justify-center py-12">
-                <p className="text-gray-500 text-lg">
-                  Sélectionnez une conversation à évaluer ou une évaluation à
-                  réviser
-                </p>
-              </div>
+            <div className="space-y-6">
+              <div className="grid gap-6 lg:grid-cols-[2.2fr_1fr]">
+                <div className="space-y-6">
+                  {/* Résumé des évaluations */}
+                  <div className="bg-white/90 rounded-2xl shadow-[0_24px_70px_-45px_rgba(15,23,42,0.35)] p-6 border border-slate-200/80">
+                    <h2 className="text-xl font-semibold text-[#0F172A] mb-4 flex items-center">
+                      <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-slate-700 rounded-lg flex items-center justify-center mr-3">
+                        <Star className="h-4 w-4 text-white" />
+                      </div>
+                      Tableau de bord des évaluations
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-200/80 shadow-sm">
+                        <div className="w-10 h-10 bg-gradient-to-r from-cyan-500 to-sky-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <Star className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="text-2xl font-bold text-slate-800 mb-1">
+                          {remainingConversationsCount}
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          À évaluer
+                        </div>
+                      </div>
+                      <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-200/80 shadow-sm">
+                        <div className="w-10 h-10 bg-gradient-to-r from-slate-600 to-slate-700 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <Star className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="text-2xl font-bold text-slate-800 mb-1">
+                          {completedEvaluationsCount}
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          Évaluations terminées
+                        </div>
+                      </div>
+                      <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-200/80 shadow-sm">
+                        <div className="w-10 h-10 bg-gradient-to-r from-cyan-600 to-slate-700 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <Star className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="text-2xl font-bold text-slate-800 mb-1">
+                          {totalConversationsCount}
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          Conversations totales
+                        </div>
+                      </div>
+                    </div>
 
-              {/* Résumé des évaluations */}
-              <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                  <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center mr-3">
-                    <Star className="h-4 w-4 text-white" />
-                  </div>
-                  Tableau de bord des évaluations
-                  {selectedHackathon !== "all" && (
-                    <span className="ml-3 px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded-full">
-                      {hackathons.find((h) => h._id === selectedHackathon)
-                        ?.nom || "Hackathon filtré"}
-                    </span>
-                  )}
-                  {selectedTache !== "all" && (
-                    <span className="ml-2 px-3 py-1 text-sm bg-emerald-100 text-emerald-700 rounded-full">
-                      {taches.find((t) => t.id === selectedTache)?.nom ||
-                        "Tâche filtrée"}
-                    </span>
-                  )}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="group hover:scale-105 transition-transform duration-300">
-                    <div className="text-center p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border-2 border-amber-200 hover:border-amber-300 shadow-sm hover:shadow-md transition-all">
-                      <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Star className="h-6 w-6 text-white" />
+                    {/* Barre de progression */}
+                    <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200/80">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium text-slate-700">
+                          Progression des évaluations
+                        </span>
+                        <span className="text-sm text-slate-600">
+                          {Math.round(
+                            (completedEvaluationsCount /
+                              Math.max(totalConversationsCount, 1)) *
+                              100
+                          )}
+                          %
+                        </span>
                       </div>
-                      <div className="text-3xl font-bold text-amber-600 mb-1">
-                        {conversations.filter((conv) => conv.studentId).length}
-                      </div>
-                      <div className="text-sm font-medium text-amber-700">
-                        Conversations disponibles
-                        {(selectedHackathon !== "all" ||
-                          selectedTache !== "all") && (
-                          <div className="text-xs text-amber-600 mt-1">
-                            (filtres actifs)
-                          </div>
-                        )}
+                      <div className="w-full bg-slate-200/70 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-cyan-500 to-sky-600 h-2 rounded-full transition-all duration-500 ease-out"
+                          style={{
+                            width: `${Math.round(
+                              (completedEvaluationsCount /
+                                Math.max(totalConversationsCount, 1)) *
+                                100
+                            )}%`,
+                          }}
+                        />
                       </div>
                     </div>
                   </div>
 
-                  <div className="group hover:scale-105 transition-transform duration-300">
-                    <div className="text-center p-6 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border-2 border-emerald-200 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all">
-                      <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Star className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="text-3xl font-bold text-emerald-600 mb-1">
-                        {evaluations.length}
-                      </div>
-                      <div className="text-sm font-medium text-emerald-700">
-                        Évaluations terminées
-                        {(selectedHackathon !== "all" ||
-                          selectedTache !== "all") && (
-                          <div className="text-xs text-emerald-600 mt-1">
-                            (filtres actifs)
-                          </div>
-                        )}
-                      </div>
+                  {/* À évaluer maintenant */}
+                  <div className="bg-white/90 rounded-2xl border border-slate-200/80 p-5 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.35)]">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-base font-semibold text-[#0F172A]">
+                        À évaluer maintenant
+                      </h3>
+                      <span className="text-xs text-slate-500">
+                        {pendingConversations.length} restantes
+                      </span>
                     </div>
-                  </div>
-
-                  <div className="group hover:scale-105 transition-transform duration-300">
-                    <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 hover:border-blue-300 shadow-sm hover:shadow-md transition-all">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Star className="h-6 w-6 text-white" />
+                    {nextConversation ? (
+                      <div className="flex items-center justify-between rounded-2xl border border-cyan-400/50 bg-cyan-500/10 px-4 py-3">
+                        <div>
+                          <p className="text-sm font-medium text-[#0F172A]">
+                            Conversation #{pendingConversations.indexOf(nextConversation) + 1}
+                          </p>
+                          <p className="text-xs text-[#0F172A]/55 mt-1">
+                            {new Date(nextConversation.createdAt).toLocaleDateString("fr-FR")}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setSelectedConversation(nextConversation._id);
+                            setSelectedEvaluation(null);
+                          }}
+                          className="px-4 py-2 rounded-full bg-[#0F172A] text-white text-xs font-semibold shadow-[0_12px_26px_-16px_rgba(2,6,23,0.6)] hover:bg-[#1E293B] transition"
+                        >
+                          Évaluer
+                        </button>
                       </div>
-                      <div className="text-3xl font-bold text-blue-600 mb-1">
-                        {conversations.filter((conv) => conv.studentId).length -
-                          evaluations.length}
+                    ) : (
+                      <div className="text-xs text-slate-500">
+                        Aucune conversation à évaluer pour le moment.
                       </div>
-                      <div className="text-sm font-medium text-blue-700">
-                        Restant à évaluer
-                        {(selectedHackathon !== "all" ||
-                          selectedTache !== "all") && (
-                          <div className="text-xs text-blue-600 mt-1">
-                            (filtres actifs)
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Barre de progression */}
-                <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">
-                      Progression des évaluations
-                    </span>
-                    <span className="text-sm text-gray-600">
-                      {Math.round(
-                        (evaluations.length /
-                          Math.max(
-                            conversations.filter((conv) => conv.studentId)
-                              .length,
-                            1
-                          )) *
-                          100
-                      )}
-                      %
-                    </span>
+                <div className="space-y-6">
+                  <div className="bg-white/90 rounded-2xl border border-slate-200/80 p-5 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.35)]">
+                    <h3 className="text-sm font-semibold text-[#0F172A] mb-3">
+                      Prochaine évaluation
+                    </h3>
+                    {nextConversation ? (
+                      <div className="rounded-2xl border border-cyan-400/30 bg-cyan-500/5 px-4 py-3">
+                        <p className="text-sm font-medium text-[#0F172A]">
+                          Conversation #{pendingConversations.indexOf(nextConversation) + 1}
+                        </p>
+                        <p className="text-xs text-[#0F172A]/55 mt-1">
+                          {new Date(nextConversation.createdAt).toLocaleDateString("fr-FR")}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500">
+                        Rien à planifier.
+                      </p>
+                    )}
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div
-                      className="bg-gradient-to-r from-emerald-500 to-teal-500 h-3 rounded-full transition-all duration-500 ease-out"
-                      style={{
-                        width: `${Math.round(
-                          (evaluations.length /
-                            Math.max(
-                              conversations.filter((conv) => conv.studentId)
-                                .length,
-                              1
-                            )) *
-                            100
-                        )}%`,
-                      }}
-                    ></div>
+
+                  <div className="bg-white/90 rounded-2xl border border-slate-200/80 p-5 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.35)]">
+                    <h3 className="text-sm font-semibold text-[#0F172A] mb-3">
+                      Dernières terminées
+                    </h3>
+                    <div className="space-y-2">
+                      {recentEvaluations.length > 0 ? (
+                        recentEvaluations.map((evaluation) => (
+                          <div
+                            key={evaluation._id}
+                            className="flex items-center justify-between rounded-xl border border-slate-200/70 bg-slate-50 px-3 py-2"
+                          >
+                            <span className="text-xs text-[#0F172A]/70">
+                              Éval #{evaluation._id.slice(-4).toUpperCase()}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600/80 border border-emerald-500/20">
+                              Terminé
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-slate-500">
+                          Aucune évaluation terminée.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -964,31 +1068,33 @@ export default function ExaminerDashboard() {
             </div>
           ) : currentConversation ? (
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-800">
+              <h2 className="text-xl font-semibold text-[#0F172A]">
                 Évaluation de la conversation
               </h2>
 
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="mb-6">
-                  <h3 className="text-lg font-medium mb-3 text-gray-900">
-                    Prompt final
-                  </h3>
-                  <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
-                    <p className="text-indigo-900 whitespace-pre-wrap leading-relaxed">
+              <div className="bg-white/90 rounded-2xl shadow-[0_24px_70px_-45px_rgba(15,23,42,0.35)] p-6 border border-slate-200/80">
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <section className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.15)]">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                        📝 Prompt final
+                      </span>
+                    </div>
+                    <div className="rounded-xl bg-white/80 border border-slate-200/70 p-3 text-sm text-[#0F172A] whitespace-pre-wrap leading-relaxed">
                       {currentConversation.versionFinale.promptFinal}
-                    </p>
-                  </div>
-                </div>
+                    </div>
+                  </section>
 
-                <div className="mb-8">
-                  <h3 className="text-lg font-medium mb-3 text-gray-900">
-                    Réponse IA finale
-                  </h3>
-                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
+                  <section className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.15)]">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                        🤖 Réponse IA finale
+                      </span>
+                    </div>
+                    <div className="rounded-xl bg-white/80 border border-slate-200/70 p-3 text-sm text-[#0F172A] whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto">
                       {currentConversation.versionFinale.reponseIAFinale}
-                    </p>
-                  </div>
+                    </div>
+                  </section>
                 </div>
 
                 {/* Vérifier si cette conversation n'a pas déjà été évaluée */}
@@ -996,10 +1102,18 @@ export default function ExaminerDashboard() {
                   (evaluation) =>
                     evaluation.conversationId === currentConversation._id
                 ) ? (
-                  <div className="border-t border-gray-200 pt-8">
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-                      <h3 className="text-xl font-semibold mb-6 text-gray-900 flex items-center">
-                        <Star className="h-5 w-5 text-yellow-500 mr-2" />
+                  <div className="mt-6 border-t border-dashed border-slate-300/80 pt-6">
+                    <div className="mb-4 flex items-center justify-between">
+                      <span className="text-xs uppercase tracking-[0.3em] text-slate-500">
+                        Évaluation
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        J’ai lu → je note
+                      </span>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-[0_12px_30px_-22px_rgba(15,23,42,0.18)]">
+                      <h3 className="text-base font-semibold mb-4 text-[#0F172A] flex items-center">
+                        <Star className="h-5 w-5 text-cyan-500 mr-2" />
                         Votre évaluation
                       </h3>
 
@@ -1011,11 +1125,15 @@ export default function ExaminerDashboard() {
 
                       {/* Note Section */}
                       <div className="mb-6">
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">
-                          Note:{" "}
-                          {evaluationForms[currentConversation._id]?.note || 5}
-                          /10
-                        </label>
+                        <div className="flex items-center justify-between mb-3">
+                          <label className="text-sm font-semibold text-[#0F172A]">
+                            Note
+                          </label>
+                          <span className="text-sm font-semibold text-[#0F172A]">
+                            {evaluationForms[currentConversation._id]?.note || 5}
+                            /10 — {getNoteLabel(evaluationForms[currentConversation._id]?.note || 5)}
+                          </span>
+                        </div>
                         <div className="relative">
                           <input
                             type="range"
@@ -1032,7 +1150,7 @@ export default function ExaminerDashboard() {
                                 parseInt(e.target.value)
                               )
                             }
-                            className="w-full h-3 bg-gradient-to-r from-red-300 via-yellow-300 to-green-300 rounded-lg appearance-none cursor-pointer slider"
+                            className="w-full h-3.5 bg-gradient-to-r from-red-300 via-yellow-300 to-green-300 rounded-full appearance-none cursor-pointer slider"
                           />
                           <div className="flex justify-between text-xs text-gray-600 mt-2 px-1">
                             <span className="text-red-600 font-medium">
@@ -1048,33 +1166,34 @@ export default function ExaminerDashboard() {
                         </div>
 
                         {/* Indicateur visuel de la note */}
-                        <div className="mt-4 p-3 rounded-lg bg-white border-2 border-gray-200">
-                          <div className="flex items-center justify-center">
-                            <div
-                              className={`text-2xl font-bold px-4 py-2 rounded-full ${
-                                (evaluationForms[currentConversation._id]
-                                  ?.note || 5) >= 8
-                                  ? "bg-green-100 text-green-800"
-                                  : (evaluationForms[currentConversation._id]
-                                      ?.note || 5) >= 6
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {evaluationForms[currentConversation._id]?.note ||
-                                5}
-                              /10
-                            </div>
-                          </div>
+                        <div className="mt-4 flex items-center gap-3">
+                          <span
+                            className={`px-3 py-1.5 rounded-full text-sm font-semibold ${
+                              (evaluationForms[currentConversation._id]?.note || 5) >= 8
+                                ? "bg-green-100 text-green-800"
+                              : (evaluationForms[currentConversation._id]?.note || 5) >= 6
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {evaluationForms[currentConversation._id]?.note || 5}/10
+                          </span>
+                          <span className="text-xs text-[#0F172A]/60">
+                            {getNoteLabel(evaluationForms[currentConversation._id]?.note || 5)}
+                          </span>
                         </div>
                       </div>
 
                       {/* Commentaire Section */}
                       <div className="mb-6">
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                        <label className="block text-sm font-semibold text-[#0F172A] mb-2">
                           Commentaire détaillé{" "}
                           <span className="text-red-500">*</span>
                         </label>
+                        <p className="text-xs text-[#0F172A]/55 mb-3">
+                          Donnez des éléments concrets : clarté du prompt, pertinence de la réponse,
+                          points forts et améliorations possibles.
+                        </p>
                         <div className="relative">
                           <textarea
                             value={
@@ -1088,9 +1207,9 @@ export default function ExaminerDashboard() {
                                 e.target.value
                               )
                             }
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-colors"
+                            className="w-full px-4 py-3 border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400/30 focus:border-cyan-400 resize-none transition-colors bg-white/95"
                             rows={5}
-                            placeholder="Expliquez votre évaluation : points forts, points faibles, suggestions d'amélioration..."
+                            placeholder="Ex: Le prompt est clair, la réponse est pertinente mais manque d’exemples concrets. Suggestion : ..."
                           />
                           <div className="absolute bottom-2 right-2 text-xs text-gray-400">
                             {
@@ -1103,12 +1222,9 @@ export default function ExaminerDashboard() {
                           </div>
                         </div>
 
-                        {/* Suggestions d'aide */}
-                        <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <p className="text-xs text-blue-700">
-                            <strong>Suggestions :</strong> Évaluez la clarté du
-                            prompt, la pertinence de la réponse, la créativité,
-                            la précision technique, et l&apos;utilité pratique.
+                        <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+                          <p className="text-xs text-[#0F172A]/60">
+                            Suggestions : clarté, pertinence, précision technique, utilité pratique.
                           </p>
                         </div>
                       </div>
@@ -1125,7 +1241,7 @@ export default function ExaminerDashboard() {
                             ]?.comment?.trim() ||
                             submittingEvals.has(currentConversation._id)
                           }
-                          className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+                          className="flex-1 px-6 py-3.5 bg-[#0F172A] text-white font-semibold rounded-xl hover:bg-[#1E293B] focus:outline-none focus:ring-2 focus:ring-cyan-400/40 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
                         >
                           {submittingEvals.has(currentConversation._id) ? (
                             <>
@@ -1153,7 +1269,7 @@ export default function ExaminerDashboard() {
                               ""
                             );
                           }}
-                          className="px-4 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                          className="px-4 py-3 bg-slate-100 text-slate-600 font-medium rounded-xl hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-400/40 focus:ring-offset-2 transition-colors"
                         >
                           Réinitialiser
                         </button>
@@ -1184,6 +1300,7 @@ export default function ExaminerDashboard() {
               </div>
             </div>
           ) : null}
+        </div>
         </div>
       </div>
     </div>

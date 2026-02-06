@@ -12,10 +12,9 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    let { email, password } = schema.parse(body);
-
-    // ✅ NORMALISATION
-    email = email.trim().toLowerCase();
+    const parsed = schema.parse(body);
+    const email = parsed.email.trim().toLowerCase();
+    const password = parsed.password;
 
     await connectDB();
 

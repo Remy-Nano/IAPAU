@@ -47,10 +47,15 @@ index.mdc
 /test-results/
 /playwright-report/
 /blob-report/
-/playwright/.cache/regarde 
+/playwright/.cache
 # Playwright root folder
 /playwright/
+/.playwright/
 
 # npm pack / local artifacts
 prompt-challenge@0.1.0
 *.tgz
+
+# editor
+.vscode/
+node_modules

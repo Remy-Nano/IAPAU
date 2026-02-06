@@ -151,14 +151,18 @@ export function UserEditForm({
       onClose={onClose}
       title={`Modifier l'utilisateur: ${user.prenom} ${user.nom}`}
     >
-      <form onSubmit={submitForm} className="space-y-4">
+      <form onSubmit={submitForm} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Prénom</label>
+            <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Prénom
+            </label>
             <Input
               type="text"
               {...register("prenom")}
-              className={errors.prenom ? "border-red-500" : ""}
+              className={`rounded-xl border border-slate-200/80 bg-slate-50/80 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/25 ${
+                errors.prenom ? "border-red-500" : ""
+              }`}
               placeholder="Entrez le prénom"
             />
             {errors.prenom && (
@@ -166,11 +170,15 @@ export function UserEditForm({
             )}
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Nom</label>
+            <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Nom
+            </label>
             <Input
               type="text"
               {...register("nom")}
-              className={errors.nom ? "border-red-500" : ""}
+              className={`rounded-xl border border-slate-200/80 bg-slate-50/80 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/25 ${
+                errors.nom ? "border-red-500" : ""
+              }`}
               placeholder="Entrez le nom"
             />
             {errors.nom && (
@@ -178,11 +186,15 @@ export function UserEditForm({
             )}
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Email</label>
+            <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Email
+            </label>
             <Input
               type="email"
               {...register("email")}
-              className={errors.email ? "border-red-500" : ""}
+              className={`rounded-xl border border-slate-200/80 bg-slate-50/80 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/25 ${
+                errors.email ? "border-red-500" : ""
+              }`}
               placeholder="exemple@domaine.fr"
             />
             {errors.email && (
@@ -190,13 +202,15 @@ export function UserEditForm({
             )}
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">
+            <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">
               Mot de passe (laisser vide pour ne pas modifier)
             </label>
             <Input
               type="password"
               {...register("password")}
-              className={errors.password ? "border-red-500" : ""}
+              className={`rounded-xl border border-slate-200/80 bg-slate-50/80 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/25 ${
+                errors.password ? "border-red-500" : ""
+              }`}
               placeholder="••••••••"
             />
             {errors.password && (
@@ -204,11 +218,13 @@ export function UserEditForm({
             )}
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Rôle</label>
+            <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Rôle
+            </label>
             <select
               {...register("role")}
-              className={`w-full p-2 border rounded-md ${
-                errors.role ? "border-red-500" : "border-gray-200"
+              className={`w-full rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2 text-sm focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/25 ${
+                errors.role ? "border-red-500" : ""
               }`}
             >
               <option value="student">Étudiant</option>
@@ -221,11 +237,15 @@ export function UserEditForm({
           </div>
           {(selectedRole === "student" || selectedRole === "etudiant") && (
             <div className="space-y-2">
-              <label className="text-sm font-medium">Numéro étudiant</label>
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Numéro étudiant
+              </label>
               <Input
                 type="text"
                 {...register("numeroEtudiant")}
-                className={errors.numeroEtudiant ? "border-red-500" : ""}
+                className={`rounded-xl border border-slate-200/80 bg-slate-50/80 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/25 ${
+                  errors.numeroEtudiant ? "border-red-500" : ""
+                }`}
                 placeholder="Optionnel"
               />
               {errors.numeroEtudiant && (
@@ -236,11 +256,15 @@ export function UserEditForm({
             </div>
           )}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Date de naissance</label>
+            <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Date de naissance
+            </label>
             <Input
               type="date"
               {...register("dateNaissance")}
-              className={errors.dateNaissance ? "border-red-500" : ""}
+              className={`rounded-xl border border-slate-200/80 bg-slate-50/80 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/25 ${
+                errors.dateNaissance ? "border-red-500" : ""
+              }`}
             />
             {errors.dateNaissance && (
               <p className="text-red-500 text-sm">
@@ -250,10 +274,19 @@ export function UserEditForm({
           </div>
         </div>
         <div className="flex justify-end space-x-2 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="border-slate-200 text-slate-700"
+          >
             Annuler
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="bg-[#0F172A] text-white hover:bg-[#1E293B]"
+          >
             {isSubmitting
               ? "Enregistrement..."
               : "Enregistrer les modifications"}

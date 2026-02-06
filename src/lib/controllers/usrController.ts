@@ -1,6 +1,6 @@
 // src/lib/controllers/usrController.ts
 import { IUser, User } from "@/lib/models/user";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export interface RegisterPayload {
   prenom?: string;

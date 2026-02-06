@@ -1,7 +1,7 @@
 import { Mistral } from "@mistralai/mistralai";
 import { OpenAI } from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
-import { config } from "./config";
+import { appConfig } from "./config";
 import { convertRoleForAI } from "./utils/messageUtils";
 
 // Initialisation des clients
@@ -30,8 +30,21 @@ export async function generateAIResponse(
       };
     }
 
+    const isOpenAI = modelName.toLowerCase().includes("openai") || modelName === "gpt";
+    const isMistral = modelName.toLowerCase().includes("mistral");
+
+    // En dev/test, fallback si clé manquante pour éviter un crash bloquant
+    if (process.env.NODE_ENV !== "production") {
+      if (isOpenAI && !process.env.OPENAI_API_KEY) {
+        return { content: "Bonjour (mock OpenAI - clé absente).", tokenCount: 0 };
+      }
+      if (isMistral && !process.env.MISTRAL_API_KEY) {
+        return { content: "Bonjour (mock Mistral - clé absente).", tokenCount: 0 };
+      }
+    }
+
     // Générer une réponse avec OpenAI
-    if (modelName.toLowerCase().includes("openai") || modelName === "gpt") {
+    if (isOpenAI) {
       // Convertir les messages pour le format OpenAI
       const messages: ChatCompletionMessageParam[] = history.map((msg) => ({
         role: convertRoleForAI(msg.role),
@@ -42,7 +55,7 @@ export async function generateAIResponse(
       messages.push({ role: "user", content: prompt });
 
       const response = await openai.chat.completions.create({
-        model: config.models.openai.defaultModel,
+        model: appConfig.models.openai.defaultModel,
         messages,
         temperature: 0.7,
         max_tokens: maxTokens,
@@ -56,7 +69,7 @@ export async function generateAIResponse(
     }
 
     // Générer une réponse avec Mistral
-    else if (modelName.toLowerCase().includes("mistral")) {
+    else if (isMistral) {
       try {
         // Convertir les messages au format Mistral
         // Note: Mistral est plus strict sur les types, on passe donc par une approche différente
@@ -75,8 +88,8 @@ export async function generateAIResponse(
 
         // Appel à l'API Mistral
         const response = await mistral.chat.complete({
-          model: config.models.mistral.defaultModel,
-          messages: formattedMessages as any, // Forcer le type pour contourner les limitations
+          model: appConfig.models.mistral.defaultModel,
+          messages: formattedMessages as unknown, // Forcer le type pour contourner les limitations
           // Passer directement l'objet avec les paramètres à l'API
           ...{ maxTokens }, // Utiliser la syntaxe d'extension pour ajouter maxTokens
         });
@@ -110,4 +123,42 @@ export async function generateAIResponse(
       }`
     );
   }
+}
+
+/**
+ * Stream une réponse IA (uniquement Mistral pour le moment)
+ */
+export async function streamAIResponse(
+  prompt: string,
+  modelName: string,
+  history: { role: string; content: string }[] = [],
+  maxTokens: number = 512
+): Promise<{
+  stream: AsyncIterable<unknown>;
+  modelUsed: string;
+}> {
+  if (process.env.E2E_TESTING === "true") {
+    async function* mockStream() {
+      yield { data: { choices: [{ delta: { content: "Bonjour (mock E2E)." } }] } };
+    }
+    return { stream: mockStream(), modelUsed: modelName };
+  }
+
+  if (modelName.toLowerCase().includes("mistral")) {
+    const formattedMessages = history.map((msg) => ({
+      role: convertRoleForAI(msg.role),
+      content: msg.content,
+    }));
+    formattedMessages.push({ role: "user", content: prompt });
+
+    const stream = await mistral.chat.stream({
+      model: appConfig.models.mistral.defaultModel,
+      messages: formattedMessages as unknown,
+      maxTokens,
+    });
+
+    return { stream, modelUsed: appConfig.models.mistral.defaultModel };
+  }
+
+  throw new Error(`Streaming non supporté pour le modèle: ${modelName}`);
 }

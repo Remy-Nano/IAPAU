@@ -22,17 +22,17 @@ export function UserModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div
-        className={`bg-white p-6 rounded-lg w-full max-w-xl shadow-lg ${className}`}
+        className={`bg-white/95 p-6 rounded-2xl w-full max-w-xl shadow-[0_24px_70px_-45px_rgba(15,23,42,0.45)] border border-slate-200/80 ${className}`}
       >
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">{title}</h2>
+          <h2 className="text-lg font-semibold text-[#0F172A]">{title}</h2>
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 rounded-full hover:bg-slate-100 text-slate-600"
           >
             <X className="h-4 w-4" />
           </Button>

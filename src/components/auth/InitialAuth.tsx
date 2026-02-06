@@ -20,61 +20,34 @@ export const InitialAuth: React.FC<InitialAuthProps> = ({ onSubmit }) => {
     onSubmit(email);
   };
 
-  const fillEmail = (emailType: "student" | "examiner" | "admin") => {
-    switch (emailType) {
-      case "student":
-        setEmail("student@example.com");
-        break;
-      case "examiner":
-        setEmail("pierre.durand@example.fr");
-        break;
-      case "admin":
-        setEmail("admin@example.com");
-        break;
-    }
-  };
-
   return (
     <div>
-      <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6">
-        Authentification
-      </h2>
+      <div className="text-left mb-8 space-y-2">
+        <h2 className="text-2xl sm:text-3xl font-semibold text-[#0F172A] tracking-tight studia-font">
+          Connexion
+        </h2>
+        <p className="text-sm text-[#0F172A]/60">
+          Entrez votre email pour continuer.
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-7">
         <div>
+          <label
+            htmlFor="email"
+            className="block text-xs font-semibold text-[#0F172A]/70 mb-2 uppercase tracking-wide"
+          >
+            Adresse email
+          </label>
           <input
             type="email"
             id="email"
-            className="w-full p-2 sm:p-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            placeholder="Adresse email"
+            className="w-full px-3 py-2.5 sm:py-3 text-sm sm:text-base border border-[#E2E8F0]/80 rounded-xl bg-[#F8FAFC] placeholder:text-[#0F172A]/35 focus:outline-none focus:ring-2 focus:ring-[#38BDF8]/25 focus:border-[#38BDF8] transition-colors duration-200 hover:border-[#38BDF8]/35"
+            placeholder="prenom.nom@exemple.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-        </div>
-
-        <div className="flex flex-wrap gap-2 justify-center text-xs sm:text-sm">
-          <button
-            type="button"
-            onClick={() => fillEmail("student")}
-            className="px-2 sm:px-3 py-1 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
-          >
-            Étudiant
-          </button>
-          <button
-            type="button"
-            onClick={() => fillEmail("examiner")}
-            className="px-2 sm:px-3 py-1 bg-green-100 text-green-700 rounded-full hover:bg-green-200"
-          >
-            Examinateur
-          </button>
-          <button
-            type="button"
-            onClick={() => fillEmail("admin")}
-            className="px-2 sm:px-3 py-1 bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
-          >
-            Admin
-          </button>
         </div>
 
         {error && (
@@ -85,7 +58,7 @@ export const InitialAuth: React.FC<InitialAuthProps> = ({ onSubmit }) => {
 
         <button
           type="submit"
-          className="w-full py-2 sm:py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white text-sm sm:text-base font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+          className="w-full py-3 sm:py-3.5 px-4 bg-cyan-500 text-white text-sm sm:text-base font-semibold rounded-xl shadow-md shadow-cyan-500/20 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-400/40 focus:ring-offset-2 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-cyan-600 active:scale-[0.99]"
         >
           Se connecter
         </button>

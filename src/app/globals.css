@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -41,6 +42,11 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+}
+
+.studia-font {
+  font-family: "Inter", "Sora", "Space Grotesk", ui-sans-serif, system-ui,
+    sans-serif;
 }
 
 :root {
@@ -121,6 +127,206 @@
   }
 }
 
+@keyframes shine {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+@keyframes iapau-trace {
+  0% {
+    stroke-dashoffset: 260;
+    opacity: 0.4;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.25;
+  }
+}
+
+@keyframes iapau-pulse {
+  0% {
+    opacity: 0.2;
+    transform: scale(0.6);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}
+
+@keyframes iapau-pau-fade {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes iapau-ia-zoom {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(2.4);
+  }
+}
+
+.iapau-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #020617;
+  overflow: hidden;
+  border: 2px solid red;
+}
+
+.iapau-intro__stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.iapau-intro__title {
+  font-family: "Georgia", "Times New Roman", serif;
+  letter-spacing: 0.2em;
+  font-size: 56px;
+  color: #ffffff;
+  text-shadow: 0 0 40px rgba(34, 211, 238, 0.45), 0 0 80px rgba(34, 211, 238, 0.25);
+}
+
+.iapau-intro__ia {
+  display: inline-block;
+  animation: iapau-ia-zoom 2.6s ease-out forwards;
+  animation-delay: 1.8s;
+}
+
+.iapau-intro__pau {
+  display: inline-block;
+  animation: iapau-pau-fade 2.6s ease-out forwards;
+  animation-delay: 1.8s;
+}
+
+.iapau-intro__brain {
+  width: 520px;
+  height: 360px;
+  opacity: 0.9;
+}
+
+.iapau-intro__brain svg {
+  width: 520px;
+  height: 360px;
+}
+
+.iapau-intro__brain-outline {
+  opacity: 0.9;
+}
+
+.iapau-intro__trace {
+  stroke-dasharray: 260;
+  stroke-dashoffset: 260;
+}
+
+.iapau-intro__neuron {
+  fill: #22d3ee;
+  opacity: 0.2;
+}
+
+.iapau-intro__neuron.n1 { animation-delay: 0ms; }
+.iapau-intro__neuron.n2 { animation-delay: 200ms; }
+.iapau-intro__neuron.n3 { animation-delay: 400ms; }
+.iapau-intro__neuron.n4 { animation-delay: 600ms; }
+.iapau-intro__neuron.n5 { animation-delay: 800ms; }
+.iapau-intro__neuron.n6 { animation-delay: 1000ms; }
+.iapau-intro__neuron.n7 { animation-delay: 1200ms; }
+
+.iapau-intro__finish {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.debug-step-0 .iapau-intro__title {
+  opacity: 1;
+}
+
+.debug-step-1 .iapau-intro__title {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.debug-step-2 .iapau-intro__title {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.debug-step-3 .iapau-intro__title {
+  opacity: 0.7;
+  transform: scale(1.15);
+}
+
+@keyframes iapau-stage-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes iapau-title-glow {
+  0% {
+    text-shadow: 0 0 18px rgba(34, 211, 238, 0.3), 0 0 40px rgba(34, 211, 238, 0.2);
+  }
+  50% {
+    text-shadow: 0 0 36px rgba(34, 211, 238, 0.6), 0 0 90px rgba(34, 211, 238, 0.35);
+  }
+  100% {
+    text-shadow: 0 0 18px rgba(34, 211, 238, 0.3), 0 0 40px rgba(34, 211, 238, 0.2);
+  }
+}
+
+@keyframes iapau-brain-breath {
+  0% {
+    opacity: 0.75;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 0.75;
+    transform: scale(0.98);
+  }
+}
+
 /* Styles pour la barre latérale des conversations */
 .conversation-history-scroll {
   height: 100%;
@@ -173,4 +379,29 @@
 
 .highlight-success {
   animation: highlight 1.5s ease-in-out;
+}
+
+@keyframes hackathonPulse {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+}
+
+.hackathon-pulse {
+  animation: hackathonPulse 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hackathon-pulse {
+    animation: none;
+  }
 }

@@ -41,7 +41,10 @@ export async function createHackathon(data: Partial<IHackathon>) {
     );
 
     // On retire _id, createdAt et updatedAt s'ils étaient passés dans le body
-    const { _id: _, createdAt: __, updatedAt: ___, ...payload } = data;
+    const payload = { ...data };
+    delete (payload as Partial<IHackathon> & { _id?: unknown })._id;
+    delete (payload as Partial<IHackathon> & { createdAt?: unknown }).createdAt;
+    delete (payload as Partial<IHackathon> & { updatedAt?: unknown }).updatedAt;
 
     // Normaliser les dates si nécessaire
     if (payload.dates) {
@@ -84,7 +87,10 @@ export async function updateHackathon(id: string, data: Partial<IHackathon>) {
     );
 
     // On retire _id, createdAt et updatedAt pour ne pas les modifier
-    const { _id: _, createdAt: __, updatedAt: ___, ...payload } = data;
+    const payload = { ...data };
+    delete (payload as Partial<IHackathon> & { _id?: unknown })._id;
+    delete (payload as Partial<IHackathon> & { createdAt?: unknown }).createdAt;
+    delete (payload as Partial<IHackathon> & { updatedAt?: unknown }).updatedAt;
 
     // Normaliser les dates si nécessaire
     if (payload.dates) {

@@ -3,8 +3,14 @@ import ClientProviders from "@/components/ClientProviders";
 import "./globals.css";
 
 export const metadata = {
-  title: "Prompt Challenge",
+  title: "Studia",
   description: "Hackathon IA",
+  icons: {
+    icon: [
+      { url: "/icon-32.png?v=3", sizes: "32x32", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png?v=3",
+  },
 };
 
 export default function RootLayout({

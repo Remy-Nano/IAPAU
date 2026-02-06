@@ -1,7 +1,7 @@
 /**
  * Configuration des valeurs par défaut de l'application
  */
-export const config = {
+export const appConfig = {
   // Configuration des tokens IA
   tokens: {
     // Limite de tokens par défaut pour les utilisateurs (peut être remplacée par une valeur depuis la BD)
