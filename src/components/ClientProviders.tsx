@@ -42,7 +42,7 @@ export default function ClientProviders({
         {children}
         <Toaster position="top-right" richColors />
         <CustomToaster />
-        <AuthDebug />
+        {process.env.NODE_ENV !== "production" && <AuthDebug />}
       </TooltipProvider>
     </AuthProvider>
   );
