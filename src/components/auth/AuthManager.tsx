@@ -65,7 +65,6 @@ export const AuthManager: React.FC = () => {
     const update = () => {
       const mobile = window.innerWidth < 640;
       setIsMobile(mobile);
-      if (mobile) setIsPinnedOpen(true);
     };
     update();
     window.addEventListener("resize", update);
@@ -121,7 +120,7 @@ export const AuthManager: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F3F7FB] relative overflow-hidden">
+    <div className="min-h-screen min-h-[100dvh] bg-[#F3F7FB] relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,_rgba(56,189,248,0.18),_transparent_50%),radial-gradient(circle_at_70%_15%,_rgba(56,189,248,0.12),_transparent_55%),radial-gradient(circle_at_65%_90%,_rgba(56,189,248,0.14),_transparent_60%)]" />
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-28 left-12 h-72 w-72 rounded-full bg-cyan-400/18 blur-3xl" />
@@ -130,10 +129,10 @@ export const AuthManager: React.FC = () => {
         <div className="iapau-spot iapau-spot-b" />
       </div>
       {/* Texte décoratif avec révélation (scan light) */}
-      <div className="pointer-events-none select-none absolute right-16 top-1/2 -translate-y-1/2 hidden lg:block">
+      <div className="pointer-events-none select-none absolute right-4 sm:right-10 lg:right-16 top-1/2 -translate-y-1/2 block">
         <span
           ref={brandRef}
-          className="iapau-reveal-wrap studia-hidden text-[120px] font-semibold uppercase tracking-[0.28em]"
+          className="iapau-reveal-wrap studia-hidden text-[48px] sm:text-[96px] lg:text-[120px] font-semibold uppercase tracking-[0.16em] sm:tracking-[0.24em] lg:tracking-[0.28em]"
         >
           <span className="iapau-reveal-base">
             STUD<span className="studia-ia">IA</span>
@@ -165,7 +164,7 @@ export const AuthManager: React.FC = () => {
       )}
 
       {(() => {
-        const isOpen = isMobile || isPinnedOpen || isHoverOpen || isFocusOpen;
+        const isOpen = isPinnedOpen || isHoverOpen || isFocusOpen;
         return (
           <div
             ref={panelRef}
@@ -182,7 +181,7 @@ export const AuthManager: React.FC = () => {
                 setIsFocusOpen(false);
               }
             }}
-            className={`relative absolute left-4 top-4 bottom-4 sm:left-6 sm:top-6 sm:bottom-auto sm:h-[calc(100vh-48px)] rounded-3xl transition-all duration-300 ease-out overflow-hidden ${
+            className={`relative absolute left-0 right-0 top-4 sm:left-6 sm:right-auto sm:top-6 sm:bottom-auto sm:h-[calc(100dvh-48px)] rounded-3xl transition-all duration-300 ease-out overflow-hidden ${
               isReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
             } ${
               isOpen
@@ -190,18 +189,18 @@ export const AuthManager: React.FC = () => {
                 : "bg-transparent border border-transparent shadow-none"
             } motion-reduce:transition-none`}
             style={{
-              width: isMobile ? "100%" : isOpen ? "420px" : "60px",
+              width: isMobile ? undefined : isOpen ? "420px" : "60px",
             }}
           >
         <button
           type="button"
           onClick={() => setIsPinnedOpen((prev) => !prev)}
-          className={`absolute inset-y-6 right-0 w-[60px] flex flex-col items-center justify-center gap-3 rounded-l-2xl rounded-r-none border border-[#E2E8F0]/90 bg-[#F8FAFC] px-2 py-4 text-[11px] font-semibold text-[#0F172A]/85 shadow-md transition-all duration-300 ease-out hover:bg-white hover:shadow-lg hover:-translate-y-0.5 hover:scale-[1.01] hover:ring-2 hover:ring-[#38BDF8]/30 focus:outline-none focus:ring-2 focus:ring-[#38BDF8]/35 cursor-pointer z-20 ${
+          className={`absolute inset-y-8 left-0 sm:left-auto sm:right-0 w-[48px] flex flex-col items-center justify-center gap-2 rounded-r-xl rounded-l-none sm:rounded-l-2xl sm:rounded-r-none border border-[#E2E8F0]/80 bg-[#F8FAFC]/90 px-1.5 py-3 text-[9px] font-semibold text-[#0F172A]/70 shadow-sm transition-all duration-300 ease-out hover:bg-white hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.01] hover:ring-2 hover:ring-[#38BDF8]/25 focus:outline-none focus:ring-2 focus:ring-[#38BDF8]/30 cursor-pointer z-20 ${
             isOpen ? "opacity-0 pointer-events-none" : "opacity-100"
           }`}
           aria-expanded={isOpen}
         >
-          <span className="rotate-180 [writing-mode:vertical-rl] tracking-[0.35em]">
+          <span className="rotate-180 [writing-mode:vertical-rl] tracking-[0.25em]">
             Connexion
           </span>
           <span
@@ -209,7 +208,7 @@ export const AuthManager: React.FC = () => {
               isOpen ? "rotate-180" : ""
             }`}
           >
-            ▸
+            ‹
           </span>
         </button>
         <div
@@ -223,7 +222,7 @@ export const AuthManager: React.FC = () => {
           }`}
         />
         <div
-          className={`relative px-6 pt-14 pb-12 sm:px-8 sm:pt-16 sm:pb-14 space-y-10 transition-opacity duration-300 ${
+          className={`relative px-5 pt-10 pb-10 sm:px-8 sm:pt-16 sm:pb-14 space-y-5 sm:space-y-10 transition-opacity duration-300 ${
             isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
         >
@@ -248,7 +247,7 @@ export const AuthManager: React.FC = () => {
       })()}
 
       {/* Footer discret avec email de support */}
-      <footer className="absolute bottom-4 left-0 right-0 text-center">
+      <footer className="absolute bottom-3 left-0 right-0 text-center">
         <p className="text-xs text-slate-500/80">
           Besoin d&apos;aide ? Contactez-nous à{" "}
           <a
@@ -364,12 +363,6 @@ export const AuthManager: React.FC = () => {
           }
           .iapau-spot {
             animation: none;
-          }
-        }
-
-        @media (max-width: 1023px) {
-          .iapau-reveal-wrap {
-            display: none;
           }
         }
 

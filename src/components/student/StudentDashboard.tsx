@@ -338,7 +338,7 @@ export default function StudentDashboard() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_40%_10%,rgba(56,189,248,0.04),transparent_70%)]" />
 
         {/* HEADER */}
-        <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 p-4 pl-14 md:pl-4">
+        <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 p-4 pl-20 md:pl-4">
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-400 via-[#0F172A] to-cyan-400" />
 
           <div className="flex items-center justify-between gap-4">
@@ -348,7 +348,7 @@ export default function StudentDashboard() {
                 onValueChange={handleHackathonChange}
                 disabled={loadingHackathons}
               >
-                <SelectTrigger className="h-12 w-full max-w-[300px] rounded-2xl border border-slate-200 bg-white/95 px-4 shadow-[0_10px_22px_-18px_rgba(15,23,42,0.2)] hover:bg-white focus:ring-2 focus:ring-cyan-400/30">
+                <SelectTrigger className="h-12 w-full max-w-[240px] sm:max-w-[300px] rounded-2xl border border-slate-200 bg-white/95 px-4 shadow-[0_10px_22px_-18px_rgba(15,23,42,0.2)] hover:bg-white focus:ring-2 focus:ring-cyan-400/30">
                   <div className="flex items-center gap-3 min-w-0">
                     <span
                       className={`h-2 w-2 rounded-full ${

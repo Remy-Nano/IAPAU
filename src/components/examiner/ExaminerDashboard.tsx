@@ -90,6 +90,9 @@ export default function ExaminerDashboard() {
   const [submittingEvals, setSubmittingEvals] = useState<Set<string>>(
     new Set()
   );
+  const [mobileEvalPane, setMobileEvalPane] = useState<
+    "conversation" | "evaluation"
+  >("conversation");
 
   const currentConversation = conversations.find(
     (conv) => conv._id === selectedConversation
@@ -128,6 +131,12 @@ export default function ExaminerDashboard() {
 
   // Mode actuel : 'evaluation' pour évaluer, 'review' pour réviser
   const currentMode = selectedEvaluation ? "review" : "evaluation";
+
+  useEffect(() => {
+    if (selectedConversation || selectedEvaluation) {
+      setMobileEvalPane("conversation");
+    }
+  }, [selectedConversation, selectedEvaluation]);
 
   // Récupérer les hackathons disponibles
   useEffect(() => {
@@ -438,13 +447,6 @@ export default function ExaminerDashboard() {
         <div className="absolute bottom-[-10rem] right-[-6rem] h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
       </div>
 
-      <button
-        className="md:hidden absolute top-4 left-4 z-50 p-2.5 rounded-lg bg-[#0F172A] text-white shadow-[0_10px_30px_-12px_rgba(2,6,23,0.6)] border border-slate-800/60"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-      >
-        {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
-
       {/* Languette sidebar (desktop) */}
       <button
         type="button"
@@ -471,9 +473,7 @@ export default function ExaminerDashboard() {
       </button>
 
       <div
-        className={`${
-          sidebarOpen ? "flex" : "hidden"
-        } md:flex w-full ${sidebarWidthClass} bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.12),transparent_60%),linear-gradient(180deg,#F8FAFC_0%,#F1F6FB_100%)] text-[#0F172A] p-4 flex-col absolute md:relative inset-0 z-40 border-r border-[#D7E3F2]/80 rounded-r-2xl shadow-[0_12px_30px_-20px_rgba(15,23,42,0.12)] transition-all duration-300 ease-in-out`}
+        className={`hidden md:flex w-full ${sidebarWidthClass} bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.12),transparent_60%),linear-gradient(180deg,#F8FAFC_0%,#F1F6FB_100%)] text-[#0F172A] p-4 flex-col absolute md:relative inset-0 z-40 border-r border-[#D7E3F2]/80 rounded-r-2xl shadow-[0_12px_30px_-20px_rgba(15,23,42,0.12)] transition-all duration-300 ease-in-out`}
       >
         <div
           className={`flex items-center gap-0 -mt-6 mb-4 -ml-2 ${
@@ -641,40 +641,138 @@ export default function ExaminerDashboard() {
         )}
 
         {!isSidebarCollapsed && isSidebarMinimized && (
-          <div className="flex flex-col items-center gap-2 overflow-y-auto max-h-[62vh] pb-4">
-            {(activeSidebarTab === "todo" ? pendingConversations : completedEvaluations).map(
-              (item, index) => (
-                <button
-                  key={item._id}
-                  onClick={() => {
-                    if (activeSidebarTab === "todo") {
-                      setSelectedConversation(item._id);
-                      setSelectedEvaluation(null);
-                    } else {
-                      setSelectedEvaluation(item._id);
-                      setSelectedConversation(null);
-                    }
-                    setSidebarOpen(false);
-                  }}
-                  className={`h-8 w-8 rounded-full text-[11px] font-semibold border shadow-sm transition ${
-                    activeSidebarTab === "todo"
-                      ? "bg-cyan-500/15 text-cyan-700 border-cyan-500/30"
-                      : "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
-                  }`}
-                  aria-label="Conversation"
-                >
-                  {index + 1}
-                </button>
-              )
-            )}
-          </div>
+          <>
+            {/* Mobile: barre horizontale */}
+            <div className="md:hidden -mx-2 px-2 pb-3">
+              <div className="flex items-center gap-2 overflow-x-auto">
+                {(activeSidebarTab === "todo" ? pendingConversations : completedEvaluations).map(
+                  (item, index) => (
+                    <button
+                      key={item._id}
+                      onClick={() => {
+                        if (activeSidebarTab === "todo") {
+                          setSelectedConversation(item._id);
+                          setSelectedEvaluation(null);
+                        } else {
+                          setSelectedEvaluation(item._id);
+                          setSelectedConversation(null);
+                        }
+                        setSidebarOpen(false);
+                      }}
+                      className={`h-8 w-8 shrink-0 rounded-full text-[11px] font-semibold border shadow-sm transition ${
+                        activeSidebarTab === "todo"
+                          ? "bg-cyan-500/15 text-cyan-700 border-cyan-500/30"
+                          : "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
+                      }`}
+                      aria-label="Conversation"
+                    >
+                      {index + 1}
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+
+            {/* Desktop: colonne */}
+            <div className="hidden md:flex flex-col items-center gap-2 overflow-y-auto max-h-[62vh] pb-4">
+              {(activeSidebarTab === "todo" ? pendingConversations : completedEvaluations).map(
+                (item, index) => (
+                  <button
+                    key={item._id}
+                    onClick={() => {
+                      if (activeSidebarTab === "todo") {
+                        setSelectedConversation(item._id);
+                        setSelectedEvaluation(null);
+                      } else {
+                        setSelectedEvaluation(item._id);
+                        setSelectedConversation(null);
+                      }
+                      setSidebarOpen(false);
+                    }}
+                    className={`h-8 w-8 rounded-full text-[11px] font-semibold border shadow-sm transition ${
+                      activeSidebarTab === "todo"
+                        ? "bg-cyan-500/15 text-cyan-700 border-cyan-500/30"
+                        : "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
+                    }`}
+                    aria-label="Conversation"
+                  >
+                    {index + 1}
+                  </button>
+                )
+              )}
+            </div>
+          </>
         )}
       </div>
 
       <div className="flex-1 flex flex-col">
         <header className="relative bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.25)]">
           <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-cyan-400/80 via-slate-600/60 to-slate-900/60" />
-          <div className="grid gap-3 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
+          <div className="flex flex-col gap-2 lg:hidden">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <Link
+                  href="/"
+                  className="group flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600 border border-transparent hover:border-slate-300 hover:bg-white hover:text-slate-800 shadow-[0_6px_16px_-12px_rgba(15,23,42,0.2)] transition"
+                  aria-label="Retour à l’accueil"
+                  title="Retour à l’accueil"
+                >
+                  <Home className="h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5" />
+                </Link>
+                <div className="min-w-0">
+                  <h1 className="text-[12px] font-semibold text-[#0F172A]/90 uppercase tracking-[0.08em] truncate">
+                    Dashboard
+                  </h1>
+                  <p className="text-[9px] text-slate-500">
+                    Évaluations
+                  </p>
+                </div>
+              </div>
+              <LogoutButton className="px-2 py-1 text-xs" />
+            </div>
+
+            <div className="flex justify-start">
+              <div className="relative w-full">
+                <label className="group relative flex w-full cursor-pointer items-center gap-3 rounded-xl border border-slate-200/80 bg-white/90 px-3 py-2 shadow-[0_10px_22px_-18px_rgba(15,23,42,0.2)] backdrop-blur transition-all hover:border-cyan-400/40 hover:shadow-[0_14px_28px_-20px_rgba(56,189,248,0.25)]">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500/90 shadow-[0_0_6px_rgba(16,185,129,0.35)] hackathon-pulse" />
+                  <div className="text-left leading-tight min-w-0">
+                    <div className="text-[9px] uppercase tracking-[0.16em] text-slate-500">
+                      Hackathon
+                    </div>
+                    <div className="text-xs font-semibold text-[#0F172A] truncate">
+                      {selectedHackathon === "all"
+                        ? "Tous les hackathons"
+                        : hackathons.find((h) => h._id === selectedHackathon)
+                            ?.nom || "Hackathon"}
+                    </div>
+                  </div>
+                  <span className="ml-auto text-slate-400 group-hover:text-slate-600 transition">
+                    ▾
+                  </span>
+                  <select
+                    value={selectedHackathon}
+                    onChange={(e) => {
+                      setSelectedHackathon(e.target.value);
+                      setSelectedConversation(null);
+                      setSelectedEvaluation(null);
+                    }}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    aria-label="Sélectionner un hackathon actif"
+                  >
+                    <option value="all">Tous les hackathons</option>
+                    {hackathons.map((hackathon) => (
+                      <option key={hackathon._id} value={hackathon._id}>
+                        {hackathon.nom}
+                        {hackathon.statut && ` (${hackathon.statut})`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="hidden lg:grid gap-3 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
             {/* Section titre et navigation */}
             <div className="flex items-center gap-3">
               <Link
@@ -746,7 +844,64 @@ export default function ExaminerDashboard() {
           </div>
         </header>
 
-        <div className="relative flex-1 p-4 md:p-6 overflow-auto">
+        <div className="relative flex-1 pl-24 pr-4 pt-4 pb-32 md:p-6 overflow-auto">
+          {/* Mobile: rail gauche pour accès direct aux évaluations */}
+          <div className="md:hidden fixed left-2 top-28 bottom-4 w-20">
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/90 p-2 shadow-[0_12px_24px_-18px_rgba(15,23,42,0.2)]">
+              <button
+                type="button"
+                onClick={() => setActiveSidebarTab("todo")}
+                className={`w-full rounded-xl px-2 py-1 text-[9px] font-semibold border leading-tight ${
+                  activeSidebarTab === "todo"
+                    ? "bg-cyan-500/15 text-cyan-700 border-cyan-500/30"
+                    : "bg-white/90 text-slate-600 border-slate-200"
+                }`}
+              >
+                <span className="block">À</span>
+                <span className="block">évaluer</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSidebarTab("done")}
+                className={`w-full rounded-xl px-2 py-1 text-[9px] font-semibold border leading-tight ${
+                  activeSidebarTab === "done"
+                    ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
+                    : "bg-white/90 text-slate-600 border-slate-200"
+                }`}
+              >
+                <span className="block">Terminées</span>
+              </button>
+            </div>
+            <div className="mt-3 flex flex-col items-center gap-2 overflow-y-auto max-h-[calc(100dvh-220px)] pb-4">
+              {(activeSidebarTab === "todo" ? pendingConversations : completedEvaluations).map(
+                (item, index) => (
+                  <button
+                    key={item._id}
+                    onClick={() => {
+                      if (activeSidebarTab === "todo") {
+                        setSelectedConversation(item._id);
+                        setSelectedEvaluation(null);
+                      } else {
+                        setSelectedEvaluation(item._id);
+                        setSelectedConversation(null);
+                      }
+                    }}
+                    className={`h-8 w-8 rounded-full text-[11px] font-semibold border shadow-sm transition ${
+                      activeSidebarTab === "todo"
+                        ? "bg-cyan-500/15 text-cyan-700 border-cyan-500/30"
+                        : "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
+                    }`}
+                    aria-label="Évaluation"
+                  >
+                    {index + 1}
+                  </button>
+                )
+              )}
+            </div>
+            <div className="mt-1 text-[9px] text-slate-500 text-center pb-4">
+              {activeSidebarTab === "todo" ? "À évaluer" : "Terminées"}
+            </div>
+          </div>
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_15%,rgba(56,189,248,0.035),transparent_70%)]" />
           <div className="relative mx-auto w-full max-w-[1200px] space-y-6">
           {/* Indicateur du hackathon sélectionné */}
@@ -792,7 +947,19 @@ export default function ExaminerDashboard() {
 
           {!selectedConversation && !selectedEvaluation ? (
             <div className="space-y-6">
-              <div className="grid gap-6 lg:grid-cols-[2.2fr_1fr]">
+              <div className="md:hidden rounded-2xl border border-slate-200/80 bg-white/90 p-6 text-center shadow-[0_20px_50px_-35px_rgba(15,23,42,0.35)]">
+                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-600">
+                  <Star className="h-4 w-4" />
+                </div>
+                <h3 className="text-sm font-semibold text-[#0F172A]">
+                  Choisis une évaluation
+                </h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  Sélectionne un numéro dans la barre pour afficher les détails.
+                </p>
+              </div>
+
+              <div className="hidden md:grid gap-6 lg:grid-cols-[2.2fr_1fr]">
                 <div className="space-y-6">
                   {/* Résumé des évaluations */}
                   <div className="bg-white/90 rounded-2xl shadow-[0_24px_70px_-45px_rgba(15,23,42,0.35)] p-6 border border-slate-200/80">
@@ -961,6 +1128,30 @@ export default function ExaminerDashboard() {
             currentEvaluationConversation ? (
             // Mode révision d'une évaluation terminée
             <div className="space-y-6">
+              <div className="md:hidden flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMobileEvalPane("conversation")}
+                  className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold border ${
+                    mobileEvalPane === "conversation"
+                      ? "bg-cyan-500/15 text-cyan-700 border-cyan-500/30"
+                      : "bg-white/90 text-slate-600 border-slate-200"
+                  }`}
+                >
+                  Conversation
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileEvalPane("evaluation")}
+                  className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold border ${
+                    mobileEvalPane === "evaluation"
+                      ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
+                      : "bg-white/90 text-slate-600 border-slate-200"
+                  }`}
+                >
+                  Évaluation
+                </button>
+              </div>
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-800 flex items-center">
                   <Star className="h-5 w-5 text-emerald-500 mr-2" />
@@ -971,7 +1162,7 @@ export default function ExaminerDashboard() {
                     setSelectedEvaluation(null);
                     setSelectedConversation(null);
                   }}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                  className="hidden md:inline-flex px-3 py-1.5 text-xs sm:px-4 sm:py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors"
                 >
                   Retour au tableau de bord
                 </button>
@@ -979,14 +1170,18 @@ export default function ExaminerDashboard() {
 
               <div className="bg-white rounded-lg shadow-md p-6">
                 {/* Informations sur l'évaluation */}
-                <div className="mb-6 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
-                  <div className="flex items-center justify-between mb-3">
+                <div
+                  className={`mb-6 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200 ${
+                    mobileEvalPane === "evaluation" ? "block" : "hidden md:block"
+                  }`}
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
                     <h3 className="text-lg font-medium text-emerald-800">
                       Votre évaluation
                     </h3>
-                    <div className="flex items-center space-x-3">
+                    <div className="flex flex-wrap items-center gap-2">
                       <div
-                        className={`px-3 py-1 rounded-full text-sm font-bold ${
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                           currentEvaluation.note >= 8
                             ? "bg-green-500 text-white"
                             : currentEvaluation.note >= 6
@@ -996,7 +1191,7 @@ export default function ExaminerDashboard() {
                       >
                         {currentEvaluation.note}/10
                       </div>
-                      <span className="text-emerald-600 text-sm">
+                      <span className="text-emerald-600 text-xs">
                         Évaluée le{" "}
                         {new Date(
                           currentEvaluation.gradedAt
@@ -1021,7 +1216,13 @@ export default function ExaminerDashboard() {
                 </div>
 
                 {/* Contenu de la conversation */}
-                <div className="mb-6">
+                <div
+                  className={`mb-6 ${
+                    mobileEvalPane === "conversation"
+                      ? "block"
+                      : "hidden md:block"
+                  }`}
+                >
                   <h3 className="text-lg font-medium mb-3 text-gray-900">
                     Prompt final
                   </h3>
@@ -1032,7 +1233,13 @@ export default function ExaminerDashboard() {
                   </div>
                 </div>
 
-                <div className="mb-6">
+                <div
+                  className={`mb-6 ${
+                    mobileEvalPane === "conversation"
+                      ? "block"
+                      : "hidden md:block"
+                  }`}
+                >
                   <h3 className="text-lg font-medium mb-3 text-gray-900">
                     Réponse IA finale
                   </h3>
@@ -1047,7 +1254,11 @@ export default function ExaminerDashboard() {
                 </div>
 
                 {/* Note d'information */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div
+                  className={`bg-blue-50 border border-blue-200 rounded-lg p-4 ${
+                    mobileEvalPane === "evaluation" ? "block" : "hidden md:block"
+                  }`}
+                >
                   <div className="flex items-start">
                     <div className="flex-shrink-0">
                       <Star className="h-5 w-5 text-blue-500 mt-0.5" />
@@ -1068,13 +1279,43 @@ export default function ExaminerDashboard() {
             </div>
           ) : currentConversation ? (
             <div className="space-y-6">
+              <div className="md:hidden flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMobileEvalPane("conversation")}
+                  className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold border ${
+                    mobileEvalPane === "conversation"
+                      ? "bg-cyan-500/15 text-cyan-700 border-cyan-500/30"
+                      : "bg-white/90 text-slate-600 border-slate-200"
+                  }`}
+                >
+                  Conversation
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileEvalPane("evaluation")}
+                  className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold border ${
+                    mobileEvalPane === "evaluation"
+                      ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
+                      : "bg-white/90 text-slate-600 border-slate-200"
+                  }`}
+                >
+                  Évaluation
+                </button>
+              </div>
               <h2 className="text-xl font-semibold text-[#0F172A]">
                 Évaluation de la conversation
               </h2>
 
               <div className="bg-white/90 rounded-2xl shadow-[0_24px_70px_-45px_rgba(15,23,42,0.35)] p-6 border border-slate-200/80">
                 <div className="grid gap-6 lg:grid-cols-2">
-                  <section className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.15)]">
+                  <section
+                    className={`rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.15)] ${
+                      mobileEvalPane === "conversation"
+                        ? "block"
+                        : "hidden md:block"
+                    }`}
+                  >
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
                         📝 Prompt final
@@ -1085,7 +1326,13 @@ export default function ExaminerDashboard() {
                     </div>
                   </section>
 
-                  <section className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.15)]">
+                  <section
+                    className={`rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.15)] ${
+                      mobileEvalPane === "conversation"
+                        ? "block"
+                        : "hidden md:block"
+                    }`}
+                  >
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
                         🤖 Réponse IA finale
@@ -1102,7 +1349,13 @@ export default function ExaminerDashboard() {
                   (evaluation) =>
                     evaluation.conversationId === currentConversation._id
                 ) ? (
-                  <div className="mt-6 border-t border-dashed border-slate-300/80 pt-6">
+                  <div
+                    className={`mt-6 border-t border-dashed border-slate-300/80 pt-6 ${
+                      mobileEvalPane === "evaluation"
+                        ? "block max-h-[calc(100dvh-260px)] overflow-y-auto pr-1 pb-6"
+                        : "hidden md:block"
+                    }`}
+                  >
                     <div className="mb-4 flex items-center justify-between">
                       <span className="text-xs uppercase tracking-[0.3em] text-slate-500">
                         Évaluation
@@ -1230,7 +1483,7 @@ export default function ExaminerDashboard() {
                       </div>
 
                       {/* Bouton de soumission */}
-                      <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <button
                           onClick={() =>
                             submitEvaluation(currentConversation._id)
@@ -1241,7 +1494,7 @@ export default function ExaminerDashboard() {
                             ]?.comment?.trim() ||
                             submittingEvals.has(currentConversation._id)
                           }
-                          className="flex-1 px-6 py-3.5 bg-[#0F172A] text-white font-semibold rounded-xl hover:bg-[#1E293B] focus:outline-none focus:ring-2 focus:ring-cyan-400/40 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+                          className="flex-1 px-3 py-2 sm:px-6 sm:py-3.5 bg-[#0F172A] text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-[#1E293B] focus:outline-none focus:ring-2 focus:ring-cyan-400/40 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
                         >
                           {submittingEvals.has(currentConversation._id) ? (
                             <>
@@ -1269,7 +1522,7 @@ export default function ExaminerDashboard() {
                               ""
                             );
                           }}
-                          className="px-4 py-3 bg-slate-100 text-slate-600 font-medium rounded-xl hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-400/40 focus:ring-offset-2 transition-colors"
+                          className="px-4 py-2.5 sm:py-3 bg-slate-100 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-400/40 focus:ring-offset-2 transition-colors"
                         >
                           Réinitialiser
                         </button>
@@ -1277,7 +1530,13 @@ export default function ExaminerDashboard() {
                     </div>
                   </div>
                 ) : (
-                  <div className="border-t border-gray-200 pt-8">
+                  <div
+                    className={`border-t border-gray-200 pt-8 ${
+                      mobileEvalPane === "evaluation"
+                        ? "block max-h-[calc(100dvh-260px)] overflow-y-auto pr-1 pb-6"
+                        : "hidden md:block"
+                    }`}
+                  >
                     <div className="bg-green-50 rounded-xl p-6 border border-green-200">
                       <div className="flex items-center">
                         <div className="flex-shrink-0">

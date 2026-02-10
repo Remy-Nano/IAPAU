@@ -7,6 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   deleteHackathon,
   fetchHackathon,
   fetchHackathons,
@@ -22,6 +32,8 @@ export function HackathonManager() {
   const [hack, setHack] = useState<Hackathon | null>(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [mobilePane, setMobilePane] = useState<"list" | "details">("list");
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   // Template pour un nouveau hackathon avec des dates ISO
   const emptyHack: Hackathon = {
@@ -75,6 +87,7 @@ export function HackathonManager() {
     try {
       const h = await fetchHackathon(id);
       setHack(h);
+      setMobilePane("details");
     } catch (error) {
       toast.error("Erreur lors du chargement du hackathon");
       console.error(error);
@@ -216,8 +229,6 @@ export function HackathonManager() {
   // Supprimer
   const onDelete = async () => {
     if (!hack?._id) return;
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce hackathon ?")) return;
-
     setLoading(true);
     try {
       await deleteHackathon(hack._id);
@@ -241,12 +252,13 @@ export function HackathonManager() {
       );
     } finally {
       setLoading(false);
+      setConfirmDeleteOpen(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-[#0F172A]">
             Gestion des hackathons
@@ -259,7 +271,7 @@ export function HackathonManager() {
           <Button
             onClick={() => setHack(emptyHack)}
             disabled={loading}
-            className="bg-[#0F172A] text-white hover:bg-[#1E293B]"
+            className="w-full justify-center bg-[#0F172A] text-white hover:bg-[#1E293B] sm:w-auto"
           >
             <Plus size={16} className="mr-2" />
             Nouveau hackathon
@@ -267,8 +279,39 @@ export function HackathonManager() {
         </div>
       </div>
 
+      <div className="flex items-center gap-2 sm:hidden">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setMobilePane("list")}
+          className={`flex-1 rounded-full text-xs ${
+            mobilePane === "list"
+              ? "border-cyan-400/50 bg-cyan-500/10 text-cyan-700"
+              : "border-slate-200 text-slate-600"
+          }`}
+        >
+          Hackathons
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setMobilePane("details")}
+          className={`flex-1 rounded-full text-xs ${
+            mobilePane === "details"
+              ? "border-cyan-400/50 bg-cyan-500/10 text-cyan-700"
+              : "border-slate-200 text-slate-600"
+          }`}
+        >
+          Détails
+        </Button>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-[1.1fr_1.4fr]">
-        <Card className="hackathon-card rounded-2xl border border-slate-200/80 bg-white/90 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.35)]">
+        <Card
+          className={`hackathon-card rounded-2xl border border-slate-200/80 bg-white/90 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.35)] ${
+            mobilePane === "details" ? "hidden sm:block" : "block"
+          }`}
+        >
           <div className="p-5 border-b border-slate-200/70">
             <h3 className="text-sm font-semibold text-[#0F172A]">
               Hackathons
@@ -324,8 +367,12 @@ export function HackathonManager() {
           </div>
         </Card>
 
-        <Card className="rounded-2xl border border-slate-200/80 bg-white/90 shadow-[0_24px_70px_-45px_rgba(15,23,42,0.35)]">
-          <div className="p-5 border-b border-slate-200/70 flex items-center justify-between">
+        <Card
+          className={`rounded-2xl border border-slate-200/80 bg-white/90 shadow-[0_24px_70px_-45px_rgba(15,23,42,0.35)] flex flex-col max-h-[calc(100dvh-180px)] sm:max-h-none ${
+            mobilePane === "list" ? "hidden sm:block" : "block"
+          }`}
+        >
+          <div className="p-5 border-b border-slate-200/70 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-sm font-semibold text-[#0F172A]">
                 Détails du hackathon
@@ -335,20 +382,20 @@ export function HackathonManager() {
               </p>
             </div>
             {hack?._id && (
-              <div className="flex items-center gap-2">
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setHack(hack)}
-                  className="border-slate-200 text-slate-700"
+                  className="w-full border-slate-200 text-slate-700 sm:w-auto"
                 >
                   Modifier
                 </Button>
                 <Button
-                  onClick={onDelete}
+                  onClick={() => setConfirmDeleteOpen(true)}
                   disabled={loading}
                   variant="outline"
-                  className="border-slate-200 text-slate-600 hover:text-red-600 hover:border-red-200"
+                  className="w-full border-slate-200 text-slate-600 hover:text-red-600 hover:border-red-200 sm:w-auto"
                 >
                   <Trash2 size={16} className="mr-1" />
                   Supprimer
@@ -357,7 +404,7 @@ export function HackathonManager() {
             )}
           </div>
 
-          <div className="p-6">
+          <div className="p-6 pb-32 sm:pb-6 flex-1 overflow-y-auto">
             {!hack && (
               <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-8 text-center text-sm text-slate-500">
                 Sélectionne un hackathon à gauche.
@@ -366,7 +413,7 @@ export function HackathonManager() {
 
             {hack && (
               <form onSubmit={onSubmit} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="nom">Nom</Label>
                   <Input
@@ -416,7 +463,7 @@ export function HackathonManager() {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="debut">Date de début</Label>
                   <Input
@@ -437,7 +484,7 @@ export function HackathonManager() {
                     disabled={loading}
                   />
                 </div>
-                <div className="flex items-end pb-2">
+                <div className="flex items-start sm:items-end pb-1 sm:pb-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="anonymatActif"
@@ -450,7 +497,7 @@ export function HackathonManager() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="promptsParEtudiant">Prompts / étudiant</Label>
                   <Input
@@ -474,7 +521,7 @@ export function HackathonManager() {
               </div>
 
               <div className="space-y-3">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <Label>Tâches</Label>
                   <Button
                     type="button"
@@ -482,6 +529,7 @@ export function HackathonManager() {
                     size="sm"
                     onClick={addTask}
                     disabled={loading}
+                    className="w-full sm:w-auto"
                   >
                     <Plus size={16} />
                     Ajouter
@@ -489,7 +537,7 @@ export function HackathonManager() {
                 </div>
 
                 {hack.taches.map((t, i) => (
-                  <div key={i} className="flex gap-2">
+                  <div key={i} className="flex flex-col gap-2 sm:flex-row">
                     <Input
                       value={t ?? ""}
                       onChange={(e) => updateTask(i, e.target.value)}
@@ -502,6 +550,7 @@ export function HackathonManager() {
                       size="icon"
                       onClick={() => removeTask(i)}
                       disabled={loading}
+                      className="h-9 w-full sm:w-10"
                     >
                       <Trash2 size={16} />
                     </Button>
@@ -509,20 +558,43 @@ export function HackathonManager() {
                 ))}
               </div>
 
-              <div className="pt-4">
-                <Button
-                  type="submit"
-                  className="w-full bg-[#0F172A] text-white hover:bg-[#1E293B]"
-                  disabled={loading}
-                >
-                  {loading ? "Sauvegarde en cours..." : "Enregistrer"}
-                </Button>
+              <div className="pt-4 sm:pt-6">
+                <div className="sticky bottom-0 -mx-6 sm:mx-0 bg-white/90 backdrop-blur-sm border-t border-slate-200/70 px-6 py-4 sm:border-none sm:bg-transparent sm:backdrop-blur-0 sm:px-0 sm:py-0">
+                  <Button
+                    type="submit"
+                    className="w-full bg-[#0F172A] text-white hover:bg-[#1E293B]"
+                    disabled={loading}
+                  >
+                    {loading ? "Sauvegarde en cours..." : "Enregistrer"}
+                  </Button>
+                </div>
               </div>
             </form>
             )}
           </div>
         </Card>
       </div>
+
+      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <AlertDialogContent className="w-[92vw] max-w-[420px] rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce hackathon ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={onDelete}
+              disabled={loading}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
