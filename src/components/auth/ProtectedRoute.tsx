@@ -52,7 +52,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }, 100);
 
     return () => clearTimeout(timeoutId);
-  }, [isAuthenticated, userRole, router, allowedRoles, redirected]);
+  }, [isAuthenticated, userRole, router, allowedRoles, redirected, shouldLog]);
 
   if (!isAuthenticated || !allowedRoles.includes(userRole ?? "")) {
     if (shouldLog) {

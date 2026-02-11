@@ -36,22 +36,6 @@ type AuthContextType = {
   logout: () => void;
 };
 
-// Identifiants prédéfinis pour la connexion
-const PREDEFINED_CREDENTIALS = {
-  admin: {
-    email: "admin@exemple.com",
-    password: "admin123",
-  },
-  examiner: {
-    email: "examinateur@exemple.com", // Email réel de la base
-    password: "examiner123",
-  },
-  student: {
-    email: "student@example.com",
-    // Les étudiants se connectent via un lien magique
-  },
-};
-
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const useAuth = () => {

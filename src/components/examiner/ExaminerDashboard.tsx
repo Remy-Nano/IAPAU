@@ -12,10 +12,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
-  Menu,
   Sparkles,
   Star,
-  X,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -72,7 +70,7 @@ export default function ExaminerDashboard() {
   );
   const [selectedHackathon, setSelectedHackathon] = useState<string>("all");
   const [selectedTache, setSelectedTache] = useState<string>("all");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [, setSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeSidebarTab, setActiveSidebarTab] = useState<"todo" | "done">(
     "todo"
