@@ -3,8 +3,13 @@ import connectDB from "@/lib/mongoose";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+interface Context {
+  params: Promise<{ id: string }> | { id: string };
+}
+
+export async function GET(_: Request, context: Context) {
   try {
+    const params = await context.params;
     await connectDB();
     const id = params.id;
     const user = await User.findById(id).lean();
@@ -26,9 +31,10 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: Context
 ) {
   try {
+    const params = await context.params;
     await connectDB();
     const data = await request.json();
     const id = params.id;
@@ -79,9 +85,10 @@ export async function PUT(
 
 export async function DELETE(
   _: Request,
-  { params }: { params: { id: string } }
+  context: Context
 ) {
   try {
+    const params = await context.params;
     await connectDB();
     const id = params.id;
     const deleted = await User.findByIdAndDelete(id).lean();
