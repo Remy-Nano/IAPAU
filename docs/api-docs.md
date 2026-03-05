@@ -1,5 +1,7 @@
 # Documentation API - Prompt Challenge
 
+> Dernière révision: 2026-02-13 (alignement avec les routes backend actuelles)
+
 ## 1. Introduction
 
 Cette documentation décrit l'API REST de la plateforme **Prompt Challenge**, une application éducative permettant aux étudiants d'interagir avec des modèles d'IA dans le cadre de hackathons pédagogiques.
@@ -10,7 +12,7 @@ Cette documentation décrit l'API REST de la plateforme **Prompt Challenge**, un
 - **Format de données** : JSON
 - **Encodage** : UTF-8
 - **Authentification** : JWT Bearer Token (pour certains endpoints)
-- **Version** : 1.0
+- **Version** : 1.1
 
 ### Technologies utilisées
 
@@ -68,12 +70,15 @@ POST /api/auth/login
 ```
 
 **Description** : Initie la connexion pour tous types d'utilisateurs.
+Le champ `password` est optionnel :
+- sans `password` : détection du rôle, et envoi du magic link pour les étudiants
+- avec `password` : délégation vers `/api/auth/credentials`
 
 **Body** :
 
 ```json
 {
-  "email": "pierre.durand@example.fr"
+  "email": "utilisateur@example.fr"
 }
 ```
 
@@ -81,14 +86,35 @@ POST /api/auth/login
 
 ```json
 {
-  "role": "etudiant"
+  "role": "student"
+}
+```
+
+**Exemple credentials via `/api/auth/login`** :
+
+```json
+{
+  "email": "examinateur@example.fr",
+  "password": "motdepasse"
+}
+```
+
+```json
+{
+  "token": "<jwt>",
+  "user": {
+    "_id": "507f1f77bcf86cd799439011",
+    "email": "examinateur@example.fr",
+    "role": "examiner"
+  }
 }
 ```
 
 **Comportement** :
 
 - **Étudiants** : Génère un lien magique envoyé par email
-- **Autres rôles** : Retourne uniquement le rôle
+- **Examinateurs/Admins (sans mot de passe)** : Retourne uniquement le rôle
+- **Examinateurs/Admins (avec mot de passe)** : Retourne `token` + `user`
 
 **Erreurs** :
 
@@ -97,7 +123,44 @@ POST /api/auth/login
 
 ---
 
-### 4.2 Vérification lien magique
+### 4.2 Connexion credentials
+
+```http
+POST /api/auth/credentials
+```
+
+**Description** : Authentification email/mot de passe pour les rôles admin/examinateur.
+
+**Body** :
+
+```json
+{
+  "email": "admin@example.fr",
+  "password": "motdepasse"
+}
+```
+
+**Réponse succès (200)** :
+
+```json
+{
+  "token": "<jwt>",
+  "user": {
+    "_id": "507f1f77bcf86cd799439011",
+    "email": "admin@example.fr",
+    "role": "admin"
+  }
+}
+```
+
+**Erreurs** :
+
+- `400` : Payload invalide / identifiants invalides
+- `403` : Rôle non autorisé sur ce endpoint
+
+---
+
+### 4.3 Vérification lien magique
 
 ```http
 GET /api/auth/magic-link/verify?token=<jwt-token>
@@ -113,10 +176,10 @@ GET /api/auth/magic-link/verify?token=<jwt-token>
 
 ```json
 {
-  "success": true,
+  "token": "<jwt-session>",
   "user": {
     "email": "etudiant@example.com",
-    "role": "etudiant",
+    "role": "student",
     "prenom": "Jean",
     "nom": "Dupont"
   }
@@ -125,8 +188,9 @@ GET /api/auth/magic-link/verify?token=<jwt-token>
 
 **Erreurs** :
 
-- `400` : Token requis ou expiré
-- `404` : Token invalide
+- `400` : Token manquant
+- `401` : Token invalide, non reconnu ou expiré
+- `404` : Utilisateur introuvable
 
 ---
 
@@ -296,9 +360,9 @@ Form data:
 **Format CSV attendu** :
 
 ```csv
-prenom,nom,email,role,password
-Marie,Dubois,marie.dubois@example.com,etudiant,password123
-Pierre,Martin,pierre.martin@example.com,examiner,password456
+nom,prenom,email,role,dateNaissance,numeroEtudiant
+Dubois,Marie,marie.dubois@example.com,student,1999-02-15,20240001
+Martin,Pierre,pierre.martin@example.com,examiner,1985-10-04,
 ```
 
 **Réponse succès (200)** :
@@ -308,8 +372,8 @@ Pierre,Martin,pierre.martin@example.com,examiner,password456
   "success": true,
   "message": "Import terminé : 2 utilisateur(s) importé(s)",
   "imported": 2,
-  "skipped": 0,
-  "errors": []
+  "errors": [],
+  "warnings": []
 }
 ```
 
@@ -345,7 +409,7 @@ GET /api/conversations?withFinalVersion=true&hackathonId=507f1f77bcf86cd79943901
       "_id": "507f1f77bcf86cd799439020",
       "studentId": "507f1f77bcf86cd799439011",
       "hackathonId": "507f1f77bcf86cd799439013",
-      "modelName": "gpt-3.5-turbo",
+      "modelName": "openai",
       "createdAt": "2024-12-15T10:00:00.000Z",
       "versionFinale": {
         "promptFinal": "Créez un chatbot intelligent",
@@ -372,7 +436,7 @@ POST /api/conversations
   "studentId": "507f1f77bcf86cd799439011",
   "hackathonId": "507f1f77bcf86cd799439013",
   "tacheId": "tache-1",
-  "modelName": "gpt-3.5-turbo",
+  "modelName": "openai",
   "temperature": 0.7,
   "maxTokens": 1000
 }
@@ -386,7 +450,7 @@ POST /api/conversations
     "_id": "507f1f77bcf86cd799439021",
     "studentId": "507f1f77bcf86cd799439011",
     "hackathonId": "507f1f77bcf86cd799439013",
-    "modelName": "gpt-3.5-turbo",
+    "modelName": "openai",
     "messages": [],
     "createdAt": "2024-12-15T14:00:00.000Z"
   }
@@ -421,7 +485,7 @@ DELETE /api/conversations/[id]
         "role": "assistant",
         "content": "Bien sûr ! Comment puis-je vous aider ?",
         "createdAt": "2024-12-15T14:05:02.000Z",
-        "modelUsed": "gpt-3.5-turbo",
+        "modelUsed": "openai",
         "tokenCount": 12
       }
     ]
@@ -486,7 +550,7 @@ POST /api/conversations/[id]/ai-response
 ```json
 {
   "prompt": "Expliquez les réseaux de neurones simplement",
-  "modelName": "gpt-3.5-turbo",
+  "modelName": "openai",
   "maxTokens": 500
 }
 ```
@@ -508,7 +572,7 @@ POST /api/conversations/[id]/ai-response
         "role": "assistant",
         "content": "Les réseaux de neurones sont des modèles informatiques inspirés du cerveau humain...",
         "createdAt": "2024-12-15T14:15:03.000Z",
-        "modelUsed": "gpt-3.5-turbo",
+        "modelUsed": "openai",
         "tokenCount": 150
       }
     ]
@@ -569,9 +633,9 @@ GET /api/conversations/[id]/final
   "maxTokensUsed": 750,
   "temperatureUsed": 0.8,
   "conversation": {
-    "modelName": "gpt-3.5-turbo",
+    "modelName": "openai",
     "statistiquesIA": {
-      "modelUtilise": "gpt-3.5-turbo",
+      "modelUtilise": "openai",
       "tokensTotal": 1250
     }
   }
@@ -599,7 +663,7 @@ GET /api/conversations/student/[id]
     {
       "_id": "507f1f77bcf86cd799439021",
       "hackathonId": "507f1f77bcf86cd799439013",
-      "modelName": "gpt-3.5-turbo",
+      "modelName": "openai",
       "createdAt": "2024-12-15T14:00:00.000Z",
       "messages": [
         {
@@ -1100,7 +1164,7 @@ const conversationResponse = await fetch("/api/conversations", {
   body: JSON.stringify({
     studentId: user._id,
     hackathonId: "hackathon_id",
-    modelName: "gpt-3.5-turbo",
+    modelName: "openai",
   }),
 });
 const { conversation } = await conversationResponse.json();
@@ -1113,7 +1177,7 @@ const aiResponse = await fetch(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       prompt: "Expliquez-moi les réseaux de neurones",
-      modelName: "gpt-3.5-turbo",
+      modelName: "openai",
       maxTokens: 500,
     }),
   }

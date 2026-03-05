@@ -1,0 +1,73 @@
+erDiagram
+  USERS {
+    varchar(24) _id PK
+    varchar(255) prenom "NOT NULL"
+    varchar(255) nom "NOT NULL"
+    datetime dateNaissance "NULL"
+    varchar(255) email "NOT NULL, UNIQUE"
+    varchar(255) numeroEtudiant "NOT NULL DEFAULT ''"
+    varchar(255) passwordHash "NOT NULL"
+    enum role "DEFAULT 'student'"
+    int tokensAuthorized "NOT NULL DEFAULT 0"
+    int tokensUsed "NOT NULL DEFAULT 0"
+    json magicLink "NOT NULL"
+    json profilEtudiant "NOT NULL"
+    json profilJury "NOT NULL"
+    tinyint consentementRGPD "NOT NULL DEFAULT 0"
+    datetime createdAt "DEFAULT CURRENT_TIMESTAMP"
+    datetime updatedAt "ON UPDATE CURRENT_TIMESTAMP"
+  }
+
+  HACKATHONS {
+    varchar(24) _id PK
+    varchar(255) nom "NOT NULL"
+    text description
+    text objectifs
+    json dates "NOT NULL"
+    tinyint anonymatActif "NOT NULL DEFAULT 0"
+    json quotas "NOT NULL"
+    json taches "NOT NULL"
+    varchar(255) statut
+    datetime createdAt "DEFAULT CURRENT_TIMESTAMP"
+    datetime updatedAt "ON UPDATE CURRENT_TIMESTAMP"
+  }
+
+  CONVERSATIONS {
+    varchar(24) _id PK
+    varchar(24) hackathonId "INDEX"
+    varchar(24) tacheId "INDEX"
+    varchar(24) studentId "INDEX"
+    varchar(24) groupId
+    varchar(255) modelName
+    int maxTokens "NOT NULL DEFAULT 512"
+    int maxTokensUsed
+    decimal(4,2) temperature "NOT NULL DEFAULT 0.70"
+    decimal(4,2) temperatureUsed
+    json messages "NOT NULL"
+    json versionFinale "NOT NULL"
+    json statistiquesIA
+    datetime createdAt "DEFAULT CURRENT_TIMESTAMP"
+    datetime updatedAt "ON UPDATE CURRENT_TIMESTAMP"
+  }
+
+  EVALUATIONS {
+    varchar(24) _id PK
+    varchar(24) conversationId "NOT NULL, INDEX"
+    varchar(24) studentId "NOT NULL, INDEX"
+    varchar(24) examinerId "NOT NULL"
+    varchar(24) hackathonId
+    varchar(24) tacheId
+    int note "NOT NULL, CHECK 1..10"
+    text comment "NOT NULL"
+    datetime gradedAt "DEFAULT CURRENT_TIMESTAMP"
+    datetime createdAt "DEFAULT CURRENT_TIMESTAMP"
+    datetime updatedAt "ON UPDATE CURRENT_TIMESTAMP"
+    string uk_examiner_conversation "UNIQUE(examinerId,conversationId)"
+  }
+
+  USERS ||--o{ CONVERSATIONS : "studentId"
+  HACKATHONS ||--o{ CONVERSATIONS : "hackathonId"
+  CONVERSATIONS ||--o{ EVALUATIONS : "conversationId"
+  USERS ||--o{ EVALUATIONS : "studentId"
+  USERS ||--o{ EVALUATIONS : "examinerId"
+  HACKATHONS ||--o{ EVALUATIONS : "hackathonId"

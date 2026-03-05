@@ -7,6 +7,12 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Non publié]
 
+### Documentation
+
+- Alignement de `docs/api-docs.md` avec les routes d'authentification actuelles (`/api/auth/login`, `/api/auth/credentials`, `/api/auth/magic-link/verify`)
+- Correction du format CSV documenté pour `/api/users/import` (suppression de la colonne `password` non utilisée)
+- Harmonisation des exemples de comptes dans `README.md`, `docs/guide-admin.md`, `docs/guide-examinateur.md` et `docs/securite.md`
+
 ### À venir
 
 - Système de notifications temps réel
@@ -103,7 +109,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **MongoDB** avec Mongoose pour la persistance
 - **API REST** complète avec documentation
 - **Validation Zod** unifiée client/serveur
-- **SendGrid** pour l'envoi d'emails sécurisé
+- **Nodemailer (SMTP)** pour l'envoi d'emails sécurisé
 - **Environnement configurable** avec variables d'environnement
 
 ### 🔧 Améliorations techniques
@@ -151,7 +157,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 #### 📧 Service email
 
-- **SendGrid intégration** pour liens magiques :
+- **SMTP (Nodemailer) intégration** pour liens magiques :
   - Templates HTML responsifs
   - Protection anti-tracking
   - Gestion des erreurs d'envoi
@@ -307,8 +313,12 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ```bash
 JWT_SECRET=your-secret-key-32-chars-minimum
 MONGODB_URI=mongodb://localhost:27017/prompt-challenge
-SENDGRID_API_KEY=SG.your-sendgrid-key
-SENDGRID_FROM_EMAIL=noreply@your-domain.com
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=votre-email@domaine.com
+SMTP_PASS=votre-mot-de-passe-app
+SMTP_FROM="STUDIA <votre-email@domaine.com>"
 OPENAI_API_KEY=sk-your-openai-key
 MISTRAL_API_KEY=your-mistral-key
 NEXTAUTH_URL=http://localhost:3000

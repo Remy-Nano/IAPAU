@@ -1,5 +1,11 @@
 # Documentation Sécurité - Prompt Challenge
 
+> Dernière révision: 2026-02-13 (alignement avec le code applicatif actuel)
+>
+> Note: ce document contient deux types de contenu
+> - mesures effectivement implémentées dans le code actuel
+> - recommandations d'exploitation (infrastructure, durcissement, monitoring)
+
 ## 1. Vue d'ensemble sécuritaire
 
 La plateforme **Prompt Challenge** implémente un système de sécurité multi-couches pour protéger les données utilisateurs et contrôler l'accès aux fonctionnalités selon les rôles. Cette documentation détaille l'ensemble des mesures de sécurité mises en place.
@@ -92,7 +98,7 @@ const token = jwt.sign(
   { expiresIn: "10m", algorithm: "HS256" }
 );
 
-// 3. Envoi email sécurisé via SendGrid
+// 3. Envoi email sécurisé via SMTP (Nodemailer)
 const magicLink = `${baseUrl}/magic-link/verify?token=${token}`;
 
 // 4. Vérification et authentification
@@ -102,9 +108,9 @@ GET /api/auth/magic-link/verify?token=<JWT>
 **Sécurité du processus** :
 
 - **Expiration courte** : 10 minutes maximum
-- **Token unique** : JWT non réutilisable
+- **Token à usage unique** : vérification du token stocké en base puis invalidation après usage
 - **Validation email** : Format et existence vérifiés
-- **HTTPS obligatoire** : Protection du lien
+- **HTTPS recommandé en production** : à appliquer au niveau reverse proxy / hébergement
 - **Nettoyage token** : Suppression après usage
 
 #### 3.1.2 Examinateurs/Admins : Credentials
@@ -114,21 +120,16 @@ GET /api/auth/magic-link/verify?token=<JWT>
 **Sécurité implémentée** :
 
 ```javascript
-// Validation stricte côté serveur
-const validCredentials =
-  email === PREDEFINED_CREDENTIALS.examiner.email &&
-  password === PREDEFINED_CREDENTIALS.examiner.password;
-
-// Protection contre timing attacks
-// (même temps de traitement succès/échec)
+// Validation stricte côté serveur + base de données
+const user = await User.findOne({ email });
+const isMatch = await bcrypt.compare(password, user.passwordHash);
+if (!isMatch) throw new Error("Mot de passe invalide");
 ```
 
-**Comptes prédéfinis sécurisés** :
+**Règle d'accès** :
 
-- **Admin** : `admin@example.com` / `admin123`
-- **Examinateur** : `pierre.durand@example.fr` / `examiner123`
-
-> ⚠️ **Important** : Changer les mots de passe par défaut en production
+- Le endpoint credentials n'autorise que les rôles admin/examinateur
+- Les étudiants utilisent le flux magic link
 
 ### 3.2 JSON Web Tokens (JWT)
 
@@ -656,29 +657,10 @@ export function middleware(req: NextRequest) {
 
 ### 8.1 Transport sécurisé
 
-#### 8.1.1 HTTPS obligatoire
+#### 8.1.1 HTTPS en production (recommandé)
 
-```javascript
-// next.config.ts - Redirection HTTPS en production
-const nextConfig = {
-  async redirects() {
-    return [
-      {
-        source: "/(.*)",
-        has: [
-          {
-            type: "header",
-            key: "x-forwarded-proto",
-            value: "http",
-          },
-        ],
-        destination: "https://yourdomain.com/:path*",
-        permanent: true,
-      },
-    ];
-  },
-};
-```
+La redirection HTTPS doit être gérée par l'infrastructure (Nginx, Traefik, Vercel, Cloudflare, etc.).
+Le dépôt applicatif ne force pas actuellement cette redirection dans `next.config.ts`.
 
 #### 8.1.2 Headers de sécurité
 
@@ -726,11 +708,11 @@ export const sendMagicLink = async (email: string, link: string) => {
     throw new Error("URL invalide");
   }
 
-  // Configuration SendGrid sécurisée
+  // Configuration SMTP sécurisée
   const msg = {
     to: email,
     from: {
-      email: sendgridFromEmail,
+      email: smtpFrom,
       name: "Prompt Challenge",
     },
     subject: "Votre lien magique - Prompt Challenge",
@@ -742,7 +724,7 @@ export const sendMagicLink = async (email: string, link: string) => {
     },
   };
 
-  await sgMail.send(msg);
+  await transporter.sendMail(msg);
 };
 ```
 
@@ -815,8 +797,8 @@ export async function GET() {
     const securityChecks = {
       database: mongoose.connection.readyState === 1,
       jwtSecret: !!process.env.JWT_SECRET,
-      sendgridConfig: !!(
-        process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL
+      smtpConfig: !!(
+        process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASS
       ),
     };
 
@@ -853,8 +835,12 @@ NEXTAUTH_URL=https://your-domain.com
 MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/database
 
 # Email Service
-SENDGRID_API_KEY=SG.your-sendgrid-api-key
-SENDGRID_FROM_EMAIL=noreply@your-domain.com
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=votre-email@domaine.com
+SMTP_PASS=votre-mot-de-passe-app
+SMTP_FROM="STUDIA <votre-email@domaine.com>"
 
 # Security
 NODE_ENV=production
@@ -867,8 +853,10 @@ NODE_ENV=production
 const requiredEnvVars = [
   "JWT_SECRET",
   "MONGODB_URI",
-  "SENDGRID_API_KEY",
-  "SENDGRID_FROM_EMAIL",
+  "SMTP_HOST",
+  "SMTP_PORT",
+  "SMTP_USER",
+  "SMTP_PASS",
 ];
 
 requiredEnvVars.forEach((envVar) => {
@@ -1197,8 +1185,8 @@ const auditTrail = {
 
 #### 14.2.2 Pour les examinateurs/admins
 
-1. **Changer le mot de passe par défaut** immédiatement
-2. **Utiliser un mot de passe fort** et unique
+1. **Utiliser un mot de passe fort** (et le renouveler selon la politique interne)
+2. **Utiliser un mot de passe unique** par service (pas de réutilisation)
 3. **Activer la double authentification** si disponible
 4. **Contrôler régulièrement** les accès et permissions
 5. **Respecter le principe** du moindre privilège

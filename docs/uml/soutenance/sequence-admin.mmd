@@ -1,0 +1,26 @@
+sequenceDiagram
+  participant U as Admin (Frontend)
+  participant AUTH as API Auth
+  participant USERS as API Users
+  participant HACK as API Hackathons
+  participant DB as MongoDB
+
+  U->>AUTH: POST /api/auth/login (email)
+  AUTH->>DB: find User by email
+  DB-->>AUTH: role admin
+  AUTH-->>U: role detecte
+
+  U->>AUTH: POST /api/auth/credentials (email, password)
+  AUTH->>DB: verify passwordHash
+  DB-->>AUTH: user valide
+  AUTH-->>U: JWT session + user
+
+  U->>USERS: GET/POST/PUT/DELETE /api/users
+  USERS->>DB: read/write users
+  DB-->>USERS: users updated
+  USERS-->>U: 200/201 success
+
+  U->>HACK: GET/POST/PATCH/DELETE /api/hackathons
+  HACK->>DB: read/write hackathons
+  DB-->>HACK: hackathons updated
+  HACK-->>U: 200/201/204 success

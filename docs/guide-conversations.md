@@ -1,5 +1,7 @@
 # Guide Technique - Conversations IA
 
+> Dernière révision: 2026-02-13 (alignement avec les routes backend actuelles)
+
 **Plateforme Éducative Prompt Challenge**  
 _Guide complet du système de conversations avec intelligence artificielle_
 
@@ -14,7 +16,7 @@ _Guide complet du système de conversations avec intelligence artificielle_
 5. [Interface utilisateur](#interface-utilisateur)
 6. [Gestion des quotas](#gestion-des-quotas)
 7. [Finalisation des conversations](#finalisation-des-conversations)
-8. [Historique et pagination](#historique-et-pagination)
+8. [Historique des messages](#historique-des-messages)
 9. [Sécurité et validation](#sécurité-et-validation)
 10. [Monitoring et statistiques](#monitoring-et-statistiques)
 
@@ -34,7 +36,7 @@ Le système de conversations IA permet aux étudiants d'interagir avec différen
 - **Types de prompts** : Mode "one shot" ou "contextuel"
 - **Gestion des quotas** : Limitation et monitoring des tokens utilisés
 - **Finalisation** : Validation d'une réponse comme version finale
-- **Historique** : Navigation dans l'historique des messages avec pagination
+- **Historique** : Consultation de l'historique des messages d'une conversation
 
 ---
 
@@ -53,10 +55,10 @@ interface IConversation {
   groupId?: string; // ID du groupe (optionnel)
   modelName?: string; // Modèle IA utilisé
   titreConversation?: string; // Titre personnalisé
-  promptType?: "one shot" | "contextuel"; // Type de prompt
+  promptType?: "one shot" | "contextuel"; // Type côté interface (non persisté de façon stricte en base)
   maxTokens?: number; // Limite de tokens par requête
   maxTokensUsed?: number; // Tokens réellement utilisés
-  temperature?: number; // Paramètre de créativité (0.0-2.0)
+  temperature?: number; // Paramètre de créativité (0.0-1.0)
   temperatureUsed?: number; // Temperature réellement utilisée
   messages: IMessage[]; // Historique des messages
   versionFinale: IVersionFinale; // Version finale soumise
@@ -177,13 +179,12 @@ const newConversation = {
 
 - Conversation active
 - Prompt ≥ 5 caractères
-- Quota tokens non épuisé
 
 **Processus** :
 
-1. **Validation** : Vérification du prompt et des quotas
-2. **Ajout message utilisateur** : `POST /api/conversations/:id/messages`
-3. **Génération réponse IA** : `POST /api/conversations/:id/ai-response`
+1. **Validation** : Vérification du prompt
+2. **Ajout message utilisateur** : `POST /api/conversations/[id]/messages`
+3. **Génération réponse IA** : `POST /api/conversations/[id]/ai-response`
 4. **Mise à jour statistiques** : Comptage des tokens utilisés
 5. **Rafraîchissement interface** : Affichage des nouveaux messages
 
@@ -245,7 +246,7 @@ Content-Type: application/json
   "studentId": "507f1f77bcf86cd799439011",
   "hackathonId": "507f1f77bcf86cd799439013",
   "tacheId": "tache-1",
-  "modelName": "gpt-3.5-turbo",
+  "modelName": "openai",
   "temperature": 0.7,
   "maxTokens": 1000
 }
@@ -290,17 +291,6 @@ Content-Type: application/json
 }
 ```
 
-#### Récupérer messages avec pagination
-
-```http
-GET /api/conversations/[id]/messages?page=1&limit=50
-```
-
-**Paramètres** :
-
-- `page` : Numéro de page (défaut: 1)
-- `limit` : Nombre de messages par page (max: 50)
-
 ### 4.3 Génération IA
 
 #### Générer réponse IA
@@ -311,7 +301,7 @@ Content-Type: application/json
 
 {
   "prompt": "Expliquez les réseaux de neurones simplement",
-  "modelName": "gpt-3.5-turbo",
+  "modelName": "openai",
   "maxTokens": 500,
   "temperature": 0.7
 }
@@ -325,8 +315,7 @@ Content-Type: application/json
   "conversation": {
     /* conversation mise à jour */
   },
-  "aiResponse": "Les réseaux de neurones sont...",
-  "tokenCount": 245
+  "aiResponse": "Les réseaux de neurones sont..."
 }
 ```
 
@@ -334,10 +323,7 @@ Content-Type: application/json
 
 ```json
 {
-  "error": "Quota IA épuisé",
-  "quotaExceeded": true,
-  "tokensUsed": 9850,
-  "tokensAuthorized": 10000
+  "error": "Erreur avec l'API openai: <détail>"
 }
 ```
 
@@ -414,9 +400,9 @@ const AVAILABLE_MODELS = [
 <Slider
   value={[temperature]}
   onValueChange={([value]) => setValue("temperature", value)}
-  min={0.1}
-  max={2.0}
-  step={0.1}
+  min={0}
+  max={1}
+  step={0.01}
   className="flex-1"
 />
 ```
@@ -462,15 +448,12 @@ for (let i = 0; i < messages.length; i += 2) {
 
 ### 6.1 Système de tokens
 
-**Configuration** :
+Le projet affiche les tokens consommés dans l'UI via `statistiquesIA.tokensTotal`
+et un plafond visuel par défaut (`appConfig.tokens.defaultLimit = 10000`).
 
 ```typescript
-// Configuration par défaut
-const TOKEN_LIMITS = {
-  defaultLimit: 10000, // Tokens par étudiant
-  warningThreshold: 8000, // Seuil d'alerte
-  criticalThreshold: 9500, // Seuil critique
-};
+const tokensUsed = conversation.statistiquesIA?.tokensTotal ?? 0;
+const tokensAuthorized = appConfig.tokens.defaultLimit; // 10000
 ```
 
 **Structure utilisateur** :
@@ -482,108 +465,11 @@ interface User {
 }
 ```
 
-### 6.2 Vérification des quotas
+### 6.2 État actuel des quotas
 
-**Avant envoi de prompt** :
-
-```typescript
-const checkQuota = (user: User, estimatedTokens: number) => {
-  const available = user.tokensAuthorized - user.tokensUsed;
-  if (available < estimatedTokens) {
-    throw new Error("Quota IA épuisé");
-  }
-  return true;
-};
-```
-
-**Mise à jour après réponse** :
-
-```typescript
-const updateTokenUsage = async (userId: string, tokenCount: number) => {
-  await User.findByIdAndUpdate(userId, {
-    $inc: { tokensUsed: tokenCount },
-  });
-};
-```
-
-### 6.3 Interface de quota épuisé
-
-**Détection** :
-
-```typescript
-if (error.message === "Quota IA épuisé") {
-  setIsDisabled(true);
-  setShowQuotaExhausted(true);
-}
-```
-
-**Affichage** :
-
-```tsx
-{
-  quotaExhausted && (
-    <div className="bg-orange-100 border border-orange-400 text-orange-700 px-4 py-3 rounded">
-      <p>Quota épuisé – Choisissez une réponse existante</p>
-      <Button onClick={openExistingResponsesModal}>
-        Choisir réponse existante
-      </Button>
-    </div>
-  );
-}
-```
-
-### 6.4 Modale de sélection des réponses existantes
-
-**Déclencheur** : Bouton "Choisir réponse existante"
-**Contenu** : Liste de toutes les réponses IA générées dans la conversation
-**Endpoint** : `GET /api/conversations/:id/messages`
-
-```tsx
-const ExistingResponsesModal = ({ conversationId, onSelect }) => {
-  const [responses, setResponses] = useState([]);
-
-  useEffect(() => {
-    fetch(`/api/conversations/${conversationId}/messages`)
-      .then((res) => res.json())
-      .then((data) => {
-        const aiResponses = data.messages
-          .filter((msg) => msg.role === "assistant")
-          .map((msg) => ({
-            content: msg.content,
-            createdAt: msg.createdAt,
-            tokenCount: msg.tokenCount,
-          }));
-        setResponses(aiResponses);
-      });
-  }, [conversationId]);
-
-  return (
-    <Dialog>
-      <DialogContent className="max-w-4xl max-h-[80vh]">
-        <DialogHeader>
-          <DialogTitle>Sélectionner une réponse existante</DialogTitle>
-        </DialogHeader>
-        <ScrollArea className="h-[60vh]">
-          {responses.map((response, index) => (
-            <div key={index} className="border rounded p-4 mb-4">
-              <p className="text-sm text-gray-500 mb-2">
-                {format(new Date(response.createdAt), "dd/MM/yyyy HH:mm")}
-                {response.tokenCount && ` • ${response.tokenCount} tokens`}
-              </p>
-              <p className="mb-3">{response.content}</p>
-              <Button onClick={() => onSelect(response.content)}>
-                Choisir cette réponse
-              </Button>
-            </div>
-          ))}
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
-  );
-};
-```
-
----
+- Le backend met à jour `conversation.statistiquesIA.tokensTotal` via l'ajout des messages assistant.
+- L'interface affiche un compteur de progression.
+- Il n'y a pas de blocage serveur strict implémenté aujourd'hui sur un quota utilisateur global.
 
 ## 7. Finalisation des conversations
 
@@ -591,9 +477,8 @@ const ExistingResponsesModal = ({ conversationId, onSelect }) => {
 
 **Déclencheurs** :
 
-- Quota épuisé → Finalisation forcée
 - Satisfaction de l'étudiant → Finalisation volontaire
-- Fin du temps imparti → Finalisation automatique
+- Finalisation manuelle de la meilleure paire prompt/réponse
 
 **Prérequis** :
 
@@ -694,117 +579,10 @@ const isFinalized = Boolean(
 
 ---
 
-## 8. Historique et pagination
+## 8. Historique des messages
 
-### 8.1 Pagination des messages
-
-**Problématique** : Les conversations longues (>50 messages) peuvent impacter les performances
-
-**Solution** : Pagination côté serveur avec chargement à la demande
-
-**Endpoint** :
-
-```http
-GET /api/conversations/[id]/messages?page=1&limit=50
-```
-
-**Paramètres** :
-
-- `page` : Numéro de page (1-indexed)
-- `limit` : Nombre de messages par page (max: 50, défaut: 50)
-
-### 8.2 Chargement progressif (Frontend)
-
-**Stratégie** : Infinite scroll vers le haut pour charger l'historique
-
-```typescript
-const MessagesWithPagination = ({ conversationId }) => {
-  const [messages, setMessages] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-
-  const loadMoreMessages = async () => {
-    if (isLoadingMore || !hasMore) return;
-
-    setIsLoadingMore(true);
-    try {
-      const response = await fetch(
-        `/api/conversations/${conversationId}/messages?page=${
-          currentPage + 1
-        }&limit=50`
-      );
-      const data = await response.json();
-
-      if (data.messages.length < 50) {
-        setHasMore(false);
-      }
-
-      // Ajouter les anciens messages au début du tableau
-      setMessages((prevMessages) => [...data.messages, ...prevMessages]);
-      setCurrentPage((prev) => prev + 1);
-    } catch (error) {
-      console.error("Erreur de chargement:", error);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
-
-  // Détection du scroll vers le haut
-  const handleScroll = (e) => {
-    const { scrollTop } = e.target;
-    if (scrollTop === 0 && hasMore) {
-      loadMoreMessages();
-    }
-  };
-
-  return (
-    <ScrollArea onScroll={handleScroll} className="h-[600px]">
-      {isLoadingMore && (
-        <div className="text-center py-4">
-          <div className="animate-spin h-6 w-6 border-2 border-indigo-600 rounded-full mx-auto"></div>
-          <p className="text-sm text-gray-500 mt-2">
-            Chargement de l'historique...
-          </p>
-        </div>
-      )}
-
-      {messages.map((message, index) => (
-        <MessageBubble
-          key={`${message.createdAt}-${index}`}
-          message={message}
-        />
-      ))}
-    </ScrollArea>
-  );
-};
-```
-
-### 8.3 Optimisations base de données
-
-**Index recommandés** :
-
-```javascript
-// MongoDB indexes pour performances
-db.conversations.createIndex({ studentId: 1, createdAt: -1 });
-db.conversations.createIndex({ hackathonId: 1, createdAt: -1 });
-db.conversations.createIndex({ "messages.createdAt": -1 });
-```
-
-**Projection sélective** :
-
-```typescript
-// Charger conversation sans messages pour liste
-const conversation = await Conversation.findById(id).select("-messages").lean();
-
-// Charger seulement les messages nécessaires
-const messages = await Conversation.findById(id)
-  .select("messages")
-  .slice("messages", [skip, limit])
-  .lean();
-```
-
----
+L'historique est stocké directement dans le document conversation (`messages[]`).
+Il n'y a pas d'endpoint dédié de pagination des messages dans l'API actuelle.
 
 ## 9. Sécurité et validation
 
@@ -835,8 +613,8 @@ const promptSchema = z.object({
     .min(5, "Message trop court")
     .max(2000, "Message trop long"),
   modelName: z.enum(["openai", "mistral"]),
-  maxTokens: z.number().int().min(50).max(4000),
-  temperature: z.number().min(0.1).max(2.0),
+  maxTokens: z.number().int().min(100).max(2048),
+  temperature: z.number().min(0).max(1),
 });
 ```
 
@@ -884,27 +662,8 @@ const sanitizeInput = (input: string) => {
 
 ### 9.3 Rate limiting
 
-**Limitation par utilisateur** :
-
-```typescript
-const RATE_LIMITS = {
-  messagesPerMinute: 10,
-  messagesPerHour: 100,
-  conversationsPerDay: 50,
-};
-
-const checkRateLimit = async (userId: string, action: string) => {
-  const key = `rate_limit:${userId}:${action}`;
-  const current = await redis.get(key);
-
-  if (current && parseInt(current) >= RATE_LIMITS[action]) {
-    throw new Error("Limite de fréquence dépassée");
-  }
-
-  await redis.incr(key);
-  await redis.expire(key, 3600); // 1 heure
-};
-```
+Le projet ne possède pas actuellement de mécanisme Redis de rate limiting.
+La protection active repose sur le middleware JWT et la validation serveur.
 
 ---
 
@@ -994,7 +753,7 @@ Le système de conversations IA de la plateforme Prompt Challenge offre une exp�
 ### Points clés à retenir
 
 1. **Flexibilité** : Support de multiples modèles IA avec configuration personnalisable
-2. **Performance** : Pagination intelligente et optimisations de base de données
+2. **Performance** : Optimisations de base de données et streaming SSE
 3. **Sécurité** : Validation rigoureuse et contrôle d'accès
 4. **Expérience utilisateur** : Interface responsive avec retour temps réel
 5. **Monitoring** : Suivi complet des métriques et statistiques

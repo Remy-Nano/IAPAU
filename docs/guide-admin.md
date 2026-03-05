@@ -50,7 +50,7 @@ En tant qu'administrateur, vous avez accès à toutes les fonctionnalités de ge
 
 3. **Authentification sécurisée**
 
-   - **Email** : admin@example.com (par défaut)
+   - **Email** : votre adresse administrateur
    - **Mot de passe** : Votre mot de passe sécurisé
    - Cliquez sur "Se connecter"
 
@@ -320,10 +320,10 @@ Onglets de navigation rapide :
 #### Format requis
 
 ```csv
-nom,prenom,email,password,role,dateNaissance,numeroEtudiant
-Dupont,Jean,jean.dupont@univ.fr,motdepasse123,student,1995-03-15,20241234
-Martin,Sophie,sophie.martin@univ.fr,,student,1996-07-22,20241235
-Durand,Pierre,pierre.durand@univ.fr,examiner123,examiner,1980-11-03,
+nom,prenom,email,role,dateNaissance,numeroEtudiant
+Dupont,Jean,jean.dupont@univ.fr,student,1995-03-15,20241234
+Martin,Sophie,sophie.martin@univ.fr,student,1996-07-22,20241235
+Durand,Pierre,pierre.durand@univ.fr,examiner,1980-11-03,
 ```
 
 #### Règles de formatage
@@ -332,19 +332,17 @@ Durand,Pierre,pierre.durand@univ.fr,examiner123,examiner,1980-11-03,
 - **Séparateur** : Virgule (,) uniquement
 - **Encodage** : UTF-8 recommandé
 - **Colonnes obligatoires** : nom, prenom, email
-- **Colonnes optionnelles** : password, role, dateNaissance, numeroEtudiant
+- **Colonnes optionnelles** : role, dateNaissance, numeroEtudiant
 
 #### Spécificités par rôle
 
 **Étudiants :**
 
-- `password` peut être vide (lien magique)
 - `numeroEtudiant` recommandé
 - `role` : "student" ou "etudiant"
 
 **Examinateurs/Admins :**
 
-- `password` obligatoire (min 6 caractères)
 - `numeroEtudiant` non utilisé
 - `role` : "examiner"/"examinateur" ou "admin"
 

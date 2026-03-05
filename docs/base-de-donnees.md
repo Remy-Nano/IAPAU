@@ -153,7 +153,6 @@ const userSchema = new Schema({
   passwordHash: {
     type: String,
     required: true,
-    select: false, // Exclusion par défaut des requêtes
   },
   role: {
     type: String,
@@ -242,27 +241,21 @@ interface IStatistiquesIA {
 ### 4.5 Modèles IA supportés
 
 ```typescript
-// OpenAI
-const OPENAI_MODELS = [
-  "gpt-3.5-turbo", // Modèle rapide et économique
-  "gpt-4", // Modèle avancé
-  "gpt-4-turbo", // Modèle optimisé
-];
+// Valeurs attendues dans conversation.modelName
+const SUPPORTED_MODEL_PROVIDERS = ["openai", "mistral"];
 
-// Mistral AI
-const MISTRAL_MODELS = [
-  "mistral-tiny", // Modèle léger
-  "mistral-small", // Modèle équilibré
-  "mistral-medium", // Modèle avancé
-];
+// Modèles techniques effectifs configurés côté backend
+// src/lib/config.ts
+// openai.defaultModel = "gpt-3.5-turbo"
+// mistral.defaultModel = "mistral-medium"
 ```
 
 ### 4.6 Paramètres de conversation
 
 | Paramètre       | Plage     | Défaut | Description                  |
 | --------------- | --------- | ------ | ---------------------------- |
-| **temperature** | 0.1 - 2.0 | 0.7    | Créativité de l'IA           |
-| **maxTokens**   | 50 - 4000 | 512    | Limite de tokens par réponse |
+| **temperature** | 0.0 - 1.0 | 0.7    | Créativité de l'IA           |
+| **maxTokens**   | 100 - 2048 | 512    | Limite de tokens par réponse |
 
 ### 4.7 Index de performance
 
@@ -715,16 +708,15 @@ export async function getDatabaseHealth() {
 ### 10.1 Protection des données sensibles
 
 ```javascript
-// Exclusion automatique des champs sensibles
+// Champs sensibles à nettoyer avant retour API
 const userSchema = new Schema({
   passwordHash: {
     type: String,
     required: true,
-    select: false, // Exclusion par défaut
   },
   magicLink: {
-    token: { type: String, select: false },
-    expiresAt: { type: Date, select: false },
+    token: { type: String },
+    expiresAt: { type: Date },
   },
 });
 
@@ -936,7 +928,7 @@ export const createTestUser = async (overrides = {}) => {
 export const createTestConversation = async (userId: string) => {
   return await Conversation.create({
     studentId: userId,
-    modelName: "gpt-3.5-turbo",
+    modelName: "openai",
     messages: [
       {
         role: "student",
@@ -1145,23 +1137,10 @@ const versionedSchema = new Schema({
 });
 ```
 
-#### 14.2.2 Cache Redis intégré
+#### 14.2.2 Cache Redis (piste future, non implémentée)
 
-```javascript
-// Cache pour requêtes fréquentes
-import Redis from "ioredis";
-const redis = new Redis(process.env.REDIS_URL);
-
-export async function getCachedHackathons() {
-  const cached = await redis.get("hackathons:active");
-  if (cached) return JSON.parse(cached);
-
-  const hackathons = await Hackathon.find({ statut: "En cours" }).lean();
-  await redis.setex("hackathons:active", 300, JSON.stringify(hackathons));
-
-  return hackathons;
-}
-```
+Le code du projet n'intègre pas de cache Redis aujourd'hui.
+Cette piste est conservée comme amélioration potentielle si la charge augmente.
 
 ### 14.3 Analytics et reporting
 
@@ -1179,4 +1158,5 @@ const analyticsSchema = new Schema({
 analyticsSchema.index({ timestamp: 1 }, { expireAfterSeconds: 2592000 }); // 30 jours
 ```
 
-> 📝 **Note** : Ce guide documente la structure actuelle de la base de données. Pour toute modification des schémas en production, suivre les procédures de migration et valider en environnement de test au préalable.
+> 📝 **Note** : Les sections 14.2.x et 14.3 décrivent des pistes d'évolution.
+> La structure active en production est celle définie dans `src/lib/models/*.ts`.

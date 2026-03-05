@@ -27,16 +27,9 @@ En tant qu'**examinateur**, vous jouez un rôle crucial dans la plateforme Promp
 1. **Accédez** à la page de connexion de Prompt Challenge
 2. **Sélectionnez** "Connexion examinateur" (onglet dédié)
 3. **Saisissez** votre email et mot de passe :
-   - Email exemple : `pierre.durand@example.fr`
+   - Email exemple : `examinateur@votre-etablissement.fr`
    - Mot de passe fourni par l'administration
 4. **Cliquez** sur "Se connecter"
-
-### Compte par défaut de démonstration
-
-- **Email** : `pierre.durand@example.fr`
-- **Mot de passe** : _fourni par l'administration_
-
-> ⚠️ **Important** : Changez votre mot de passe par défaut lors de votre première connexion pour des raisons de sécurité.
 
 ### Dépannage connexion
 

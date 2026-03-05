@@ -1,0 +1,50 @@
+%% MCD NoSQL (base reelle MongoDB)
+erDiagram
+  USERS {
+    string _id
+    string prenom
+    string nom
+    string email
+    string role
+    object magicLink
+    object profilEtudiant
+    object profilJury
+  }
+
+  HACKATHONS {
+    string _id
+    string nom
+    string description
+    object dates
+    object quotas
+    array taches
+    string statut
+  }
+
+  CONVERSATIONS {
+    string _id
+    string studentId
+    string hackathonId
+    string tacheId
+    array messages_embedded
+    object versionFinale_embedded
+    object statistiquesIA_embedded
+  }
+
+  EVALUATIONS {
+    string _id
+    string conversationId
+    string studentId
+    string examinerId
+    string hackathonId
+    string tacheId
+    int note
+    string comment
+  }
+
+  USERS ||--o{ CONVERSATIONS : "cree"
+  HACKATHONS ||--o{ CONVERSATIONS : "contexte"
+  CONVERSATIONS ||--o{ EVALUATIONS : "recoit evaluation"
+  USERS ||--o{ EVALUATIONS : "etudiant evalue"
+  USERS ||--o{ EVALUATIONS : "examinateur note"
+  HACKATHONS ||--o{ EVALUATIONS : "cadre"

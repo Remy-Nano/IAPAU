@@ -222,13 +222,13 @@ Chaque hackathon impose des limites :
   - Réponses plus créatives et variées
   - Idéal pour : Créativité, brainstorming, storytelling
 
-#### Max Tokens (128 à 2048)
+#### Max Tokens (100 à 2048)
 
 - **Définition** : Longueur maximale de la réponse
 - **Valeur par défaut** : 512 tokens
 - **Estimation** : 1 token ≈ 0.75 mot en français
 - **Conseils** :
-  - 128-256 : Réponses courtes
+  - 100-256 : Réponses courtes
   - 512 : Réponses moyennes (recommandé)
   - 1024+ : Réponses longues (consomme plus)
 
@@ -416,7 +416,7 @@ Contraintes : Ton professionnel, données récentes
 
 #### Tâches analytiques
 
-- **Temperature basse** (0.1-0.3)
+- **Temperature basse** (0.0-0.3)
 - **Mode one shot** pour les questions ponctuelles
 - **Prompts précis** avec critères clairs
 - **Demandes de justification** des réponses

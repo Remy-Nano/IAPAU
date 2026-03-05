@@ -1,0 +1,44 @@
+%% MCD SQL fictif proche du modele NoSQL (hybride avec JSON)
+erDiagram
+  USERS {
+    string _id
+    string email
+    string role
+    json magicLink
+    json profilEtudiant
+    json profilJury
+  }
+
+  HACKATHONS {
+    string _id
+    string nom
+    string statut
+    json dates
+    json quotas
+    json taches
+  }
+
+  CONVERSATIONS {
+    string _id
+    string studentId
+    string hackathonId
+    string tacheId
+    json messages
+    json versionFinale
+    json statistiquesIA
+  }
+
+  EVALUATIONS {
+    string _id
+    string conversationId
+    string studentId
+    string examinerId
+    int note
+  }
+
+  USERS ||--o{ CONVERSATIONS : "cree"
+  HACKATHONS ||--o{ CONVERSATIONS : "cadre"
+  USERS ||--o{ EVALUATIONS : "etudiant_evalue"
+  USERS ||--o{ EVALUATIONS : "examinateur_note"
+  CONVERSATIONS ||--o{ EVALUATIONS : "recoit"
+  HACKATHONS ||--o{ EVALUATIONS : "contexte"

@@ -1,0 +1,42 @@
+flowchart TD
+  A[Debut session utilisateur] --> B[Saisie email]
+  B --> C[POST /api/auth/login]
+  C --> D{Role detecte}
+
+  D -- student --> E[Envoi magic link SMTP]
+  E --> F[Clic lien recu par email]
+  F --> G[GET /api/auth/magic-link/verify]
+  G --> H[JWT session valide]
+  H --> I[Ouvrir dashboard etudiant]
+  I --> O[Creer conversation]
+  O --> P[Configurer modele / temperature / maxTokens]
+  P --> Q[Envoyer prompt]
+  Q --> R[Generation reponse IA]
+  R --> S{Reponse satisfaisante ?}
+  S -- non --> Q
+  S -- oui --> T[Soumettre version finale]
+  T --> U[Consulter notes / resultats]
+  U --> F1[Fin]
+
+  D -- admin --> J[Saisie mot de passe]
+  J --> K[POST /api/auth/credentials]
+  K --> L{Credentials valides ?}
+  L -- non --> J
+  L -- oui --> M[JWT session valide]
+  M --> N[Ouvrir dashboard admin]
+  N --> V[Gerer utilisateurs]
+  V --> X[Gerer hackathons]
+  X --> F2[Fin]
+
+  D -- examiner --> J2[Saisie mot de passe]
+  J2 --> K2[POST /api/auth/credentials]
+  K2 --> L2{Credentials valides ?}
+  L2 -- non --> J2
+  L2 -- oui --> M2[JWT session valide]
+  M2 --> N2[Ouvrir dashboard examinateur]
+  N2 --> V2[Consulter conversations finalisees]
+  V2 --> V3[Filtrer par hackathon / tache]
+  V3 --> V4[Evaluer une conversation]
+  V4 --> W2[Saisir note et commentaire]
+  W2 --> W3[Envoyer la note a l'etudiant]
+  W3 --> F3[Fin]

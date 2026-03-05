@@ -1,0 +1,73 @@
+%% MLD SQL fictif (proche du NoSQL): references logiques + colonnes JSON
+erDiagram
+  USERS {
+    varchar(24) _id PK
+    varchar(255) prenom
+    varchar(255) nom
+    datetime dateNaissance
+    varchar(255) email UK
+    varchar(255) numeroEtudiant
+    varchar(255) passwordHash
+    enum role
+    int tokensAuthorized
+    int tokensUsed
+    json magicLink
+    json profilEtudiant
+    json profilJury
+    tinyint consentementRGPD
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  HACKATHONS {
+    varchar(24) _id PK
+    varchar(255) nom
+    text description
+    text objectifs
+    json dates
+    tinyint anonymatActif
+    json quotas
+    json taches
+    varchar(255) statut
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  CONVERSATIONS {
+    varchar(24) _id PK
+    varchar(24) studentId
+    varchar(24) hackathonId
+    varchar(24) tacheId
+    varchar(24) groupId
+    varchar(255) modelName
+    int maxTokens
+    int maxTokensUsed
+    decimal temperature
+    decimal temperatureUsed
+    json messages
+    json versionFinale
+    json statistiquesIA
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  EVALUATIONS {
+    varchar(24) _id PK
+    varchar(24) conversationId
+    varchar(24) studentId
+    varchar(24) examinerId
+    varchar(24) hackathonId
+    varchar(24) tacheId
+    int note
+    text comment
+    datetime gradedAt
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  USERS ||--o{ CONVERSATIONS : "ref_logique studentId"
+  HACKATHONS ||--o{ CONVERSATIONS : "ref_logique hackathonId"
+  CONVERSATIONS ||--o{ EVALUATIONS : "ref_logique conversationId"
+  USERS ||--o{ EVALUATIONS : "ref_logique studentId"
+  USERS ||--o{ EVALUATIONS : "ref_logique examinerId"
+  HACKATHONS ||--o{ EVALUATIONS : "ref_logique hackathonId"

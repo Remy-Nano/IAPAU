@@ -1,0 +1,59 @@
+flowchart LR
+  subgraph COL_ADMIN[Use Cases Administrateur]
+    direction TB
+    Admin[Administrateur]
+    UC2A((Se connecter par credentials))
+    UC8((Gerer utilisateurs))
+    UC10((Gerer hackathons))
+    UC19((Creer un hackathon))
+    UC20((Modifier un hackathon))
+    UC21((Supprimer un hackathon))
+    UC22((Configurer quotas et dates))
+    UC23((Configurer taches et statut))
+    UC18((Se deconnecter))
+    Admin --> UC2A
+    Admin --> UC8
+    Admin --> UC10
+    Admin --> UC18
+    UC10 --> UC19
+    UC10 --> UC20
+    UC10 --> UC21
+    UC10 --> UC22
+    UC10 --> UC23
+  end
+
+  subgraph COL_EXAMINER[Use Cases Examinateur]
+    direction TB
+    Examiner[Examinateur]
+    UC2((Se connecter par credentials))
+    UC7((Evaluer une conversation))
+    UC12((Consulter conversations finalisees))
+    UC14((Filtrer par hackathon / tache))
+    UC24((Noter et envoyer la note a l'etudiant))
+    UC17((Se deconnecter))
+    Examiner --> UC2
+    Examiner --> UC7
+    Examiner --> UC17
+    UC7 --> UC12
+    UC7 --> UC14
+    UC7 --> UC24
+  end
+
+  subgraph COL_STUDENT[Use Cases Etudiant]
+    direction TB
+    Student[Etudiant]
+    UC1((Se connecter par magic link))
+    UC3((Creer une conversation))
+    UC4((Envoyer un prompt))
+    UC5((Generer une reponse IA))
+    UC6((Soumettre version finale))
+    UC11((Consulter notes et resultats))
+    UC16((Se deconnecter))
+    Student --> UC1
+    Student --> UC3
+    Student --> UC11
+    Student --> UC16
+    UC3 --> UC4
+    UC4 --> UC5
+    UC3 --> UC6
+  end

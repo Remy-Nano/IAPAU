@@ -1,0 +1,41 @@
+sequenceDiagram
+  participant U as Etudiant (Frontend)
+  participant AUTH as API Auth
+  participant CONV as API Conversations
+  participant EVAL as API Evaluations
+  participant AI as ai-service
+  participant DB as MongoDB
+
+  U->>AUTH: POST /api/auth/login (email)
+  AUTH->>DB: find User by email
+  DB-->>AUTH: role student
+  AUTH-->>U: role student (magic link envoye)
+
+  U->>AUTH: GET /api/auth/magic-link/verify?token=...
+  AUTH->>DB: verify token + invalidate magicLink
+  DB-->>AUTH: user valide
+  AUTH-->>U: JWT session + user
+
+  U->>CONV: POST /api/conversations
+  CONV->>DB: create conversation
+  DB-->>CONV: conversationId
+  CONV-->>U: 201 conversation
+
+  loop Iteration prompts
+    U->>CONV: POST /api/conversations/:id/ai-response
+    CONV->>AI: generateAIResponse(...)
+    AI-->>CONV: aiResponse + tokenCount
+    CONV->>DB: save messages + statistiquesIA
+    DB-->>CONV: updated
+    CONV-->>U: 200 aiResponse
+  end
+
+  U->>CONV: PATCH /api/conversations/:id/final
+  CONV->>DB: update versionFinale
+  DB-->>CONV: finalisee
+  CONV-->>U: 200 success
+
+  U->>EVAL: GET /api/evaluations/student/:studentId
+  EVAL->>DB: find evaluations
+  DB-->>EVAL: evaluations
+  EVAL-->>U: 200 evaluations

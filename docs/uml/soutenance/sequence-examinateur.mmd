@@ -1,0 +1,26 @@
+sequenceDiagram
+  participant U as Examinateur (Frontend)
+  participant AUTH as API Auth
+  participant CONV as API Conversations
+  participant EVAL as API Evaluations
+  participant DB as MongoDB
+
+  U->>AUTH: POST /api/auth/login (email)
+  AUTH->>DB: find User by email
+  DB-->>AUTH: role examiner
+  AUTH-->>U: role detecte
+
+  U->>AUTH: POST /api/auth/credentials (email, password)
+  AUTH->>DB: verify passwordHash
+  DB-->>AUTH: user valide
+  AUTH-->>U: JWT session + user
+
+  U->>CONV: GET /api/conversations?withFinalVersion=true&hackathonId=...&tacheId=...
+  CONV->>DB: find final conversations (+ filtres)
+  DB-->>CONV: conversations finalisees
+  CONV-->>U: 200 conversations
+
+  U->>EVAL: POST /api/evaluations
+  EVAL->>DB: create evaluation + update versionFinale.evaluationEtudiant
+  DB-->>EVAL: evaluation created
+  EVAL-->>U: 200 success (note envoyee a l'etudiant)

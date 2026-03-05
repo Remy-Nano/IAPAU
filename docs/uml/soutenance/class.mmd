@@ -1,0 +1,99 @@
+classDiagram
+  class User {
+    +string _id
+    +string prenom
+    +string nom
+    +string email
+    +string role
+    +string passwordHash
+    +number tokensAuthorized
+    +number tokensUsed
+    +MagicLink magicLink
+  }
+
+  class MagicLink {
+    +string token
+    +Date expiresAt
+  }
+
+  class Conversation {
+    +string _id
+    +string studentId
+    +string hackathonId
+    +string tacheId
+    +string modelName
+    +number maxTokens
+    +number temperature
+    +Message[] messages
+    +VersionFinale versionFinale
+    +StatistiquesIA statistiquesIA
+  }
+
+  class Message {
+    +string role
+    +string content
+    +Date createdAt
+    +number tokenCount
+    +string modelUsed
+  }
+
+  class VersionFinale {
+    +string promptFinal
+    +string reponseIAFinale
+    +Date soumisLe
+    +EvaluationEtudiant evaluationEtudiant
+  }
+
+  class StatistiquesIA {
+    +string modelUtilise
+    +number tokensTotal
+    +number coutEstime
+  }
+
+  class EvaluationEtudiant {
+    +number note
+    +string comment
+    +string examinerId
+    +Date date
+  }
+
+  class Evaluation {
+    +string _id
+    +string conversationId
+    +string studentId
+    +string examinerId
+    +string hackathonId
+    +string tacheId
+    +number note
+    +string comment
+    +Date gradedAt
+  }
+
+  class Hackathon {
+    +string _id
+    +string nom
+    +string description
+    +Dates dates
+    +Quotas quotas
+    +string[] taches
+    +string statut
+  }
+
+  class Dates {
+    +Date debut
+    +Date fin
+    +Date archiveLe
+  }
+
+  class Quotas {
+    +number promptsParEtudiant
+    +number tokensParEtudiant
+  }
+
+  User "1" --> "0..*" Conversation : cree
+  Conversation "1" --> "0..*" Message : contient
+  Conversation "1" --> "0..1" VersionFinale : finalise
+  Conversation "1" --> "0..1" StatistiquesIA : mesure
+  VersionFinale "0..1" --> "0..1" EvaluationEtudiant : recoit
+  Conversation "1" --> "0..*" Evaluation : evaluee par jury
+  Hackathon "1" --> "0..*" Conversation : contexte

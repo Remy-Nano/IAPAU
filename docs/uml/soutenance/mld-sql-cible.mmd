@@ -1,0 +1,129 @@
+%% MLD SQL cible (normalise) - version relationnelle du projet
+erDiagram
+  USERS {
+    varchar(24) id PK
+    varchar(255) prenom
+    varchar(255) nom
+    datetime date_naissance
+    varchar(255) email UK
+    varchar(255) password_hash
+    enum role
+    int tokens_authorized
+    int tokens_used
+    boolean consentement_rgpd
+    datetime created_at
+    datetime updated_at
+  }
+
+  MAGIC_LINKS {
+    varchar(64) token PK
+    varchar(24) user_id FK
+    datetime expires_at
+    datetime created_at
+  }
+
+  STUDENT_PROFILES {
+    varchar(24) user_id PK,FK
+    varchar(50) niveau_formation
+    varchar(100) type_etude
+    varchar(24) group_id
+  }
+
+  EXAMINER_PROFILES {
+    varchar(24) user_id PK,FK
+    varchar(100) niveau_diplome
+    varchar(100) poste_occupe
+    varchar(100) secteur_activite
+    int annees_experience
+    int nombre_etp_employeur
+  }
+
+  HACKATHONS {
+    varchar(24) id PK
+    varchar(255) nom
+    text description
+    text objectifs
+    datetime date_debut
+    datetime date_fin
+    datetime date_archive
+    boolean anonymat_actif
+    int quota_prompts
+    int quota_tokens
+    varchar(30) statut
+    datetime created_at
+    datetime updated_at
+  }
+
+  HACKATHON_TASKS {
+    varchar(24) id PK
+    varchar(24) hackathon_id FK
+    varchar(255) titre
+    text description
+    int ordre
+  }
+
+  CONVERSATIONS {
+    varchar(24) id PK
+    varchar(24) student_id FK
+    varchar(24) hackathon_id FK
+    varchar(24) task_id FK
+    varchar(255) model_name
+    int max_tokens
+    decimal temperature
+    datetime created_at
+    datetime updated_at
+  }
+
+  CONVERSATION_MESSAGES {
+    bigint id PK
+    varchar(24) conversation_id FK
+    enum role
+    text content
+    int token_count
+    varchar(255) model_used
+    datetime created_at
+  }
+
+  CONVERSATION_FINALS {
+    varchar(24) conversation_id PK,FK
+    text prompt_final
+    text reponse_ia_finale
+    datetime soumis_le
+  }
+
+  CONVERSATION_STATS {
+    varchar(24) conversation_id PK,FK
+    varchar(255) model_utilise
+    int tokens_total
+    decimal cout_estime
+  }
+
+  EVALUATIONS {
+    varchar(24) id PK
+    varchar(24) conversation_id FK
+    varchar(24) student_id FK
+    varchar(24) examiner_id FK
+    varchar(24) hackathon_id FK
+    varchar(24) task_id FK
+    int note
+    text comment
+    datetime graded_at
+    datetime created_at
+    datetime updated_at
+  }
+
+  USERS ||--o{ MAGIC_LINKS : has
+  USERS ||--|| STUDENT_PROFILES : has
+  USERS ||--|| EXAMINER_PROFILES : has
+  HACKATHONS ||--o{ HACKATHON_TASKS : contains
+  USERS ||--o{ CONVERSATIONS : creates
+  HACKATHONS ||--o{ CONVERSATIONS : scopes
+  HACKATHON_TASKS ||--o{ CONVERSATIONS : targets
+  CONVERSATIONS ||--o{ CONVERSATION_MESSAGES : contains
+  CONVERSATIONS ||--|| CONVERSATION_FINALS : final
+  CONVERSATIONS ||--|| CONVERSATION_STATS : stats
+  CONVERSATIONS ||--o{ EVALUATIONS : receives
+  USERS ||--o{ EVALUATIONS : student
+  USERS ||--o{ EVALUATIONS : examiner
+  HACKATHONS ||--o{ EVALUATIONS : context
+  HACKATHON_TASKS ||--o{ EVALUATIONS : task

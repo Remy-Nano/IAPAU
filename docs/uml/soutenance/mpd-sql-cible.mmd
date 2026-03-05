@@ -1,0 +1,106 @@
+%% MPD SQL cible (normalise) - contraintes principales
+erDiagram
+  USERS {
+    varchar(24) id PK
+    varchar(255) email UK "NOT NULL"
+    varchar(255) password_hash "NOT NULL"
+    enum role "NOT NULL"
+    int tokens_authorized "DEFAULT 0"
+    int tokens_used "DEFAULT 0"
+  }
+
+  MAGIC_LINKS {
+    varchar(64) token PK
+    varchar(24) user_id FK "NOT NULL"
+    datetime expires_at "NOT NULL"
+  }
+
+  STUDENT_PROFILES {
+    varchar(24) user_id PK,FK
+    varchar(50) niveau_formation
+    varchar(100) type_etude
+  }
+
+  EXAMINER_PROFILES {
+    varchar(24) user_id PK,FK
+    int annees_experience
+  }
+
+  HACKATHONS {
+    varchar(24) id PK
+    varchar(255) nom "NOT NULL"
+    datetime date_debut "NOT NULL"
+    datetime date_fin "NOT NULL"
+    int quota_prompts "NOT NULL"
+    int quota_tokens "NOT NULL"
+    varchar(30) statut "NOT NULL"
+  }
+
+  HACKATHON_TASKS {
+    varchar(24) id PK
+    varchar(24) hackathon_id FK "NOT NULL"
+    varchar(255) titre "NOT NULL"
+    int ordre "NOT NULL"
+  }
+
+  CONVERSATIONS {
+    varchar(24) id PK
+    varchar(24) student_id FK "NOT NULL"
+    varchar(24) hackathon_id FK "NOT NULL"
+    varchar(24) task_id FK "NOT NULL"
+    varchar(255) model_name
+    int max_tokens "DEFAULT 512"
+    decimal(4,2) temperature "DEFAULT 0.70"
+  }
+
+  CONVERSATION_MESSAGES {
+    bigint id PK
+    varchar(24) conversation_id FK "NOT NULL"
+    enum role "student|assistant|system"
+    text content "NOT NULL"
+    int token_count
+    datetime created_at "NOT NULL"
+  }
+
+  CONVERSATION_FINALS {
+    varchar(24) conversation_id PK,FK
+    text prompt_final "NOT NULL"
+    text reponse_ia_finale "NOT NULL"
+    datetime soumis_le "NOT NULL"
+  }
+
+  CONVERSATION_STATS {
+    varchar(24) conversation_id PK,FK
+    varchar(255) model_utilise
+    int tokens_total "DEFAULT 0"
+    decimal(10,4) cout_estime
+  }
+
+  EVALUATIONS {
+    varchar(24) id PK
+    varchar(24) conversation_id FK "NOT NULL"
+    varchar(24) student_id FK "NOT NULL"
+    varchar(24) examiner_id FK "NOT NULL"
+    varchar(24) hackathon_id FK
+    varchar(24) task_id FK
+    int note "CHECK 1..10"
+    text comment "NOT NULL"
+    datetime graded_at "NOT NULL"
+    string uk_examiner_conversation "UNIQUE(examiner_id,conversation_id)"
+  }
+
+  USERS ||--o{ MAGIC_LINKS : fk_magic_links_user
+  USERS ||--|| STUDENT_PROFILES : fk_student_profiles_user
+  USERS ||--|| EXAMINER_PROFILES : fk_examiner_profiles_user
+  HACKATHONS ||--o{ HACKATHON_TASKS : fk_tasks_hackathon
+  USERS ||--o{ CONVERSATIONS : fk_conversations_student
+  HACKATHONS ||--o{ CONVERSATIONS : fk_conversations_hackathon
+  HACKATHON_TASKS ||--o{ CONVERSATIONS : fk_conversations_task
+  CONVERSATIONS ||--o{ CONVERSATION_MESSAGES : fk_messages_conversation
+  CONVERSATIONS ||--|| CONVERSATION_FINALS : fk_finals_conversation
+  CONVERSATIONS ||--|| CONVERSATION_STATS : fk_stats_conversation
+  CONVERSATIONS ||--o{ EVALUATIONS : fk_evaluations_conversation
+  USERS ||--o{ EVALUATIONS : fk_evaluations_student
+  USERS ||--o{ EVALUATIONS : fk_evaluations_examiner
+  HACKATHONS ||--o{ EVALUATIONS : fk_evaluations_hackathon
+  HACKATHON_TASKS ||--o{ EVALUATIONS : fk_evaluations_task
