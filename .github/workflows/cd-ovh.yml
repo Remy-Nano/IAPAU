@@ -31,7 +31,7 @@ jobs:
           script_stop: true
           command_timeout: 30m
           script: |
-            set -euo pipefail
+            set -eu
 
             APP_DIR="${{ secrets.OVH_APP_DIR }}"
             if [ -z "$APP_DIR" ]; then
@@ -40,6 +40,7 @@ jobs:
             fi
 
             cd "$APP_DIR"
+            echo "==> Working directory: $(pwd)"
 
             echo "==> Update source code"
             git fetch origin main
@@ -48,20 +49,41 @@ jobs:
 
             echo "==> Build and restart container"
             if docker compose version >/dev/null 2>&1; then
-              DC="docker compose"
-            elif docker-compose version >/dev/null 2>&1; then
-              DC="docker-compose"
+              echo "Using docker compose plugin"
+              docker compose pull web || true
+              docker compose build web
+              docker compose up -d web
+              COMPOSE_MODE="plugin"
+            elif command -v docker-compose >/dev/null 2>&1; then
+              echo "Using docker-compose binary"
+              docker-compose pull web || true
+              docker-compose build web
+              docker-compose up -d web
+              COMPOSE_MODE="binary"
             else
-              echo "Docker Compose introuvable sur le serveur"
-              exit 1
+              echo "Docker Compose unavailable, fallback to plain docker"
+              docker build -t studia:1.0.0 .
+              docker stop studia || true
+              docker rm studia || true
+              docker run -d \
+                --name studia \
+                --restart unless-stopped \
+                --env-file .env.docker \
+                -p 3000:3000 \
+                studia:1.0.0
+              COMPOSE_MODE="none"
             fi
 
-            $DC pull web || true
-            $DC build web
-            $DC up -d web
-
             echo "==> Post-deploy checks"
-            $DC ps
-            $DC logs --tail=50 web || true
+            if [ "$COMPOSE_MODE" = "plugin" ]; then
+              docker compose ps
+              docker compose logs --tail=50 web || true
+            elif [ "$COMPOSE_MODE" = "binary" ]; then
+              docker-compose ps
+              docker-compose logs --tail=50 web || true
+            else
+              docker ps
+              docker logs --tail=50 studia || true
+            fi
             curl -fsS http://localhost:3000/api/health >/dev/null
             echo "Deployment successful"
