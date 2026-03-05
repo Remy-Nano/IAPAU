@@ -47,11 +47,21 @@ jobs:
             git pull --ff-only origin main
 
             echo "==> Build and restart container"
-            docker compose build --pull web
-            docker compose up -d web
+            if docker compose version >/dev/null 2>&1; then
+              DC="docker compose"
+            elif docker-compose version >/dev/null 2>&1; then
+              DC="docker-compose"
+            else
+              echo "Docker Compose introuvable sur le serveur"
+              exit 1
+            fi
+
+            $DC pull web || true
+            $DC build web
+            $DC up -d web
 
             echo "==> Post-deploy checks"
-            docker compose ps
-            docker compose logs --tail=50 web || true
+            $DC ps
+            $DC logs --tail=50 web || true
             curl -fsS http://localhost:3000/api/health >/dev/null
             echo "Deployment successful"
