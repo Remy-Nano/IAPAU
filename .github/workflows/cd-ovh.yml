@@ -72,5 +72,13 @@ jobs:
             echo "==> Post-deploy checks"
             $DOCKER ps
             $DOCKER logs --tail=50 studia || true
+            for i in $(seq 1 30); do
+              if curl -fsS http://localhost:3000/api/health >/dev/null; then
+                echo "Health check OK"
+                break
+              fi
+              echo "Waiting for app startup... ($i/30)"
+              sleep 2
+            done
             curl -fsS http://localhost:3000/api/health >/dev/null
             echo "Deployment successful"
