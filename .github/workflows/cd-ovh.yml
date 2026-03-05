@@ -26,7 +26,7 @@ jobs:
         with:
           host: ${{ secrets.OVH_SSH_HOST }}
           username: ${{ secrets.OVH_SSH_USER }}
-          key: ${{ secrets.OVH_SSH_PRIVATE_KEY }}
+          password: ${{ secrets.OVH_SSH_PASSWORD }}
           port: ${{ secrets.OVH_SSH_PORT || '22' }}
           script_stop: true
           command_timeout: 30m
