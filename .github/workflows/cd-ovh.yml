@@ -58,42 +58,19 @@ jobs:
               exit 1
             fi
 
-            if $DOCKER compose version >/dev/null 2>&1; then
-              echo "Using docker compose plugin"
-              $DOCKER compose pull web || true
-              $DOCKER compose build web
-              $DOCKER compose up -d web
-              COMPOSE_MODE="plugin"
-            elif command -v docker-compose >/dev/null 2>&1; then
-              echo "Using docker-compose binary"
-              docker-compose pull web || true
-              docker-compose build web
-              docker-compose up -d web
-              COMPOSE_MODE="binary"
-            else
-              echo "Docker Compose unavailable, fallback to plain docker"
-              $DOCKER build -t studia:1.0.0 .
-              $DOCKER stop studia || true
-              $DOCKER rm studia || true
-              $DOCKER run -d \
-                --name studia \
-                --restart unless-stopped \
-                --env-file .env.docker \
-                -p 3000:3000 \
-                studia:1.0.0
-              COMPOSE_MODE="none"
-            fi
+            echo "Using plain docker deployment"
+            $DOCKER build -t studia:1.0.0 .
+            $DOCKER stop studia || true
+            $DOCKER rm studia || true
+            $DOCKER run -d \
+              --name studia \
+              --restart unless-stopped \
+              --env-file .env.docker \
+              -p 3000:3000 \
+              studia:1.0.0
 
             echo "==> Post-deploy checks"
-            if [ "$COMPOSE_MODE" = "plugin" ]; then
-              $DOCKER compose ps
-              $DOCKER compose logs --tail=50 web || true
-            elif [ "$COMPOSE_MODE" = "binary" ]; then
-              docker-compose ps
-              docker-compose logs --tail=50 web || true
-            else
-              $DOCKER ps
-              $DOCKER logs --tail=50 studia || true
-            fi
+            $DOCKER ps
+            $DOCKER logs --tail=50 studia || true
             curl -fsS http://localhost:3000/api/health >/dev/null
             echo "Deployment successful"
