@@ -1,6 +1,9 @@
-# Deploiement OVH Manuel (Docker)
+# Deploiement OVH (Manuel + CD)
 
-Ce document decrit la procedure reelle de deploiement actuellement utilisee sur le VPS OVH.
+Ce document decrit la procedure reelle de deploiement sur le VPS OVH, avec:
+
+- le mode manuel historique
+- le mode CD automatise actuellement en place via GitHub Actions
 
 ## Contexte constate
 
@@ -160,9 +163,9 @@ Dans GitHub: `Settings` -> `Secrets and variables` -> `Actions` -> `New reposito
 
 - `OVH_SSH_HOST`: IP ou hostname du VPS (ex: `51.255.203.117`)
 - `OVH_SSH_USER`: utilisateur SSH (ex: `ubuntu`)
-- `OVH_SSH_PRIVATE_KEY`: cle privee SSH (contenu complet)
+- `OVH_SSH_PASSWORD`: mot de passe SSH de l'utilisateur VPS (configuration actuelle)
 - `OVH_SSH_PORT`: port SSH (souvent `22`)
-- `OVH_APP_DIR`: chemin absolu du projet sur VPS (ex: `/home/ubuntu/IAPAU-main`)
+- `OVH_APP_DIR`: chemin absolu du projet sur VPS (ex: `/home/ubuntu/IAPAU`)
 
 ### Ce que fait le CD
 
@@ -173,8 +176,12 @@ cd "$OVH_APP_DIR"
 git fetch origin main
 git checkout main
 git pull --ff-only origin main
-docker compose build --pull web
-docker compose up -d web
+docker build -t studia:1.0.0 .
+docker stop studia || true
+docker rm studia || true
+docker run -d --name studia --restart unless-stopped --env-file .env.docker -p 3000:3000 studia:1.0.0
+
+# attente demarrage + health check
 curl -fsS http://localhost:3000/api/health
 ```
 
@@ -187,16 +194,42 @@ curl -fsS http://localhost:3000/api/health
 3. Confirmer sur VPS:
 
 ```bash
-docker compose ps
-docker compose logs --tail=100 web
+docker ps
+docker logs --tail=100 studia
+curl -I http://localhost:3000/api/health
 ```
 
 ### Important
 
 - Le serveur doit deja avoir:
   - git
-  - docker + docker compose plugin
+  - docker
   - le repo clone dans `OVH_APP_DIR`
 - Si l'utilisateur SSH n'a pas acces a Docker:
   - ajouter l'utilisateur au groupe docker
   - ou executer via sudo (a adapter dans le workflow)
+
+## 11) Script oral (court)
+
+Version simple a dire:
+
+1. "J'ai une CI qui valide build + tests E2E sur chaque push."
+2. "J'ai ajoute une CD sur OVH: apres succes CI sur main, GitHub se connecte en SSH au VPS."
+3. "Le job fait git pull, rebuild l'image Docker, redemarre le conteneur, puis verifie /api/health."
+4. "Resultat: deploiement reproductible, plus rapide, et moins d'erreurs manuelles."
+
+## 12) Limite actuelle et amelioration prevue
+
+Configuration actuelle:
+
+- SSH par mot de passe (`OVH_SSH_PASSWORD`) pour fiabiliser la mise en place rapide.
+
+Amelioration prevue:
+
+- migrer vers une authentification SSH par cle (`OVH_SSH_PRIVATE_KEY`) et rotation periodique des secrets.
+
+Cette trajectoire est acceptable pour l'oral si tu expliques:
+
+- ce qui est en production maintenant
+- pourquoi ce choix a ete fait
+- ce que tu ameliores ensuite
