@@ -1,0 +1,58 @@
+name: CD - OVH VPS
+
+on:
+  workflow_run:
+    workflows: ["CI - E2E (Playwright + Mongo)"]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main'
+      )
+    environment: production
+
+    steps:
+      - name: Deploy on OVH VPS over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.OVH_SSH_HOST }}
+          username: ${{ secrets.OVH_SSH_USER }}
+          key: ${{ secrets.OVH_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.OVH_SSH_PORT || '22' }}
+          script_stop: true
+          command_timeout: 30m
+          script: |
+            set -euo pipefail
+
+            APP_DIR="${{ secrets.OVH_APP_DIR }}"
+            if [ -z "$APP_DIR" ]; then
+              echo "OVH_APP_DIR secret is empty"
+              exit 1
+            fi
+
+            cd "$APP_DIR"
+
+            echo "==> Update source code"
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+
+            echo "==> Build and restart container"
+            docker compose build --pull web
+            docker compose up -d web
+
+            echo "==> Post-deploy checks"
+            docker compose ps
+            docker compose logs --tail=50 web || true
+            curl -fsS http://localhost:3000/api/health >/dev/null
+            echo "Deployment successful"
