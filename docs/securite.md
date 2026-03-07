@@ -976,11 +976,12 @@ npm audit
 echo "🔄 Mise à jour dépendances sécuritaires..."
 npm update
 
-echo "🧪 Tests sécurité..."
-npm run test:security
+echo "🧪 Tests de non-régression..."
+npm run test:e2e:local
 
-echo "🚀 Déploiement sécurisé..."
-npm run build && npm run deploy
+echo "🚀 Build + déploiement via pipeline CD..."
+npm run build
+# push sur main -> CI puis CD OVH (workflow GitHub Actions)
 ```
 
 #### 11.2.2 Monitoring continu

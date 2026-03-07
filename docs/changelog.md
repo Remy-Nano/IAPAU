@@ -12,6 +12,9 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Alignement de `docs/api-docs.md` avec les routes d'authentification actuelles (`/api/auth/login`, `/api/auth/credentials`, `/api/auth/magic-link/verify`)
 - Correction du format CSV documenté pour `/api/users/import` (suppression de la colonne `password` non utilisée)
 - Harmonisation des exemples de comptes dans `README.md`, `docs/guide-admin.md`, `docs/guide-examinateur.md` et `docs/securite.md`
+- Ajout de la documentation CD OVH (`docs/deploiement-ovh-manuel.md`) avec workflow GitHub Actions et verification health-check
+- Correction des commandes de maintenance securitaire (`docs/securite.md`) pour coller aux scripts existants
+- Nettoyage des references UML (`docs/diagrammes-uml.md`) avec suppression d'un fichier non present
 
 ### À venir
 

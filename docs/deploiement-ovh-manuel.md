@@ -13,7 +13,7 @@ Ce document decrit la procedure reelle de deploiement sur le VPS OVH, avec:
 - Image observee: `studia:1.0.0`
 - Politique de redemarrage: `unless-stopped`
 - Exposition port: `3000:3000`
-- Pas de CD automatique detecte a ce stade:
+- Constat initial (historique, avant mise en place du workflow CD):
   - pas de cron `ubuntu` ni `root`
   - pas de service `pm2`
   - pas de service/timer `deploy` ou `watchtower`

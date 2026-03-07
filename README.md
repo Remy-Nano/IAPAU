@@ -2,7 +2,7 @@
 
 _Plateforme d'évaluation IA pour hackathons - Architecture Next.js/MERN avec Domain-Driven Design_
 
-[![Next.js](https://img.shields.io/badge/Next.js-15.3.1-000000?style=flat&logo=nextdotjs)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.5.12-000000?style=flat&logo=nextdotjs)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat&logo=typescript)](https://www.typescriptlang.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat&logo=mongodb)](https://www.mongodb.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.x-06B6D4?style=flat&logo=tailwindcss)](https://tailwindcss.com/)
@@ -28,11 +28,11 @@ _Plateforme d'évaluation IA pour hackathons - Architecture Next.js/MERN avec Do
 
 ### **Stack technique actuelle**
 
-- **Frontend** : Next.js 15.3.1, React 19, TypeScript 5, Tailwind CSS 4
+- **Frontend** : Next.js 15.5.12, React 19, TypeScript 5, Tailwind CSS 4
 - **Backend** : Next.js API Routes, Mongoose 8.14.1, MongoDB Atlas
 - **UI/UX** : ShadCN/ui (style New York), Radix UI, Lucide React 0.507.0
 - **IA** : OpenAI 4.97.0, Mistral AI 1.6.0
-- **Auth** : JWT, bcrypt, Magic Links via SendGrid 8.1.5
+- **Auth** : JWT, bcrypt, Magic Links via SMTP (Nodemailer)
 - **Validation** : Zod 3.25.55, React Hook Form 7.56.3
 - **Tooling** : ESLint 9, Turbopack, file-loader
 
@@ -46,7 +46,7 @@ _Plateforme d'évaluation IA pour hackathons - Architecture Next.js/MERN avec Do
 prompt-challenge/
 ├── 📁 src/
 │   ├── 📁 app/                    # Pages & API Routes (Next.js 15+)
-│   │   ├── 📁 api/               # Routes API backend
+│   │   ├── 📁 (backend)/api/     # Routes API backend
 │   │   │   ├── auth/             # Authentification (login, magic-link)
 │   │   │   ├── users/            # CRUD utilisateurs + import CSV
 │   │   │   ├── conversations/    # Gestion conversations IA
@@ -93,7 +93,7 @@ prompt-challenge/
 ### **🔐 Système d'authentification**
 
 - **Multi-rôle robuste** : étudiants, examinateurs, administrateurs avec gestion différenciée
-- **Magic Links SendGrid** : authentification sans mot de passe pour étudiants avec emails réels
+- **Magic Links SMTP (Nodemailer)** : authentification sans mot de passe pour étudiants avec emails réels
 - **Authentification hybride** : email/mot de passe pour jurys et admins, magic links pour étudiants
 - **JWT sécurisé** : tokens avec expiration contrôlée (10 minutes pour magic links)
 - **Utilisateurs de test** : comptes prédéfinis pour démonstration immédiate
@@ -147,7 +147,7 @@ prompt-challenge/
 
 - Node.js 18+
 - MongoDB Atlas (ou instance locale)
-- Clés API : OpenAI + Mistral + SendGrid
+- Clés API : OpenAI + Mistral + SMTP
 
 ### **Installation**
 
@@ -169,9 +169,11 @@ npm run dev
 
 - **Application** : http://localhost:3000
 - **Comptes de test** :
-  - **👨‍💼 Admin** : `jean.admin@exemple.com` / `admin123`
-  - **👨‍🏫 Examinateur** : `pierre.durand@example.fr` / `examiner123`
-  - **🎓 Étudiant** : `christophe.mostefaoui.dev@gmail.com` (magic link par email)
+  - En environnement local standard : utilisez des comptes créés via l'interface admin
+  - En mode E2E (`npm run test:e2e:local`) : voir `scripts/seed-e2e.js`
+  - **Admin E2E** : `admin@exemple.com` / `admin123`
+  - **Examinateur E2E** : `examinateur@exemple.com` / `examiner123`
+  - **Étudiant E2E** : `matheoalves030@gmail.com` (magic link)
 
 ---
 
@@ -191,11 +193,15 @@ NEXTAUTH_URL=http://localhost:3000
 OPENAI_API_KEY=sk-your-openai-api-key
 MISTRAL_API_KEY=your-mistral-api-key
 
-# Email (SendGrid) - Magic Links
-SENDGRID_API_KEY=your-sendgrid-api-key
-SENDGRID_FROM_EMAIL=noreply@votredomaine.com
+# Email (SMTP) - Magic Links
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=votre-email@domaine.com
+SMTP_PASS=votre-mot-de-passe-app
+SMTP_FROM="STUDIA <votre-email@domaine.com>"
 
-# Note : SENDGRID_FROM_EMAIL doit être vérifié dans SendGrid Dashboard
+# Note : utilisez un mot de passe applicatif SMTP (ex: Gmail)
 ```
 
 ### **Scripts disponibles**
@@ -247,7 +253,7 @@ Organisation par domaines métier avec séparation claire des responsabilités :
 - **JWT avec expiration** contrôlée et validation stricte
 - **Validation Zod** côté serveur avec schémas adaptatifs
 - **Variables d'environnement** sécurisées et isolées
-- **SendGrid API** : intégration sécurisée pour magic links
+- **SMTP (Nodemailer)** : intégration sécurisée pour magic links
 - **Isolation des données** : conversations filtrées par utilisateur
 
 ### **5. UI/UX moderne**
@@ -282,7 +288,7 @@ refactor: optimiser connexion MongoDB
 
 1. **Types** : définir dans `/src/types/`
 2. **Services** : logique métier dans `/src/lib/services/`
-3. **API** : routes dans `/src/app/api/`
+3. **API** : routes dans `/src/app/(backend)/api/`
 4. **UI** : composants dans `/src/components/{domain}/`
 
 ---
@@ -292,7 +298,7 @@ refactor: optimiser connexion MongoDB
 ### **🔧 Système d'authentification corrigé**
 
 - ✅ **Problème "utilisateur non trouvé"** : suppression de la logique de recherche limitée aux emails prédéfinis
-- ✅ **Magic links fonctionnels** : intégration SendGrid complète avec gestion d'erreurs robuste
+- ✅ **Magic links fonctionnels** : intégration SMTP complète avec gestion d'erreurs robuste
 - ✅ **Support dual des rôles** : reconnaissance des formats "student"/"etudiant" et "examiner"/"examinateur"
 - ✅ **Logs détaillés** : amélioration du debugging pour l'authentification
 
@@ -322,7 +328,7 @@ refactor: optimiser connexion MongoDB
 Toutes les fonctionnalités principales sont **opérationnelles et testées** :
 
 - ✅ **Authentification complète** : Admin, Examinateurs et Étudiants
-- ✅ **Magic Links SendGrid** : emails envoyés en temps réel
+- ✅ **Magic Links SMTP (Nodemailer)** : emails envoyés en temps réel
 - ✅ **Conversations IA** : OpenAI et Mistral intégrés
 - ✅ **Interface étudiante** : dashboard propre sans données parasites
 - ✅ **Système d'évaluation** : notation et commentaires fonctionnels
@@ -356,7 +362,7 @@ Toutes les fonctionnalités principales sont **opérationnelles et testées** :
 
 - [OpenAI API](https://platform.openai.com/docs)
 - [Mistral AI API](https://docs.mistral.ai/)
-- [SendGrid API](https://docs.sendgrid.com/)
+- [Nodemailer](https://nodemailer.com/)
 
 ### **Outils de développement**
 

@@ -1,6 +1,6 @@
 # Diagrammes UML - Prompt Challenge
 
-> Dernière mise à jour: 2026-02-13
+> Dernière mise à jour: 2026-03-05
 >
 > Pour `mermaid.live`, le plus simple est d'ouvrir un des fichiers `.mmd` ci-dessous
 > et copier-coller tout le contenu du fichier (sans backticks).
@@ -20,7 +20,6 @@
 11. MPD SQL (fictif): `docs/uml/soutenance/mpd-sql.mmd`
 12. MLD SQL cible (normalise): `docs/uml/soutenance/mld-sql-cible.mmd`
 13. MPD SQL cible (normalise): `docs/uml/soutenance/mpd-sql-cible.mmd`
-14. MCD SQL normalise (ta version): `docs/uml/soutenance/mcd-sql-normalise.mmd`
 
 ## Rappel
 
