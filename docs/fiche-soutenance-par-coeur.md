@@ -19,6 +19,137 @@ UI (`tsx`) -> `fetch("/api/...")` -> `route.ts` -> service/controller -> model M
 
 ---
 
+## 1 bis) Parcours d'apprentissage par flux (ordre conseille)
+Lis et apprends dans cet ordre, flux par flux:
+1. Flux Login etudiant (magic link)
+2. Flux Login admin/examinateur (credentials)
+3. Flux Protection API (middleware)
+4. Flux Creation utilisateur admin
+5. Flux Import CSV utilisateurs
+6. Flux CRUD hackathons
+7. Flux Deploy CI/CD
+
+Pour chaque flux, tu recites:
+1. Declencheur
+2. Fichiers traverses
+3. Chemin technique exact
+4. Resultat final
+
+### Flux 1 - Login etudiant (magic link)
+Declencheur:
+L'etudiant saisit son email sur l'ecran de login.
+
+Fichiers traverses:
+- `src/components/auth/AuthManager.tsx`
+- `src/context/AuthContext.tsx`
+- `src/app/(backend)/api/auth/login/route.ts`
+- `src/lib/models/user.ts`
+- `src/lib/utils/email.ts`
+- `src/app/(frontend)/magic-link/verify/page.tsx`
+- `src/app/(backend)/api/auth/magic-link/verify/route.ts`
+
+Chemin technique exact:
+`AuthManager` -> `loginWithEmail()` -> `POST /api/auth/login` -> generation + stockage magic link -> clic lien -> page verify -> `GET /api/auth/magic-link/verify` -> token session.
+
+Resultat final:
+Utilisateur connecte, redirection vers dashboard etudiant.
+
+### Flux 2 - Login admin/examinateur (credentials)
+Declencheur:
+Admin/examinateur saisit email + mot de passe.
+
+Fichiers traverses:
+- `src/components/auth/AuthManager.tsx`
+- `src/context/AuthContext.tsx`
+- `src/app/(backend)/api/auth/credentials/route.ts`
+- `src/lib/controllers/authController.ts`
+- `src/lib/models/user.ts`
+
+Chemin technique exact:
+`handleAdminLogin/handleExaminerLogin` -> `loginWithCredentials()` -> `POST /api/auth/credentials` -> `authController.login()` -> verification bcrypt -> JWT session.
+
+Resultat final:
+Token et user renvoyes, redirection dashboard admin ou examinateur.
+
+### Flux 3 - Protection API (middleware)
+Declencheur:
+Toute requete sur `/api/*`.
+
+Fichiers traverses:
+- `middleware.ts`
+
+Chemin technique exact:
+Requete API -> check route publique/privee -> lecture `Authorization` -> `jwt.verify`.
+
+Resultat final:
+`NextResponse.next()` si token valide, sinon `401`.
+
+### Flux 4 - Creation utilisateur admin
+Declencheur:
+Admin soumet formulaire creation user.
+
+Fichiers traverses:
+- `src/components/admin/users/UserCreateForm.tsx`
+- `src/app/(backend)/api/users/route.ts`
+- `src/lib/services/userService.ts`
+- `src/lib/models/user.ts`
+
+Chemin technique exact:
+Submit form -> `POST /api/users` -> `createUser(data)` -> validation + hash password + insert Mongo.
+
+Resultat final:
+User cree (`201`) ou erreur metier (`400/409`).
+
+### Flux 5 - Import CSV utilisateurs
+Declencheur:
+Admin upload un fichier CSV.
+
+Fichiers traverses:
+- `src/components/admin/users/UserImportForm.tsx`
+- `src/app/(backend)/api/users/import/route.ts`
+- `src/lib/services/importService.ts`
+- `src/lib/models/user.ts`
+
+Chemin technique exact:
+Upload multipart -> `POST /api/users/import` -> `processCSVImport(file)` -> parse + validation + creations.
+
+Resultat final:
+Resume import `{ imported, warnings, errors }`.
+
+### Flux 6 - CRUD hackathons
+Declencheur:
+Admin consulte/cree/modifie/supprime un hackathon.
+
+Fichiers traverses:
+- `src/services/hackathonService.ts` (cote front)
+- `src/app/(backend)/api/hackathons/route.ts`
+- `src/app/(backend)/api/hackathons/[id]/route.ts`
+- `src/lib/services/hackathonService.ts` (cote backend, si utilise)
+- `src/lib/models/hackathon.ts`
+
+Chemin technique exact:
+UI -> appels Axios `GET/POST/PATCH/DELETE /api/hackathons*` -> routes API -> DB.
+
+Resultat final:
+Etat hackathon persiste en base et reflété dans l'UI.
+
+### Flux 7 - Deploy CI/CD
+Declencheur:
+Push `main` apres CI ou lancement manuel workflow.
+
+Fichiers traverses:
+- `.github/workflows/ci-e2e.yml`
+- `.github/workflows/cd-ovh.yml`
+- `Dockerfile`
+
+Chemin technique exact:
+CI (install/build/tests) -> CD (SSH OVH -> git pull -> docker build -> docker run -> healthcheck).
+
+Resultat final:
+Nouvelle version en ligne; si echec, job failed + rollback manuel.
+
+---
+
 ## 2) Regles de types de fichiers
 `page.tsx`: page front rendue au navigateur.
 `component.tsx`: composant UI reutilisable.
